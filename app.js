@@ -1237,25 +1237,30 @@ function startAnimationLoop() {
     let fpsTimer = performance.now();
 
     function renderFrame(now) {
-        const delta = (now - lastTime) / 1000;
-        lastTime = now;
+        try {
+            const delta = (now - lastTime) / 1000;
+            lastTime = now;
 
-        // FPS Calculation
-        frameCount++;
-        if (now - fpsTimer >= 1000) {
-            document.getElementById("fpsMeter").textContent = `${frameCount} FPS`;
-            frameCount = 0;
-            fpsTimer = now;
+            // FPS Calculation
+            frameCount++;
+            if (now - fpsTimer >= 1000) {
+                const fpsMeter = document.getElementById("fpsMeter");
+                if (fpsMeter) fpsMeter.textContent = `${frameCount} FPS`;
+                frameCount = 0;
+                fpsTimer = now;
+            }
+
+            // Update Animation States
+            updateFacialAnimations(delta);
+
+            // Draw Canvas Layers
+            drawStudioBackground();
+            drawMediaPIP();
+            drawMaleAnchorModel();
+            drawLowerThirdsAndTicker();
+        } catch (err) {
+            console.error("Error in animation render loop:", err);
         }
-
-        // Update Animation States
-        updateFacialAnimations(delta);
-
-        // Draw Canvas Layers
-        drawStudioBackground();
-        drawMediaPIP();
-        drawMaleAnchorModel();
-        drawLowerThirdsAndTicker();
 
         requestAnimationFrame(renderFrame);
     }
@@ -1446,6 +1451,24 @@ function drawMaleAnchorModel() {
     ctx.restore();
 }
 
+// Helper: Safe Canvas RoundRect Compatibility
+function drawRoundRect(c, x, y, width, height, radius) {
+    if (typeof c.roundRect === 'function') {
+        c.roundRect(x, y, width, height, radius);
+        return;
+    }
+    let r = radius;
+    if (width < 2 * r) r = width / 2;
+    if (height < 2 * r) r = height / 2;
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + width, y, x + width, y + height, r);
+    c.arcTo(x + width, y + height, x, y + height, r);
+    c.arcTo(x, y + height, x, y, r);
+    c.arcTo(x, y, x + width, y, r);
+    c.closePath();
+}
+
 // 🤖 Render Interactive 3D Humanoid Cyber Android Presenter (NEXUS-3D & NEXUS-9 Hyper-Realistic Model)
 function drawHumanoid3DAnchor(w, h) {
     const centerX = w / 2;
@@ -1555,8 +1578,7 @@ function drawHumanoid3DAnchor(w, h) {
 
     // 4. Dual Cybernetic Optic Visor & 3D Irises
     ctx.fillStyle = "#020617";
-    ctx.beginPath();
-    ctx.roundRect(centerX - 52, headY - 35, 104, 28, 6);
+    drawRoundRect(ctx, centerX - 52, headY - 35, 104, 28, 6);
     ctx.fill();
     ctx.strokeStyle = "rgba(0, 210, 255, 0.8)";
     ctx.lineWidth = 2;
