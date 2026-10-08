@@ -523,7 +523,29 @@ function setupEventListeners() {
         aiMotionBtn.addEventListener("click", generateAiMotionVideo);
     }
 
-    // AI News Intelligence Chatbot Handlers
+    // Viewport Mode Switcher Tabs (3D Studio vs AI Chat Hub)
+    const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
+    const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
+    const canvasWrapper = document.getElementById("canvasWrapper");
+    const aiChatHubViewport = document.getElementById("aiChatHubViewport");
+
+    if (modeBroadcastBtn && modeAiChatBtn) {
+        modeBroadcastBtn.addEventListener("click", () => {
+            modeBroadcastBtn.classList.add("active");
+            modeAiChatBtn.classList.remove("active");
+            if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+            if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
+        });
+
+        modeAiChatBtn.addEventListener("click", () => {
+            modeAiChatBtn.classList.add("active");
+            modeBroadcastBtn.classList.remove("active");
+            if (aiChatHubViewport) aiChatHubViewport.classList.remove("hidden");
+            if (canvasWrapper) canvasWrapper.classList.add("hidden");
+        });
+    }
+
+    // AI News Intelligence Chatbot Handlers (Left Panel)
     const sendChatBtn = document.getElementById("sendAiChatBtn");
     const chatInput = document.getElementById("aiChatInput");
     if (sendChatBtn && chatInput) {
@@ -532,6 +554,24 @@ function setupEventListeners() {
             if (e.key === "Enter") handleAiChatQuery();
         });
     }
+
+    // AI Chat Hub Viewport Controls (Center Main Viewport)
+    const hubSendBtn = document.getElementById("hubSendBtn");
+    const hubChatInput = document.getElementById("hubChatInput");
+    if (hubSendBtn && hubChatInput) {
+        hubSendBtn.addEventListener("click", () => handleHubChatQuery(hubChatInput.value));
+        hubChatInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") handleHubChatQuery(hubChatInput.value);
+        });
+    }
+
+    document.querySelectorAll(".hub-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            const query = chip.dataset.query;
+            if (hubChatInput) hubChatInput.value = query;
+            handleHubChatQuery(query);
+        });
+    });
 
     // Broadcast Controls
     document.getElementById("startSpeechBtn").addEventListener("click", startNewsBroadcast);
@@ -820,65 +860,104 @@ function translateStoryScript(story, targetLang) {
     if (subTicker) subTicker.textContent = translated;
 }
 
-// 💬 AI News Chatbot & Feed Intelligence System
-function handleAiChatQuery() {
-    const input = document.getElementById("aiChatInput");
-    const container = document.getElementById("aiChatMessages");
-    if (!input || !input.value.trim()) return;
+// 💬 Main Viewport AI Chat Intelligence Hub Handler (Center Screen)
+function handleHubChatQuery(queryText) {
+    const container = document.getElementById("hubChatMessages");
+    const input = document.getElementById("hubChatInput");
+    if (!queryText || !queryText.trim() || !container) return;
 
-    const query = input.value.trim();
-    input.value = "";
+    const query = queryText.trim();
+    if (input) input.value = "";
 
-    // 1. Append User Message
+    // 1. Append User Query Message
     const userMsg = document.createElement("div");
     userMsg.className = "chat-msg user-msg";
     userMsg.textContent = query;
     container.appendChild(userMsg);
-
-    // Scroll to bottom
     container.scrollTop = container.scrollHeight;
 
-    // 2. Generate Intelligent Conversational Briefing Response
+    // 2. Generate Multi-lingual AI Response Script
     setTimeout(() => {
         const botMsg = document.createElement("div");
         botMsg.className = "chat-msg bot-msg";
 
+        let responseTitle = "AI News Intelligence Briefing";
         let responseScript = "";
-        let responseTitle = "AI Conversational News Briefing";
+        let targetLang = "hi-IN";
 
         const lowerQ = query.toLowerCase();
 
-        if (lowerQ.includes("isro") || lowerQ.includes("space") || lowerQ.includes("kannada")) {
-            responseTitle = "ISRO Space Mission Briefing";
-            responseScript = "ನಮಸ್ಕಾರ. ಇಂದಿನ ಪ್ರಮುಖ ವರದಿ. ಭಾರತೀಯ ಬಾಹ್ಯಾಕಾಶ ಸಂಶೋಧನಾ ಸಂಸ್ಥೆ ಈಸ್ರೋ ಗಗನನೌಕೆ ಯೋಜನೆಯ ಪರೀಕ್ಷೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಳಿಸಿದೆ.";
-            botMsg.innerHTML = `🤖 <strong>ISRO Mission Briefing (Kannada / English)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
-        } else if (lowerQ.includes("hindi") || lowerQ.includes("हिन्दी")) {
-            responseTitle = "AI News Summary (Hindi)";
-            responseScript = "नमस्कार। आज के मुख्य समाचार। भारत में सेमीकंडक्टर और कृत्रिम बुद्धिमत्ता मिशन में बड़ी सफलता प्राप्त हुई है।";
-            botMsg.innerHTML = `🤖 <strong>AI News Briefing (Hindi)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
-        } else if (lowerQ.includes("tamil") || lowerQ.includes("தமிழ்")) {
-            responseTitle = "AI News Summary (Tamil)";
-            responseScript = "வணக்கம். இன்றைய முக்கிய செய்திகள். செயற்கை நுண்ணறிவு மற்றும் சூப்பர் கம்ப்யூட்டிங் துறையில் விஞ்ஞானிகள் பெரும் சாதனை படைத்துள்ளனர்.";
-            botMsg.innerHTML = `🤖 <strong>AI News Briefing (Tamil)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
+        if (lowerQ.includes("kannada") || lowerQ.includes("ಕನ್ನಡ") || lowerQ.includes("isro")) {
+            targetLang = "kn-IN";
+            responseTitle = "ISRO Gaganyaan Mission Briefing (Kannada)";
+            responseScript = "ನಮಸ್ಕಾರ. ಇಂದಿನ ಪ್ರಮುಖ ವರದಿ. ಭಾರತೀಯ ಬಾಹ್ಯಾಕಾಶ ಸಂಶೋಧನಾ ಸಂಸ್ಥೆ ಈಸ್ರೋ ಗಗನನೌಕೆ ಯೋಜನೆಯ ಪರೀಕ್ಷೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಳಿಸಿದೆ. ಮುಂಬರುವ ಮಾನವ ಸಹಿತ ಬಾಹ್ಯಾಕಾಶ ಯಾನಕ್ಕೆ ಸಿದ್ಧತೆಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ.";
+            botMsg.innerHTML = `🤖 <strong>ISRO Mission Briefing (ಕನ್ನಡ - Kannada)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
+        } else if (lowerQ.includes("hindi") || lowerQ.includes("हिन्दी") || lowerQ.includes("semiconductor")) {
+            targetLang = "hi-IN";
+            responseTitle = "India AI & Semiconductor Briefing (Hindi)";
+            responseScript = "नमस्कार। आज के मुख्य समाचार। भारत में सेमीकंडक्टर और कृत्रिम बुद्धिमत्ता मिशन में बड़ी सफलता प्राप्त हुई है। नई चिप विनिर्माण इकाइयां देश में चिप उत्पादन शुरू कर चुकी हैं।";
+            botMsg.innerHTML = `🤖 <strong>AI Mission Briefing (हिन्दी - Hindi)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
+        } else if (lowerQ.includes("tamil") || lowerQ.includes("தமிழ்") || lowerQ.includes("quantum")) {
+            targetLang = "ta-IN";
+            responseTitle = "Quantum Tech Briefing (Tamil)";
+            responseScript = "வணக்கம். இன்றைய முக்கிய செய்திகள். செயற்கை நுண்ணறிவு மற்றும் சூப்பர் கம்ப்யூட்டிங் துறையில் விஞ்ஞானிகள் பெரும் சாதனை படைத்துள்ளனர். புதிய குவாண்டம் தொழில்நுட்பம் அறிமுகம் செய்யப்பட்டுள்ளது.";
+            botMsg.innerHTML = `🤖 <strong>Quantum Tech Briefing (தமிழ் - Tamil)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
+        } else if (lowerQ.includes("telugu") || lowerQ.includes("తెలుగు")) {
+            targetLang = "te-IN";
+            responseTitle = "AI Tech Summary (Telugu)";
+            responseScript = "నమస్కారం. నేటి ముఖ్యాంశాలు. కృత్రిమ మేధస్సు మరియు సూపర్ కంప్యూటింగ్ రంగంలో శాస్త్రవేత్తలు గొప్ప విజయాన్ని సాధించారు.";
+            botMsg.innerHTML = `🤖 <strong>AI Tech Briefing (తెలుగు - Telugu)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
         } else {
-            responseTitle = `AI News Intelligence: "${query.substring(0, 30)}"`;
-            responseScript = `Good evening. Here is your AI conversational briefing regarding "${query}". Research labs and digital public infrastructure networks across India and global hubs report major technological advancements today.`;
-            botMsg.innerHTML = `🤖 <strong>AI News Intelligence Briefing</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
+            targetLang = "en-US";
+            responseTitle = `Global AI News Intelligence: "${query.substring(0, 30)}"`;
+            responseScript = `Good evening. Here is your AI news intelligence summary regarding "${query}". Research labs across global innovation hubs report major technological advancements, deep learning breakthroughs, and next-generation AI automation.`;
+            botMsg.innerHTML = `🤖 <strong>AI News Intelligence Briefing</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
         }
 
         container.appendChild(botMsg);
         container.scrollTop = container.scrollHeight;
-    }, 600);
+    }, 500);
 }
 
 // Global helper function for chat buttons
-window.loadChatBriefingToTeleprompter = function(title, script) {
+window.loadChatBriefingToTeleprompter = function(title, script, targetLang = "hi-IN") {
+    // 1. Update Application Language State
+    state.currentLanguage = targetLang;
+    const langSelect = document.getElementById("languageSelect");
+    if (langSelect) langSelect.value = targetLang;
+
+    // Update Quick Lang Remote Pills
+    document.querySelectorAll("#quickLangPills .remote-pill").forEach(p => {
+        if (p.dataset.lang === targetLang) p.classList.add("active");
+        else p.classList.remove("active");
+    });
+
+    // 2. Load Story Script into Teleprompter
     loadStoryIntoTeleprompter({
         title: title,
         script: script,
         category: "AI Chat Intelligence"
     });
-    alert(`🎉 AI CHAT BRIEFING LOADED TO TELEPROMPTER!\n\nTitle: ${title}\nThe 3D Humanoid Robot Presenter is ready to read your briefing out loud!`);
+
+    // 3. Switch View Mode to 3D Studio Canvas
+    const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
+    const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
+    const canvasWrapper = document.getElementById("canvasWrapper");
+    const aiChatHubViewport = document.getElementById("aiChatHubViewport");
+
+    if (modeBroadcastBtn && modeAiChatBtn) {
+        modeBroadcastBtn.classList.add("active");
+        modeAiChatBtn.classList.remove("active");
+        if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+        if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
+    }
+
+    // 4. Start Presenter Speech Broadcast
+    initSpeechSynthesis();
+    startNewsBroadcast();
+
+    const unmuteBanner = document.getElementById("unmuteBanner");
+    if (unmuteBanner) unmuteBanner.classList.add("hidden");
 };
 
 // Fetch RSS via proxy

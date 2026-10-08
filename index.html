@@ -362,6 +362,16 @@
                 </div>
             </div>
 
+            <!-- Viewport Main Mode Switcher (Broadcast Studio vs AI Chat Hub) -->
+            <div class="viewport-mode-switcher">
+                <button id="viewModeBroadcastBtn" class="mode-tab-btn active">
+                    <i class="fa-solid fa-tv text-neon"></i> 📺 3D HUMANOID BROADCAST STUDIO
+                </button>
+                <button id="viewModeAiChatBtn" class="mode-tab-btn">
+                    <i class="fa-solid fa-comments text-neon"></i> 💬 AI CHAT & NEWS ENGINE HUB
+                </button>
+            </div>
+
     <!-- YouTube Broadcast Screen Box -->
     <div class="viewport-card">
         <div class="screen-header">
@@ -375,14 +385,14 @@
             </div>
         </div>
 
-        <!-- Main Canvas Container -->
+        <!-- Mode 1: Main Broadcast Canvas Container -->
         <div id="canvasWrapper" class="canvas-wrapper landscape-mode">
             <canvas id="broadcastCanvas" width="1280" height="720"></canvas>
 
             <!-- Click to Enable Audio Audio Overlay -->
             <div id="unmuteBanner" class="unmute-banner">
                 <i class="fa-solid fa-volume-high pulse"></i>
-                <span>CLICK ANYWHERE TO UNMUTE AI MALE VOICE BROADCAST</span>
+                <span>CLICK ANYWHERE TO UNMUTE AI VOICE BROADCAST</span>
             </div>
 
             <!-- Realtime Teleprompter Subtitle Overlay over Canvas -->
@@ -390,6 +400,53 @@
                 <div id="subtitleTicker" class="subtitle-text">
                     Waiting for news broadcast to start...
                 </div>
+            </div>
+        </div>
+
+        <!-- Mode 2: Main Viewport AI CHAT Hub Container (Second Image View) -->
+        <div id="aiChatHubViewport" class="chat-hub-viewport hidden">
+            <div class="chat-hub-header">
+                <div class="hub-title">
+                    <i class="fa-solid fa-robot text-neon"></i>
+                    <span>AI NEWS CHAT INTELLIGENCE ENGINE</span>
+                </div>
+                <div class="hub-subtitle">
+                    Ask any question, request multi-lingual news summaries (Kannada, Hindi, Tamil, Telugu, English), or ingest live feeds into 3D Humanoid Presenter teleprompter!
+                </div>
+            </div>
+
+            <!-- Quick Suggested Query Chips -->
+            <div class="hub-suggested-chips">
+                <span class="chip-label">QUICK PROMPTS:</span>
+                <button class="hub-chip" data-query="Summarize ISRO Gaganyaan mission in Kannada">
+                    🇮🇳 ISRO Mission (Kannada)
+                </button>
+                <button class="hub-chip" data-query="Give me India Semiconductor & AI breaking news in Hindi">
+                    🇮🇳 AI Mission (Hindi)
+                </button>
+                <button class="hub-chip" data-query="Summarize Quantum Computing breakthrough in Tamil">
+                    🇮🇳 Quantum Tech (Tamil)
+                </button>
+                <button class="hub-chip" data-query="Explain global tech and market news in English">
+                    🌍 World News (English)
+                </button>
+            </div>
+
+            <!-- Chat Conversation Feed -->
+            <div id="hubChatMessages" class="hub-messages-box">
+                <div class="chat-msg bot-msg">
+                    👋 <strong>Welcome to AI News Intelligence Hub!</strong><br>
+                    I am your AI News Presenter assistant. I can research, translate, and format news in 28+ languages (including Kannada, Hindi, Tamil, Telugu, Marathi, Gujarati, etc.).<br><br>
+                    Type a query or click a quick prompt chip above to generate an instant teleprompter news script for your 3D Humanoid Anchor!
+                </div>
+            </div>
+
+            <!-- Chat Input Controls -->
+            <div class="hub-input-row">
+                <input type="text" id="hubChatInput" class="form-input hub-input" placeholder="Ask AI news question (e.g., 'Summarize ISRO space news in Kannada')...">
+                <button id="hubSendBtn" class="btn-action primary hub-send-btn">
+                    <i class="fa-solid fa-paper-plane"></i> Ask AI & Generate Script
+                </button>
             </div>
         </div>
 
