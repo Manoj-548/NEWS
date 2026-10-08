@@ -660,15 +660,20 @@ function switchPresenterModel(model) {
         initSpeechSynthesis();
     }
 
-    // Ensure 3D Broadcast Studio mode is active on center screen
+    // Ensure 3D Broadcast Studio mode is active & news reader window is visible
     const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
     const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
     const canvasWrapper = document.getElementById("canvasWrapper");
     const aiChatHubViewport = document.getElementById("aiChatHubViewport");
+    const viewportCard = document.querySelector(".viewport-card");
+    const teleCard = document.querySelector(".teleprompter-card");
+
     if (modeBroadcastBtn && modeAiChatBtn) {
         modeBroadcastBtn.classList.add("active");
         modeAiChatBtn.classList.remove("active");
+        if (viewportCard) viewportCard.classList.remove("hidden");
         if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+        if (teleCard) teleCard.classList.remove("hidden");
         if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
     }
 
@@ -678,6 +683,10 @@ function switchPresenterModel(model) {
 
     // AUTOMATE WORKFLOW: Immediately start news broadcast with selected reporter!
     startNewsBroadcast();
+
+    if (viewportCard) {
+        viewportCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 }
 
 // Unified Language Switcher & Automated Workflow Engine
@@ -744,15 +753,20 @@ function switchBroadcastLanguage(lang) {
         translateStoryScript(state.currentStory, state.currentLanguage);
     }
 
-    // Ensure 3D Broadcast Studio mode
+    // Ensure 3D Broadcast Studio mode & news reader window is visible
     const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
     const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
     const canvasWrapper = document.getElementById("canvasWrapper");
     const aiChatHubViewport = document.getElementById("aiChatHubViewport");
+    const viewportCard = document.querySelector(".viewport-card");
+    const teleCard = document.querySelector(".teleprompter-card");
+
     if (modeBroadcastBtn && modeAiChatBtn) {
         modeBroadcastBtn.classList.add("active");
         modeAiChatBtn.classList.remove("active");
+        if (viewportCard) viewportCard.classList.remove("hidden");
         if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+        if (teleCard) teleCard.classList.remove("hidden");
         if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
     }
 
@@ -760,8 +774,12 @@ function switchBroadcastLanguage(lang) {
     const unmuteBanner = document.getElementById("unmuteBanner");
     if (unmuteBanner) unmuteBanner.classList.add("hidden");
 
-    // AUTOMATE WORKFLOW: Immediately start broadcast in target language!
+    // AUTOMATE WORKFLOW: Immediately start broadcast in target language & scroll news reader screen into view
     startNewsBroadcast();
+
+    if (viewportCard) {
+        viewportCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 }
 
 // --- Developer vs. Viewer Display Control ---
