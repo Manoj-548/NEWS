@@ -665,27 +665,48 @@ function setupEventListeners() {
         });
     });
 
-    document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(pill => {
-        pill.addEventListener("click", () => {
-            document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(p => p.classList.remove("active"));
-            pill.classList.add("active");
+    // Presenter / Reporter Model Selection Handlers (Top Header & Remote Control Bar)
+    function switchPresenterModel(model) {
+        state.anchorModel = model;
 
-            const model = pill.dataset.model;
-            state.anchorModel = model;
-
-            const modelSelect = document.getElementById("anchorModelSelect");
-            if (modelSelect) modelSelect.value = model;
-
-            const genderSelect = document.getElementById("voiceGenderSelect");
-            if (genderSelect) {
-                if (model === "indian_female") {
-                    genderSelect.value = "female";
-                } else {
-                    genderSelect.value = "male";
-                }
-                initSpeechSynthesis();
-            }
+        // Sync Top Header Pills
+        document.querySelectorAll("#topHeaderAnchorPills .top-reporter-pill").forEach(p => {
+            if (p.dataset.model === model) p.classList.add("active");
+            else p.classList.remove("active");
         });
+
+        // Sync Quick Anchor Remote Pills
+        document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(p => {
+            if (p.dataset.model === model) p.classList.add("active");
+            else p.classList.remove("active");
+        });
+
+        // Sync Select Dropdown
+        const modelSelect = document.getElementById("anchorModelSelect");
+        if (modelSelect) modelSelect.value = model;
+
+        // Auto-assign voice gender matching character
+        const genderSelect = document.getElementById("voiceGenderSelect");
+        if (genderSelect) {
+            if (model === "indian_female" || model === "humanoid_creature") {
+                genderSelect.value = "female";
+            } else {
+                genderSelect.value = "male";
+            }
+            initSpeechSynthesis();
+        }
+
+        if (state.isSpeaking) {
+            startNewsBroadcast();
+        }
+    }
+
+    document.querySelectorAll("#topHeaderAnchorPills .top-reporter-pill").forEach(pill => {
+        pill.addEventListener("click", () => switchPresenterModel(pill.dataset.model));
+    });
+
+    document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(pill => {
+        pill.addEventListener("click", () => switchPresenterModel(pill.dataset.model));
     });
 }
 
