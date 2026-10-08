@@ -181,17 +181,22 @@ function runScreenLoadingSequence() {
     let progress = 0;
 
     const interval = setInterval(() => {
-        progress += 8;
+        progress += 10;
         if (fill) fill.style.width = `${progress}%`;
 
         if (progress >= 100) {
             clearInterval(interval);
             setTimeout(() => {
-                if (loaderScreen) loaderScreen.classList.add("fade-out");
+                if (loaderScreen) {
+                    loaderScreen.classList.add("fade-out");
+                    setTimeout(() => {
+                        loaderScreen.style.display = "none";
+                    }, 400);
+                }
                 autoStartLiveBroadcastModel();
-            }, 300);
+            }, 200);
         }
-    }, 40);
+    }, 30);
 }
 
 // Auto-Start Visual Broadcast Model on Load
