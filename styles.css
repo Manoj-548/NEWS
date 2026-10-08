@@ -848,7 +848,7 @@ body.dark-theme {
 .canvas-wrapper {
     position: relative;
     width: 100%;
-    min-height: 400px;
+    min-height: 340px;
     background: #000000;
     border-radius: 8px;
     overflow: hidden;

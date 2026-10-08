@@ -390,47 +390,7 @@ function setupEventListeners() {
 
     // Real-Time Language & Distinct Voice Switching Engine
     document.getElementById("languageSelect").addEventListener("change", (e) => {
-        state.currentLanguage = e.target.value;
-        const selectedText = e.target.options[e.target.selectedIndex].text;
-        document.getElementById("currentLangLabel").textContent = selectedText.split(" ")[1] || e.target.value;
-        
-        // Re-populate male voice list for target language
-        initSpeechSynthesis();
-
-        // Assign distinct voice pitch / tone profiles per language family for unique voices
-        const langCode = state.currentLanguage.split('-')[0];
-        if (langCode === "hi" || langCode === "en") {
-            state.speechPitch = 0.92;
-            state.speechRate = 1.0;
-        } else if (langCode === "ta" || langCode === "te" || langCode === "kn" || langCode === "ml") {
-            state.speechPitch = 0.98;
-            state.speechRate = 1.05;
-        } else if (langCode === "de" || langCode === "ru") {
-            state.speechPitch = 0.82; // Deep baritone for German/Russian
-            state.speechRate = 0.95;
-        } else if (langCode === "fr" || langCode === "es" || langCode === "it") {
-            state.speechPitch = 1.02; // Melodic pitch for Romance languages
-            state.speechRate = 1.08;
-        } else if (langCode === "ja" || langCode === "zh" || langCode === "ko") {
-            state.speechPitch = 1.08;
-            state.speechRate = 1.0;
-        }
-
-        document.getElementById("speechPitch").value = state.speechPitch;
-        document.getElementById("pitchVal").textContent = state.speechPitch;
-        document.getElementById("speechRate").value = state.speechRate;
-        document.getElementById("rateVal").textContent = `${state.speechRate}x`;
-        
-        // Translate script to new language
-        if (document.getElementById("autoTranslateCheck").checked && state.currentStory) {
-            translateStoryScript(state.currentStory, state.currentLanguage);
-        }
-
-        // Hide unmute banner and immediately start broadcast in target language
-        const unmuteBanner = document.getElementById("unmuteBanner");
-        if (unmuteBanner) unmuteBanner.classList.add("hidden");
-        
-        startNewsBroadcast();
+        switchBroadcastLanguage(e.target.value);
     });
 
     document.getElementById("voiceSelect").addEventListener("change", (e) => {
@@ -449,7 +409,7 @@ function setupEventListeners() {
 
     // Visual Model Selectors
     document.getElementById("anchorModelSelect").addEventListener("change", (e) => {
-        state.anchorModel = e.target.value;
+        switchPresenterModel(e.target.value);
     });
 
     document.getElementById("studioBgSelect").addEventListener("change", (e) => {
@@ -641,81 +601,9 @@ function setupEventListeners() {
     // Viewer Smart Remote Control Pill Handlers
     document.querySelectorAll("#quickLangPills .remote-pill").forEach(pill => {
         pill.addEventListener("click", () => {
-            document.querySelectorAll("#quickLangPills .remote-pill").forEach(p => p.classList.remove("active"));
-            pill.classList.add("active");
-
-            const lang = pill.dataset.lang;
-            state.currentLanguage = lang;
-
-            const langSelect = document.getElementById("languageSelect");
-            if (langSelect) langSelect.value = lang;
-
-            const selectedText = pill.textContent.split(" ")[1] || pill.textContent;
-            document.getElementById("currentLangLabel").textContent = selectedText;
-
-            initSpeechSynthesis();
-
-            const autoCheck = document.getElementById("autoTranslateCheck");
-            if ((!autoCheck || autoCheck.checked) && state.currentStory) {
-                translateStoryScript(state.currentStory, state.currentLanguage);
-            }
-
-            // Hide unmute banner if visible
-            const unmuteBanner = document.getElementById("unmuteBanner");
-            if (unmuteBanner) unmuteBanner.classList.add("hidden");
-
-            // Ensure view mode is 3D Broadcast Studio
-            const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
-            const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
-            const canvasWrapper = document.getElementById("canvasWrapper");
-            const aiChatHubViewport = document.getElementById("aiChatHubViewport");
-            if (modeBroadcastBtn && modeAiChatBtn) {
-                modeBroadcastBtn.classList.add("active");
-                modeAiChatBtn.classList.remove("active");
-                if (canvasWrapper) canvasWrapper.classList.remove("hidden");
-                if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
-            }
-
-            // Immediately start broadcast in selected language
-            startNewsBroadcast();
+            switchBroadcastLanguage(pill.dataset.lang);
         });
     });
-
-    // Presenter / Reporter Model Selection Handlers (Top Header & Remote Control Bar)
-    function switchPresenterModel(model) {
-        state.anchorModel = model;
-
-        // Sync Top Header Pills
-        document.querySelectorAll("#topHeaderAnchorPills .top-reporter-pill").forEach(p => {
-            if (p.dataset.model === model) p.classList.add("active");
-            else p.classList.remove("active");
-        });
-
-        // Sync Quick Anchor Remote Pills
-        document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(p => {
-            if (p.dataset.model === model) p.classList.add("active");
-            else p.classList.remove("active");
-        });
-
-        // Sync Select Dropdown
-        const modelSelect = document.getElementById("anchorModelSelect");
-        if (modelSelect) modelSelect.value = model;
-
-        // Auto-assign voice gender matching character
-        const genderSelect = document.getElementById("voiceGenderSelect");
-        if (genderSelect) {
-            if (model === "indian_female" || model === "humanoid_creature") {
-                genderSelect.value = "female";
-            } else {
-                genderSelect.value = "male";
-            }
-            initSpeechSynthesis();
-        }
-
-        if (state.isSpeaking) {
-            startNewsBroadcast();
-        }
-    }
 
     document.querySelectorAll("#topHeaderAnchorPills .top-reporter-pill").forEach(pill => {
         pill.addEventListener("click", () => switchPresenterModel(pill.dataset.model));
@@ -724,6 +612,156 @@ function setupEventListeners() {
     document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(pill => {
         pill.addEventListener("click", () => switchPresenterModel(pill.dataset.model));
     });
+
+    // Make top header language badge clickable to cycle languages
+    const langStatBadge = document.getElementById("currentLangLabel")?.parentElement;
+    if (langStatBadge) {
+        langStatBadge.style.cursor = "pointer";
+        langStatBadge.title = "Click to cycle broadcast language";
+        langStatBadge.addEventListener("click", () => {
+            const langPills = Array.from(document.querySelectorAll("#quickLangPills .remote-pill"));
+            if (langPills.length > 0) {
+                const currentIdx = langPills.findIndex(p => p.dataset.lang === state.currentLanguage);
+                const nextIdx = (currentIdx + 1) % langPills.length;
+                switchBroadcastLanguage(langPills[nextIdx].dataset.lang);
+            }
+        });
+    }
+}
+
+// Presenter / Reporter Model Selection Handlers
+function switchPresenterModel(model) {
+    state.anchorModel = model;
+
+    // Sync Top Header Pills
+    document.querySelectorAll("#topHeaderAnchorPills .top-reporter-pill").forEach(p => {
+        if (p.dataset.model === model) p.classList.add("active");
+        else p.classList.remove("active");
+    });
+
+    // Sync Quick Anchor Remote Pills
+    document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(p => {
+        if (p.dataset.model === model) p.classList.add("active");
+        else p.classList.remove("active");
+    });
+
+    // Sync Select Dropdown
+    const modelSelect = document.getElementById("anchorModelSelect");
+    if (modelSelect && modelSelect.value !== model) modelSelect.value = model;
+
+    // Auto-assign voice gender matching character
+    const genderSelect = document.getElementById("voiceGenderSelect");
+    if (genderSelect) {
+        if (model === "indian_female" || model === "humanoid_creature") {
+            genderSelect.value = "female";
+        } else {
+            genderSelect.value = "male";
+        }
+        initSpeechSynthesis();
+    }
+
+    // Ensure 3D Broadcast Studio mode is active on center screen
+    const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
+    const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
+    const canvasWrapper = document.getElementById("canvasWrapper");
+    const aiChatHubViewport = document.getElementById("aiChatHubViewport");
+    if (modeBroadcastBtn && modeAiChatBtn) {
+        modeBroadcastBtn.classList.add("active");
+        modeAiChatBtn.classList.remove("active");
+        if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+        if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
+    }
+
+    // Hide unmute banner
+    const unmuteBanner = document.getElementById("unmuteBanner");
+    if (unmuteBanner) unmuteBanner.classList.add("hidden");
+
+    // AUTOMATE WORKFLOW: Immediately start news broadcast with selected reporter!
+    startNewsBroadcast();
+}
+
+// Unified Language Switcher & Automated Workflow Engine
+function switchBroadcastLanguage(lang) {
+    state.currentLanguage = lang;
+
+    // Sync dropdown
+    const langSelect = document.getElementById("languageSelect");
+    if (langSelect && langSelect.value !== lang) langSelect.value = lang;
+
+    // Sync quick pills
+    document.querySelectorAll("#quickLangPills .remote-pill").forEach(p => {
+        if (p.dataset.lang === lang) p.classList.add("active");
+        else p.classList.remove("active");
+    });
+
+    // Sync header stat label
+    const activePill = document.querySelector(`#quickLangPills .remote-pill[data-lang="${lang}"]`);
+    let labelText = lang;
+    if (activePill) {
+        labelText = activePill.textContent;
+    } else if (langSelect && langSelect.selectedIndex >= 0) {
+        labelText = langSelect.options[langSelect.selectedIndex].text;
+    }
+    const currentLangLabel = document.getElementById("currentLangLabel");
+    if (currentLangLabel) {
+        currentLangLabel.textContent = labelText.split(" ")[1] || labelText;
+    }
+
+    // Update speech synthesis voices
+    initSpeechSynthesis();
+
+    // Assign distinct voice pitch / tone profiles per language family
+    const langCode = state.currentLanguage.split('-')[0];
+    if (langCode === "hi" || langCode === "en") {
+        state.speechPitch = 0.92;
+        state.speechRate = 1.0;
+    } else if (langCode === "ta" || langCode === "te" || langCode === "kn" || langCode === "ml") {
+        state.speechPitch = 0.98;
+        state.speechRate = 1.05;
+    } else if (langCode === "de" || langCode === "ru") {
+        state.speechPitch = 0.82;
+        state.speechRate = 0.95;
+    } else if (langCode === "fr" || langCode === "es" || langCode === "it") {
+        state.speechPitch = 1.02;
+        state.speechRate = 1.08;
+    } else if (langCode === "ja" || langCode === "zh" || langCode === "ko") {
+        state.speechPitch = 1.08;
+        state.speechRate = 1.0;
+    }
+
+    const pitchElem = document.getElementById("speechPitch");
+    if (pitchElem) pitchElem.value = state.speechPitch;
+    const pitchVal = document.getElementById("pitchVal");
+    if (pitchVal) pitchVal.textContent = state.speechPitch;
+    const rateElem = document.getElementById("speechRate");
+    if (rateElem) rateElem.value = state.speechRate;
+    const rateVal = document.getElementById("rateVal");
+    if (rateVal) rateVal.textContent = `${state.speechRate}x`;
+
+    // Translate script to new language
+    const autoCheck = document.getElementById("autoTranslateCheck");
+    if ((!autoCheck || autoCheck.checked) && state.currentStory) {
+        translateStoryScript(state.currentStory, state.currentLanguage);
+    }
+
+    // Ensure 3D Broadcast Studio mode
+    const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
+    const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
+    const canvasWrapper = document.getElementById("canvasWrapper");
+    const aiChatHubViewport = document.getElementById("aiChatHubViewport");
+    if (modeBroadcastBtn && modeAiChatBtn) {
+        modeBroadcastBtn.classList.add("active");
+        modeAiChatBtn.classList.remove("active");
+        if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+        if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
+    }
+
+    // Hide unmute banner
+    const unmuteBanner = document.getElementById("unmuteBanner");
+    if (unmuteBanner) unmuteBanner.classList.add("hidden");
+
+    // AUTOMATE WORKFLOW: Immediately start broadcast in target language!
+    startNewsBroadcast();
 }
 
 // --- Developer vs. Viewer Display Control ---
