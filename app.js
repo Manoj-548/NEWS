@@ -160,29 +160,52 @@ let speechSynth = window.speechSynthesis;
 let currentUtterance = null;
 let assetImages = {};
 
-// Initialize Application on DOM Ready
-document.addEventListener("DOMContentLoaded", () => {
-    initDOMReferences();
-    loadAssetImages();
-    initSpeechSynthesis();
-    initCanvas();
-    setupEventListeners();
-    updateDeveloperModeDisplay();
-    loadNewsCategory("tech");
-    updateChannelBrandDisplay();
-    startAnimationLoop();
-    runScreenLoadingSequence();
-});
+// Main Application Entry Point
+function initApp() {
+    try {
+        initDOMReferences();
+        loadAssetImages();
+        initSpeechSynthesis();
+        initCanvas();
+        setupEventListeners();
+        updateDeveloperModeDisplay();
+        loadNewsCategory("tech");
+        updateChannelBrandDisplay();
+        startAnimationLoop();
+        runScreenLoadingSequence();
+    } catch (err) {
+        console.error("Error during app initialization:", err);
+        // Safety fallback: force dismiss loading screen if any initialization error occurs
+        const loaderScreen = document.getElementById("appLoaderScreen");
+        if (loaderScreen) loaderScreen.style.display = "none";
+    }
+}
 
-// Animated Screen Loading Sequence
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initApp);
+} else {
+    initApp();
+}
+
+// Animated Screen Loading Sequence with Bulletproof Dismissal
 function runScreenLoadingSequence() {
     const fill = document.getElementById("loaderFill");
     const loaderScreen = document.getElementById("appLoaderScreen");
     let progress = 0;
 
+    // Safety fallback: forcibly dismiss loader after 1.2s max under any condition
+    setTimeout(() => {
+        if (loaderScreen && loaderScreen.style.display !== "none") {
+            loaderScreen.classList.add("fade-out");
+            setTimeout(() => {
+                loaderScreen.style.display = "none";
+            }, 300);
+        }
+    }, 1200);
+
     const interval = setInterval(() => {
-        progress += 10;
-        if (fill) fill.style.width = `${progress}%`;
+        progress += 15;
+        if (fill) fill.style.width = `${Math.min(100, progress)}%`;
 
         if (progress >= 100) {
             clearInterval(interval);
@@ -191,10 +214,10 @@ function runScreenLoadingSequence() {
                     loaderScreen.classList.add("fade-out");
                     setTimeout(() => {
                         loaderScreen.style.display = "none";
-                    }, 400);
+                    }, 300);
                 }
                 autoStartLiveBroadcastModel();
-            }, 200);
+            }, 150);
         }
     }, 30);
 }
