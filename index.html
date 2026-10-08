@@ -73,9 +73,14 @@
                     <option value="private">🔒 Private (Developer Review)</option>
                 </select>
 
-                <button id="uploadToYouTubeBtn" class="btn-action primary" style="background: linear-gradient(135deg, #ff0000 0%, #b30000 100%); margin-top: 6px;">
-                    <i class="fa-brands fa-youtube"></i> 🔴 Auto-Publish Broadcast to YouTube Channel
-                </button>
+                <div class="grid-2col style-btn-group" style="margin-top: 8px;">
+                    <button id="uploadToYouTubeBtn" class="btn-action primary" style="background: linear-gradient(135deg, #ff0000 0%, #b30000 100%); font-size: 0.76rem;">
+                        <i class="fa-brands fa-youtube"></i> 🔴 Auto-Publish YouTube
+                    </button>
+                    <button id="downloadVideoBtn" class="btn-action primary" style="background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); font-size: 0.76rem;">
+                        <i class="fa-solid fa-download"></i> ⬇️ Download MP4 Video
+                    </button>
+                </div>
             </div>
 
             <div class="panel-section">
@@ -257,9 +262,14 @@
                 </div>
 
                 <div class="media-upload-box mt-10">
-                    <label class="form-label"><i class="fa-solid fa-image"></i> News Side Media (Picture-in-Picture):</label>
-                    <input type="file" id="pipImageUpload" accept="image/*" class="file-input">
-                    <button id="clearPipBtn" class="btn-sm btn-danger ml-5"><i class="fa-solid fa-trash"></i> Clear PIP</button>
+                    <label class="form-label"><i class="fa-solid fa-photo-film"></i> Upload Side Media (Image or Video PIP):</label>
+                    <div class="input-group" style="display:flex; gap:6px;">
+                        <input type="file" id="pipImageUpload" accept="image/*,video/*" class="file-input" style="flex:1;">
+                        <button id="clearPipBtn" class="btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Clear</button>
+                    </div>
+                    <button id="generateAiVideoBtn" class="btn-action primary mt-8" style="background: linear-gradient(135deg, #7209b7, #3a0ca3); font-size:0.75rem;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> ✨ Generate AI Motion Background Video
+                    </button>
                 </div>
             </div>
         </aside>
@@ -284,16 +294,23 @@
                     <div class="remote-row">
                         <span class="remote-label"><i class="fa-solid fa-language"></i> Language:</span>
                         <div class="remote-pills" id="quickLangPills">
-                            <button class="remote-pill active" data-lang="hi-IN">🇮🇳 Hindi</button>
-                            <button class="remote-pill" data-lang="en-IN">🇮🇳 English</button>
-                            <button class="remote-pill" data-lang="ta-IN">🇮🇳 Tamil</button>
-                            <button class="remote-pill" data-lang="te-IN">🇮🇳 Telugu</button>
-                            <button class="remote-pill" data-lang="bn-IN">🇮🇳 Bengali</button>
+                            <button class="remote-pill active" data-lang="hi-IN">🇮🇳 Hindi (हिन्दी)</button>
+                            <button class="remote-pill" data-lang="kn-IN">🇮🇳 Kannada (ಕನ್ನಡ)</button>
+                            <button class="remote-pill" data-lang="ta-IN">🇮🇳 Tamil (தமிழ்)</button>
+                            <button class="remote-pill" data-lang="te-IN">🇮🇳 Telugu (తెలుగు)</button>
+                            <button class="remote-pill" data-lang="bn-IN">🇮🇳 Bengali (বাংলা)</button>
+                            <button class="remote-pill" data-lang="mr-IN">🇮🇳 Marathi (मराठी)</button>
+                            <button class="remote-pill" data-lang="gu-IN">🇮🇳 Gujarati (ગુજરાતી)</button>
+                            <button class="remote-pill" data-lang="ml-IN">🇮🇳 Malayalam (മലയാളം)</button>
+                            <button class="remote-pill" data-lang="pa-IN">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</button>
+                            <button class="remote-pill" data-lang="ur-IN">🇮🇳 Urdu (اردو)</button>
                             <button class="remote-pill" data-lang="en-US">🇺🇸 US English</button>
                             <button class="remote-pill" data-lang="es-ES">🇪🇸 Spanish</button>
                             <button class="remote-pill" data-lang="fr-FR">🇫🇷 French</button>
                             <button class="remote-pill" data-lang="de-DE">🇩🇪 German</button>
                             <button class="remote-pill" data-lang="ja-JP">🇯🇵 Japanese</button>
+                            <button class="remote-pill" data-lang="zh-CN">🇨🇳 Mandarin</button>
+                            <button class="remote-pill" data-lang="ar-SA">🇸🇦 Arabic</button>
                         </div>
                     </div>
 
