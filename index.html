@@ -87,6 +87,7 @@
                 <h3><i class="fa-solid fa-newspaper"></i> News Feed & Teleprompter</h3>
                 <div class="feed-tabs">
                     <button class="tab-btn active" data-tab="preset-feed"><i class="fa-solid fa-fire"></i> Trending</button>
+                    <button class="tab-btn" data-tab="ai-chat-feed"><i class="fa-solid fa-comments"></i> 💬 AI Chat</button>
                     <button class="tab-btn" data-tab="custom-feed"><i class="fa-solid fa-paste"></i> Custom Text</button>
                     <button class="tab-btn" data-tab="rss-feed"><i class="fa-solid fa-rss"></i> RSS Ingest</button>
                 </div>
@@ -95,7 +96,10 @@
                 <div id="preset-feed" class="tab-content active">
                     <label for="newsCategorySelect" class="form-label">Select News Topic:</label>
                     <select id="newsCategorySelect" class="form-select">
-                        <option value="tech">🚀 Breaking Technology & AI</option>
+                        <option value="india_tech" selected>🇮🇳 India AI & Semiconductor Mission</option>
+                        <option value="isro_space">🚀 ISRO Gaganyaan & Lunar Space Missions</option>
+                        <option value="india_economy">📈 Digital Public Infra & Indian Markets</option>
+                        <option value="tech">🌐 Breaking Technology & AI</option>
                         <option value="world">🌍 World News & Geopolitics</option>
                         <option value="finance">📈 Global Markets & Crypto</option>
                         <option value="science">🔬 Space Exploration & Science</option>
@@ -107,7 +111,27 @@
                     </div>
                 </div>
 
-                <!-- Tab 2: Custom Text -->
+                <!-- Tab 2: AI News Chat Assistant (Chat with your Data/Feeds) -->
+                <div id="ai-chat-feed" class="tab-content">
+                    <div class="ai-chat-box">
+                        <div class="chat-header">
+                            <i class="fa-solid fa-robot text-neon"></i> <span>AI News Intelligence Assistant</span>
+                        </div>
+                        <div class="chat-messages" id="aiChatMessages">
+                            <div class="chat-msg bot-msg">
+                                👋 Hello! I am your AI News Intelligence assistant. Ask me anything about today's news feeds, regional reports in Hindi, Tamil, Kannada, Telugu, Bengali, or global events!
+                            </div>
+                        </div>
+                        <div class="chat-input-area mt-8">
+                            <input type="text" id="aiChatInput" class="form-input" placeholder="e.g. Summarize today's ISRO mission in Kannada...">
+                            <button id="sendAiChatBtn" class="btn-action primary mt-5">
+                                <i class="fa-solid fa-paper-plane"></i> Ask AI & Generate Script
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Custom Text -->
                 <div id="custom-feed" class="tab-content">
                     <label for="customNewsTitle" class="form-label">Headline / Title:</label>
                     <input type="text" id="customNewsTitle" class="form-input" placeholder="e.g. Revolutionary AI Model Breakthrough Announced!">
@@ -120,7 +144,7 @@
                     </button>
                 </div>
 
-                <!-- Tab 3: RSS Feed -->
+                <!-- Tab 4: RSS Feed -->
                 <div id="rss-feed" class="tab-content">
                     <label for="rssUrlInput" class="form-label">RSS / News API Feed URL:</label>
                     <div class="input-group">

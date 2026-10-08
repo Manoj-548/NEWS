@@ -51,6 +51,36 @@ const state = {
 
 // --- Preset News Feeds Database (Multi-Language Templates) ---
 const presetNewsData = {
+    india_tech: [
+        {
+            id: "in_tech_1",
+            title: "India Semiconductor Mission Unveils 3 New Silicon Fabrication Plants",
+            category: "India AI & Semiconductor",
+            script: "Good evening from India News Desk. India has achieved a historic milestone in deep-tech manufacturing as three state-of-the-art semiconductor fabrication facilities officially commenced production today. The multi-billion dollar chips ecosystem will power next-generation AI processors and automotive electronics globally."
+        },
+        {
+            id: "in_tech_2",
+            title: "Indian AI Unicorn Launches Multilingual Neural Engine in 22 Official Languages",
+            category: "India AI & Semiconductor",
+            script: "In Indian technology, researchers have unveiled an indigenous generative AI foundation model trained across twenty-two official languages. The open-source architecture enables instant real-time translation, voice synthesis, and legal document processing for over 1.4 billion citizens."
+        }
+    ],
+    isro_space: [
+        {
+            id: "isro_1",
+            title: "ISRO Gaganyaan Crew Capsule Successfully Passes Orbit Escape Tests",
+            category: "ISRO Space Missions",
+            script: "Reporting live on space exploration. Indian Space Research Organisation scientists have successfully executed high-altitude abort and orbital re-entry maneuvers for the Gaganyaan crew module. Officials confirm crewed spaceflight preparations remain on track for human spaceflight."
+        }
+    ],
+    india_economy: [
+        {
+            id: "in_econ_1",
+            title: "Digital Public Infrastructure UPI Crosses 15 Billion Transactions Monthly",
+            category: "Indian Economy & DPI",
+            script: "In economic news, India's Unified Payments Interface has recorded over fifteen billion transactions in a single calendar month. Financial regulators highlight international expansion across Asia, Europe, and South America."
+        }
+    ],
     tech: [
         {
             id: "tech_1",
@@ -71,12 +101,6 @@ const presetNewsData = {
             title: "Historic Global Clean Energy Accord Signed by 120 Nations",
             category: "World News",
             script: "Turning to international affairs. Leaders from over 120 nations have officially signed a landmark treaty in Geneva, pledging a seventy percent reduction in global carbon emissions by 2035. The agreement establishes a hundred billion dollar fund to support renewable infrastructure in developing nations."
-        },
-        {
-            id: "world_2",
-            title: "Global Supply Chains Reach Record Efficiency with Autonomous Freight Networks",
-            category: "World News",
-            script: "In world commerce tonight, maritime and air freight corridors have transitioned to AI-managed logistics routing. Trade authorities report a thirty percent reduction in transit delays worldwide, marking the smoothest holiday trade flow on record."
         }
     ],
     finance: [
@@ -84,13 +108,7 @@ const presetNewsData = {
             id: "finance_1",
             title: "Global Markets Surge as Inflation Drops to Multi-Year Lows",
             category: "Finance & Crypto",
-            script: "In business news, stock indices across New York, London, and Tokyo surged today following central bank reports indicating inflation has returned to target levels. Technology and green energy equities led the rally, with major indices recording three percent gains."
-        },
-        {
-            id: "finance_2",
-            title: "Decentralized Finance Protocol Reaches $500 Billion Total Value Locked",
-            category: "Finance & Crypto",
-            script: "Crypto markets reached a major milestone today as decentralized financial networks surpassed half a trillion dollars in locked assets. Financial analysts attribute the surge to increased institutional adoption and novel automated liquidity protocols."
+            script: "In business news, stock indices across New York, London, and Tokyo surged today following central bank reports indicating inflation has returned to target levels."
         }
     ],
     science: [
@@ -98,7 +116,7 @@ const presetNewsData = {
             id: "science_1",
             title: "Deep Space Telescope Detects Atmospheric Water Vapor on Nearby Exoplanet",
             category: "Space & Science",
-            script: "Astronomers using the orbit-based space telescope have detected significant signatures of water vapor and carbon dioxide on an Earth-sized exoplanet located forty light-years away. Astrobiologists note this is one of the most promising candidates for atmospheric habitability ever discovered."
+            script: "Astronomers using the orbit-based space telescope have detected significant signatures of water vapor and carbon dioxide on an Earth-sized exoplanet located forty light-years away."
         }
     ],
     sports: [
@@ -106,7 +124,7 @@ const presetNewsData = {
             id: "sports_1",
             title: "World Championship Esports Finals Draw Record 100 Million Live Viewers",
             category: "Sports & Gaming",
-            script: "In sports tonight, the international esports championship concluded in Tokyo before a packed stadium and a record-breaking online audience of over one hundred million viewers. Team Nexus secured the trophy in a dramatic final round comeback."
+            script: "In sports tonight, the international esports championship concluded in Tokyo before a packed stadium and a record-breaking online audience."
         }
     ]
 };
@@ -505,6 +523,16 @@ function setupEventListeners() {
         aiMotionBtn.addEventListener("click", generateAiMotionVideo);
     }
 
+    // AI News Intelligence Chatbot Handlers
+    const sendChatBtn = document.getElementById("sendAiChatBtn");
+    const chatInput = document.getElementById("aiChatInput");
+    if (sendChatBtn && chatInput) {
+        sendChatBtn.addEventListener("click", handleAiChatQuery);
+        chatInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") handleAiChatQuery();
+        });
+    }
+
     // Broadcast Controls
     document.getElementById("startSpeechBtn").addEventListener("click", startNewsBroadcast);
     document.getElementById("pauseSpeechBtn").addEventListener("click", pauseNewsBroadcast);
@@ -791,6 +819,67 @@ function translateStoryScript(story, targetLang) {
     const subTicker = document.getElementById("subtitleTicker");
     if (subTicker) subTicker.textContent = translated;
 }
+
+// 💬 AI News Chatbot & Feed Intelligence System
+function handleAiChatQuery() {
+    const input = document.getElementById("aiChatInput");
+    const container = document.getElementById("aiChatMessages");
+    if (!input || !input.value.trim()) return;
+
+    const query = input.value.trim();
+    input.value = "";
+
+    // 1. Append User Message
+    const userMsg = document.createElement("div");
+    userMsg.className = "chat-msg user-msg";
+    userMsg.textContent = query;
+    container.appendChild(userMsg);
+
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+
+    // 2. Generate Intelligent Conversational Briefing Response
+    setTimeout(() => {
+        const botMsg = document.createElement("div");
+        botMsg.className = "chat-msg bot-msg";
+
+        let responseScript = "";
+        let responseTitle = "AI Conversational News Briefing";
+
+        const lowerQ = query.toLowerCase();
+
+        if (lowerQ.includes("isro") || lowerQ.includes("space") || lowerQ.includes("kannada")) {
+            responseTitle = "ISRO Space Mission Briefing";
+            responseScript = "ನಮಸ್ಕಾರ. ಇಂದಿನ ಪ್ರಮುಖ ವರದಿ. ಭಾರತೀಯ ಬಾಹ್ಯಾಕಾಶ ಸಂಶೋಧನಾ ಸಂಸ್ಥೆ ಈಸ್ರೋ ಗಗನನೌಕೆ ಯೋಜನೆಯ ಪರೀಕ್ಷೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಳಿಸಿದೆ.";
+            botMsg.innerHTML = `🤖 <strong>ISRO Mission Briefing (Kannada / English)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
+        } else if (lowerQ.includes("hindi") || lowerQ.includes("हिन्दी")) {
+            responseTitle = "AI News Summary (Hindi)";
+            responseScript = "नमस्कार। आज के मुख्य समाचार। भारत में सेमीकंडक्टर और कृत्रिम बुद्धिमत्ता मिशन में बड़ी सफलता प्राप्त हुई है।";
+            botMsg.innerHTML = `🤖 <strong>AI News Briefing (Hindi)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
+        } else if (lowerQ.includes("tamil") || lowerQ.includes("தமிழ்")) {
+            responseTitle = "AI News Summary (Tamil)";
+            responseScript = "வணக்கம். இன்றைய முக்கிய செய்திகள். செயற்கை நுண்ணறிவு மற்றும் சூப்பர் கம்ப்யூட்டிங் துறையில் விஞ்ஞானிகள் பெரும் சாதனை படைத்துள்ளனர்.";
+            botMsg.innerHTML = `🤖 <strong>AI News Briefing (Tamil)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
+        } else {
+            responseTitle = `AI News Intelligence: "${query.substring(0, 30)}"`;
+            responseScript = `Good evening. Here is your AI conversational briefing regarding "${query}". Research labs and digital public infrastructure networks across India and global hubs report major technological advancements today.`;
+            botMsg.innerHTML = `🤖 <strong>AI News Intelligence Briefing</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`)"><i class="fa-solid fa-play"></i> Send to 3D Robot Teleprompter</button>`;
+        }
+
+        container.appendChild(botMsg);
+        container.scrollTop = container.scrollHeight;
+    }, 600);
+}
+
+// Global helper function for chat buttons
+window.loadChatBriefingToTeleprompter = function(title, script) {
+    loadStoryIntoTeleprompter({
+        title: title,
+        script: script,
+        category: "AI Chat Intelligence"
+    });
+    alert(`🎉 AI CHAT BRIEFING LOADED TO TELEPROMPTER!\n\nTitle: ${title}\nThe 3D Humanoid Robot Presenter is ready to read your briefing out loud!`);
+};
 
 // Fetch RSS via proxy
 async function fetchRssFeed() {
