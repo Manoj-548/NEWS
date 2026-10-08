@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Male News Reporter Studio - YouTube Broadcast Visual Model</title>
+    <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal channel branding.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Outfit:wght@400;600;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <!-- Top Broadcast Header Bar -->
+    <header class="top-header">
+        <div class="brand-title">
+            <div class="live-dot pulse-red"></div>
+            <i class="fa-solid fa-satellite-dish"></i>
+            <span>AI NEWS STUDIO <small>v2.5 PRO</small></span>
+        </div>
+        
+        <div class="channel-identity-bar">
+            <span class="label">CHANNEL IDENTITY:</span>
+            <div id="channelBrandBadge" class="brand-badge secret-mode">
+                <i class="fa-solid fa-user-secret"></i>
+                <span id="channelBrandText">SECRET / REVEALING SOON</span>
+            </div>
+            <button id="toggleRevealBtn" class="btn-reveal" title="Toggle Channel Name Reveal">
+                <i class="fa-solid fa-eye"></i> Unveil Channel
+            </button>
+            <button id="editBrandBtn" class="btn-sm btn-outline">
+                <i class="fa-solid fa-pen-to-square"></i> Edit Name
+            </button>
+        </div>
+
+        <div class="quick-stats">
+            <button id="devModeToggleBtn" class="btn-sm btn-outline dev-toggle-btn" title="Toggle Developer / Uploader Mode">
+                <i class="fa-solid fa-user-gear"></i> <span id="devModeStatusText">Developer Mode: OFF (Viewer View)</span>
+            </button>
+            <span class="stat-badge"><i class="fa-solid fa-language"></i> <span id="currentLangLabel">Hindi (हिन्दी)</span></span>
+            <span class="stat-badge"><i class="fa-solid fa-display"></i> <span id="currentResLabel">16:9 Landscape</span></span>
+            <button id="snapThumbnailBtn" class="btn-action primary dev-only-inline hidden" style="width:auto; padding: 7px 12px; background: linear-gradient(135deg, #7209b7, #3a0ca3);">
+                <i class="fa-solid fa-camera"></i> 📸 Save YouTube Thumbnail
+            </button>
+            <button id="recordBtn" class="btn-record dev-only-inline hidden">
+                <i class="fa-solid fa-circle"></i> <span id="recordBtnText">Record YouTube Video</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="studio-container">
+
+        <!-- Left Column: News Feed & Control Panel -->
+        <aside id="mainControlPanel" class="control-panel">
+            
+            <!-- DEVELOPER EXCLUSIVE: YouTube Channel Auto-Publisher -->
+            <div class="panel-section dev-upload-section">
+                <h3><i class="fa-brands fa-youtube" style="color:#ff0000;"></i> Developer YouTube Channel Publisher</h3>
+                
+                <div class="yt-status-box">
+                    <i class="fa-solid fa-circle-check text-success"></i>
+                    <span>Connected Channel: <strong>NEXUS NEWS 24 (Official)</strong></span>
+                </div>
+
+                <label for="ytPrivacySelect" class="form-label mt-8">YouTube Privacy Status:</label>
+                <select id="ytPrivacySelect" class="form-select">
+                    <option value="public">🌐 Public (Instant Live Release)</option>
+                    <option value="unlisted">🔗 Unlisted (Shareable Link)</option>
+                    <option value="private">🔒 Private (Developer Review)</option>
+                </select>
+
+                <button id="uploadToYouTubeBtn" class="btn-action primary" style="background: linear-gradient(135deg, #ff0000 0%, #b30000 100%); margin-top: 6px;">
+                    <i class="fa-brands fa-youtube"></i> 🔴 Auto-Publish Broadcast to YouTube Channel
+                </button>
+            </div>
+
+            <div class="panel-section">
+                <h3><i class="fa-solid fa-newspaper"></i> News Feed & Teleprompter</h3>
+                <div class="feed-tabs">
+                    <button class="tab-btn active" data-tab="preset-feed"><i class="fa-solid fa-fire"></i> Trending</button>
+                    <button class="tab-btn" data-tab="custom-feed"><i class="fa-solid fa-paste"></i> Custom Text</button>
+                    <button class="tab-btn" data-tab="rss-feed"><i class="fa-solid fa-rss"></i> RSS Ingest</button>
+                </div>
+
+                <!-- Tab 1: Preset Feeds -->
+                <div id="preset-feed" class="tab-content active">
+                    <label for="newsCategorySelect" class="form-label">Select News Topic:</label>
+                    <select id="newsCategorySelect" class="form-select">
+                        <option value="tech">🚀 Breaking Technology & AI</option>
+                        <option value="world">🌍 World News & Geopolitics</option>
+                        <option value="finance">📈 Global Markets & Crypto</option>
+                        <option value="science">🔬 Space Exploration & Science</option>
+                        <option value="sports">🏆 World Sports & Gaming</option>
+                    </select>
+
+                    <div class="news-list" id="presetNewsList">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Tab 2: Custom Text -->
+                <div id="custom-feed" class="tab-content">
+                    <label for="customNewsTitle" class="form-label">Headline / Title:</label>
+                    <input type="text" id="customNewsTitle" class="form-input" placeholder="e.g. Revolutionary AI Model Breakthrough Announced!">
+                    
+                    <label for="customNewsBody" class="form-label">News Script Content (To be read by male anchor):</label>
+                    <textarea id="customNewsBody" class="form-textarea" rows="5" placeholder="Enter article script here. The AI Male anchor will read this text in your chosen language with dynamic lip sync and subtitles..."></textarea>
+                    
+                    <button id="loadCustomBtn" class="btn-action primary">
+                        <i class="fa-solid fa-bolt"></i> Load to Teleprompter
+                    </button>
+                </div>
+
+                <!-- Tab 3: RSS Feed -->
+                <div id="rss-feed" class="tab-content">
+                    <label for="rssUrlInput" class="form-label">RSS / News API Feed URL:</label>
+                    <div class="input-group">
+                        <input type="text" id="rssUrlInput" class="form-input" placeholder="https://news.google.com/rss...">
+                        <button id="fetchRssBtn" class="btn-action"><i class="fa-solid fa-download"></i> Fetch</button>
+                    </div>
+                    <div class="small-hint">Fetch live RSS feeds directly into teleprompter script.</div>
+                </div>
+            </div>
+
+            <!-- Language & Voice Controls -->
+            <div class="panel-section">
+                <h3><i class="fa-solid fa-language"></i> Language & Male Anchor Voice</h3>
+                
+                <div class="grid-2col">
+                    <div>
+                        <label for="languageSelect" class="form-label">Target Broadcast Language:</label>
+                        <select id="languageSelect" class="form-select">
+                            <optgroup label="🇮🇳 Indian Languages">
+                                <option value="hi-IN" selected>🇮🇳 Hindi (हिन्दी)</option>
+                                <option value="en-IN">🇮🇳 English (India)</option>
+                                <option value="ta-IN">🇮🇳 Tamil (தமிழ்)</option>
+                                <option value="te-IN">🇮🇳 Telugu (తెలుగు)</option>
+                                <option value="bn-IN">🇮🇳 Bengali (বাংলা)</option>
+                                <option value="mr-IN">🇮🇳 Marathi (मराठी)</option>
+                                <option value="gu-IN">🇮🇳 Gujarati (ગુજરાતી)</option>
+                                <option value="kn-IN">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+                                <option value="ml-IN">🇮🇳 Malayalam (മലയാളം)</option>
+                                <option value="pa-IN">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+                                <option value="ur-IN">🇮🇳 Urdu (اردو)</option>
+                                <option value="or-IN">🇮🇳 Odia (ଓଡ଼ିଆ)</option>
+                                <option value="as-IN">🇮🇳 Assamese (অসমੀয়া)</option>
+                                <option value="sa-IN">🇮🇳 Sanskrit (संस्कृत)</option>
+                            </optgroup>
+                            <optgroup label="🌍 World Languages">
+                                <option value="en-US">🇺🇸 English (US)</option>
+                                <option value="en-GB">🇬🇧 English (UK)</option>
+                                <option value="es-ES">🇪🇸 Spanish (Español)</option>
+                                <option value="fr-FR">🇫🇷 French (Français)</option>
+                                <option value="de-DE">🇩🇪 German (Deutsch)</option>
+                                <option value="zh-CN">🇨🇳 Mandarin (中文)</option>
+                                <option value="ja-JP">🇯🇵 Japanese (日本語)</option>
+                                <option value="ar-SA">🇸🇦 Arabic (العربية)</option>
+                                <option value="pt-BR">🇧🇷 Portuguese (Português)</option>
+                                <option value="it-IT">🇮🇹 Italian (Italiano)</option>
+                                <option value="ru-RU">🇷🇺 Russian (Русский)</option>
+                                <option value="ko-KR">🇰🇷 Korean (한국어)</option>
+                                <option value="tr-TR">🇹🇷 Turkish (Türkçe)</option>
+                                <option value="nl-NL">🇳🇱 Dutch (Nederlands)</option>
+                                <option value="sv-SE">🇸🇪 Swedish (Svenska)</option>
+                                <option value="pl-PL">🇵🇱 Polish (Polski)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                        <label for="voiceGenderSelect" class="form-label">Voice Over Gender:</label>
+                        <select id="voiceGenderSelect" class="form-select mb-8">
+                            <option value="male" selected>👔 Male Voice Over</option>
+                            <option value="female">👩 Female Voice Over</option>
+                        </select>
+
+                        <label for="voiceSelect" class="form-label">Voice Model:</label>
+                        <select id="voiceSelect" class="form-select">
+                            <!-- Populated dynamically from SpeechSynthesis voices -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-item">
+                        <label>Speech Rate: <span id="rateVal">1.0x</span></label>
+                        <input type="range" id="speechRate" min="0.7" max="1.4" step="0.05" value="1.0">
+                    </div>
+                    <div class="slider-item">
+                        <label>Voice Pitch: <span id="pitchVal">1.0</span></label>
+                        <input type="range" id="speechPitch" min="0.6" max="1.3" step="0.05" value="0.95">
+                    </div>
+                </div>
+
+                <div class="checkbox-item">
+                    <input type="checkbox" id="autoTranslateCheck" checked>
+                    <label for="autoTranslateCheck">Simulate Auto-Translation when switching languages</label>
+                </div>
+            </div>
+
+            <!-- Visual Anchor & Studio Setup -->
+            <div class="panel-section">
+                <h3><i class="fa-solid fa-person-rays"></i> Visual Presenter Model & Studio Setup</h3>
+                
+                <label for="anchorModelSelect" class="form-label">News Anchor Presenter Model:</label>
+                <select id="anchorModelSelect" class="form-select">
+                    <optgroup label="🤖 3D Humanoid & Cyber Presenters">
+                        <option value="nexus_3d" selected>🤖 NEXUS-3D (Humanoid 3D Cyber Android Anchor)</option>
+                        <option value="humanoid_creature">🤖 NEXUS-9 (Human-Like Synthetic Cyber Creature Anchor)</option>
+                    </optgroup>
+                    <optgroup label="🇮🇳 Indian Presenters">
+                        <option value="indian_ditto_male">👳 Arjun Sharma (Professional Indian Male Anchor - Bandhgala Suit)</option>
+                        <option value="indian_female">👩‍💼 Priya Sharma (Professional Indian Female Anchor - Navy Suit)</option>
+                        <option value="indian_ditto_exec">💼 Vikram Mehta (Executive Indian Male Anchor - Dark Suit)</option>
+                    </optgroup>
+                    <optgroup label="🌍 Global Presenters">
+                        <option value="human_ditto_male">👤 Alexander Vance (Hyper-Realistic Global Male AI Anchor)</option>
+                        <option value="human_ditto_exec">💼 Marcus Vance (Executive AI Presenter)</option>
+                    </optgroup>
+                </select>
+
+                <label for="studioBgSelect" class="form-label">Studio Environment Background:</label>
+                <select id="studioBgSelect" class="form-select">
+                    <option value="bg_modern">🌆 Cyber High-Tech TV Studio Desk</option>
+                    <option value="bg_glass">🏙️ Metro Skylight Glass Newsroom</option>
+                    <option value="bg_hologram">🔮 Holographic AI Matrix Grid</option>
+                    <option value="bg_dark">🖤 Midnight Executive Broadcast Set</option>
+                </select>
+
+                <label for="studioLightingSelect" class="form-label">Studio Lighting & Atmosphere:</label>
+                <select id="studioLightingSelect" class="form-select">
+                    <option value="prime_blue">💡 Prime Time Blue Studio</option>
+                    <option value="red_alert">🚨 Breaking Red Alert Mood</option>
+                    <option value="gold_luxury">✨ Gold Sunset Executive Desk</option>
+                    <option value="cyber_neon">⚡ Cyber Matrix Neon Aura</option>
+                </select>
+
+                <div class="grid-2col mt-10">
+                    <div>
+                        <label for="aspectRatioSelect" class="form-label">YouTube Format:</label>
+                        <select id="aspectRatioSelect" class="form-select">
+                            <option value="16:9">📺 16:9 Standard Broadcast</option>
+                            <option value="9:16">📱 9:16 YouTube Shorts</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="subtitleStyleSelect" class="form-label">Subtitle Style:</label>
+                        <select id="subtitleStyleSelect" class="form-select">
+                            <option value="yellow_black">🟡 Viral YouTube (Yellow Glow + Black Box)</option>
+                            <option value="bbc_red">🔴 BBC Breaking News Style</option>
+                            <option value="cyber_neon">⚡ Cyber Neon Glassmorphic</option>
+                            <option value="minimal">⚪ Clean Minimalist Subtitles</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="media-upload-box mt-10">
+                    <label class="form-label"><i class="fa-solid fa-image"></i> News Side Media (Picture-in-Picture):</label>
+                    <input type="file" id="pipImageUpload" accept="image/*" class="file-input">
+                    <button id="clearPipBtn" class="btn-sm btn-danger ml-5"><i class="fa-solid fa-trash"></i> Clear PIP</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center/Right Column: Live Broadcast Preview & Teleprompter -->
+        <main class="broadcast-viewport">
+            
+            <!-- VIEWER SMART TV REMOTE CONTROL BAR (Always visible for Viewers & Developers) -->
+            <div class="viewer-remote-bar">
+                <div class="remote-header-row">
+                    <div class="remote-title">
+                        <i class="fa-solid fa-gamepad text-neon"></i>
+                        <span>VIEWER REMOTE CONTROL</span>
+                    </div>
+                    <div class="remote-mode-tag">
+                        <i class="fa-solid fa-circle text-success" style="font-size: 0.55rem;"></i> 1-CLICK INSTANT BROADCAST SWITCHER
+                    </div>
+                </div>
+                
+                <div class="remote-rows-container">
+                    <!-- Row 1: Language Switcher Remote Pills -->
+                    <div class="remote-row">
+                        <span class="remote-label"><i class="fa-solid fa-language"></i> Language:</span>
+                        <div class="remote-pills" id="quickLangPills">
+                            <button class="remote-pill active" data-lang="hi-IN">🇮🇳 Hindi</button>
+                            <button class="remote-pill" data-lang="en-IN">🇮🇳 English</button>
+                            <button class="remote-pill" data-lang="ta-IN">🇮🇳 Tamil</button>
+                            <button class="remote-pill" data-lang="te-IN">🇮🇳 Telugu</button>
+                            <button class="remote-pill" data-lang="bn-IN">🇮🇳 Bengali</button>
+                            <button class="remote-pill" data-lang="en-US">🇺🇸 US English</button>
+                            <button class="remote-pill" data-lang="es-ES">🇪🇸 Spanish</button>
+                            <button class="remote-pill" data-lang="fr-FR">🇫🇷 French</button>
+                            <button class="remote-pill" data-lang="de-DE">🇩🇪 German</button>
+                            <button class="remote-pill" data-lang="ja-JP">🇯🇵 Japanese</button>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Anchor Character Switcher Remote Pills -->
+                    <div class="remote-row">
+                        <span class="remote-label"><i class="fa-solid fa-robot text-neon"></i> Presenter Model:</span>
+                        <div class="remote-pills" id="quickAnchorPills">
+                            <button class="remote-pill active" data-model="nexus_3d">🤖 NEXUS-3D Robot</button>
+                            <button class="remote-pill" data-model="humanoid_creature">🤖 NEXUS-9 Robot</button>
+                            <button class="remote-pill" data-model="indian_ditto_male">👳 Arjun (Male)</button>
+                            <button class="remote-pill" data-model="indian_female">👩‍💼 Priya (Female)</button>
+                            <button class="remote-pill" data-model="indian_ditto_exec">💼 Vikram (Exec)</button>
+                            <button class="remote-pill" data-model="human_ditto_male">👤 Alexander</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Channel Secret / Reveal Banner Modal Overlay if triggered -->
+            <div id="revealBanner" class="reveal-banner hidden">
+                <div class="reveal-content">
+                    <span class="reveal-tag">SPECIAL ANNOUNCEMENT</span>
+                    <h2 id="modalChannelTitle">CLASSIFIED CHANNEL NAME</h2>
+                    <p>Official YouTube News Station Visual Model</p>
+                </div>
+            </div>
+
+    <!-- YouTube Broadcast Screen Box -->
+    <div class="viewport-card">
+        <div class="screen-header">
+            <div class="screen-info">
+                <span class="badge live-badge"><i class="fa-solid fa-circle"></i> LIVE ON AIR</span>
+                <span id="screenTitle" class="screen-title">BREAKING NEWS - TOP STORY</span>
+            </div>
+            <div class="screen-actions">
+                <button id="fpsMeter" class="badge info-badge">60 FPS</button>
+                <button id="fullscreenBtn" class="btn-icon" title="Toggle Fullscreen"><i class="fa-solid fa-expand"></i></button>
+            </div>
+        </div>
+
+        <!-- Main Canvas Container -->
+        <div id="canvasWrapper" class="canvas-wrapper landscape-mode">
+            <canvas id="broadcastCanvas" width="1280" height="720"></canvas>
+
+            <!-- Click to Enable Audio Audio Overlay -->
+            <div id="unmuteBanner" class="unmute-banner">
+                <i class="fa-solid fa-volume-high pulse"></i>
+                <span>CLICK ANYWHERE TO UNMUTE AI MALE VOICE BROADCAST</span>
+            </div>
+
+            <!-- Realtime Teleprompter Subtitle Overlay over Canvas -->
+            <div id="teleprompterSubtitleBox" class="subtitle-overlay style-yellow_black">
+                <div id="subtitleTicker" class="subtitle-text">
+                    Waiting for news broadcast to start...
+                </div>
+            </div>
+        </div>
+
+                <!-- Broadcast Playback Controls Bar -->
+                <div class="broadcast-controls">
+                    <button id="startSpeechBtn" class="btn-control primary">
+                        <i class="fa-solid fa-play"></i> <span id="playBtnText">Start AI News Broadcast</span>
+                    </button>
+                    <button id="pauseSpeechBtn" class="btn-control warning" disabled>
+                        <i class="fa-solid fa-pause"></i> Pause
+                    </button>
+                    <button id="stopSpeechBtn" class="btn-control danger" disabled>
+                        <i class="fa-solid fa-square"></i> Stop
+                    </button>
+                    <button id="nextNewsBtn" class="btn-control secondary">
+                        <i class="fa-solid fa-forward"></i> Next Story
+                    </button>
+
+                    <div class="volume-control">
+                        <i class="fa-solid fa-volume-high"></i>
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teleprompter Script Inspector & Live Audio Spectrum -->
+            <div class="teleprompter-card">
+                <div class="teleprompter-header">
+                    <h4><i class="fa-solid fa-scroll"></i> Anchor Teleprompter Script</h4>
+                    <div class="audio-spectrum-bar">
+                        <span class="spectrum-label">AUDIO SPECTRUM:</span>
+                        <div class="equalizer-bars">
+                            <div class="bar bar1"></div>
+                            <div class="bar bar2"></div>
+                            <div class="bar bar3"></div>
+                            <div class="bar bar4"></div>
+                            <div class="bar bar5"></div>
+                            <div class="bar bar6"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="teleprompterText" class="teleprompter-display">
+                    Select a news story or paste custom news text to load the teleprompter script...
+                </div>
+            </div>
+
+            <!-- YouTube Video Snapshot & Download Modal Bar -->
+            <div id="recordStatusCard" class="record-status-card hidden">
+                <div class="status-content">
+                    <i class="fa-solid fa-video pulse"></i>
+                    <div>
+                        <strong>YouTube Video Recording in Progress...</strong>
+                        <div id="recordTime">00:00</div>
+                    </div>
+                </div>
+                <button id="stopRecordBtn" class="btn-sm btn-danger">Stop & Download MP4</button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Edit Channel Name Modal -->
+    <div id="brandModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-shield-halved"></i> Channel Identity & Branding</h3>
+            <p>Customize your YouTube news channel identity. Choose whether to keep it secret/unannounced or reveal it to your viewers!</p>
+            
+            <label for="channelNameInput" class="form-label">Official Channel Name:</label>
+            <input type="text" id="channelNameInput" class="form-input" value="NEXUS NEWS 24">
+
+            <label for="secretPlaceholderInput" class="form-label">Secret Teaser Text (When Secret Mode is ON):</label>
+            <input type="text" id="secretPlaceholderInput" class="form-input" value="SECRET CHANNEL / REVEALING SOON">
+
+            <div class="checkbox-item mt-15">
+                <input type="checkbox" id="secretModeToggle" checked>
+                <label for="secretModeToggle">Keep Channel Name Secret (Teaser Mode)</label>
+            </div>
+
+            <div class="modal-actions">
+                <button id="saveBrandBtn" class="btn-action primary">Save Branding Settings</button>
+                <button id="closeBrandModalBtn" class="btn-action secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen Loading Overlay on App Launch -->
+    <div id="appLoaderScreen" class="app-loader-overlay">
+        <div class="loader-card">
+            <div class="spinner-ring"></div>
+            <div class="loader-logo"><i class="fa-solid fa-satellite-dish"></i> AI NEWS STUDIO</div>
+            <h3 class="loader-title">INITIALIZING AI MALE NEWS REPORTER MODEL...</h3>
+            <p class="loader-subtitle">Loading Studio Desk, Viseme Lip-Sync & Teleprompter Feeds</p>
+            <div class="loader-progress-bar"><div class="progress-fill" id="loaderFill"></div></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

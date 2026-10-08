@@ -1,0 +1,20 @@
+{
+  "name": "ai-news-reporter-studio",
+  "version": "2.5.0",
+  "description": "AI Visual Male & Humanoid Robot News Reporter YouTube Broadcast Studio Web App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "ai-news-reporter",
+    "youtube-broadcast",
+    "humanoid-robot",
+    "teleprompter",
+    "text-to-speech",
+    "viseme-lipsync"
+  ],
+  "author": "Manoj-548",
+  "license": "MIT"
+}
