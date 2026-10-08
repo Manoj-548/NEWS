@@ -1507,4 +1507,118 @@ body.dark-theme {
     transition: width 0.08s ease;
 }
 
+/* ==========================================================================
+   Viewer Remote Control Bar & 1-Click Language Switcher (Fixed Position)
+   ========================================================================== */
+.viewer-remote-bar {
+    background: linear-gradient(180deg, rgba(17, 22, 35, 0.95) 0%, rgba(13, 17, 26, 0.95) 100%);
+    border: 1px solid rgba(0, 210, 255, 0.25);
+    border-radius: 10px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.remote-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 4px;
+}
+
+.remote-title {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+}
+
+.remote-mode-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+}
+
+.remote-rows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.remote-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.remote-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--primary-neon);
+    white-space: nowrap;
+    min-width: 110px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.remote-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding-bottom: 2px;
+    flex: 1;
+}
+
+.remote-pills::-webkit-scrollbar {
+    height: 4px;
+}
+
+.remote-pills::-webkit-scrollbar-thumb {
+    background: rgba(0, 210, 255, 0.3);
+    border-radius: 2px;
+}
+
+.remote-pill {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-main);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.remote-pill:hover {
+    background: rgba(0, 136, 255, 0.2);
+    border-color: var(--primary-neon);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.remote-pill.active {
+    background: linear-gradient(135deg, #0088ff 0%, #7209b7 100%);
+    border-color: #00f5d4;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(0, 245, 212, 0.35);
+}
+
+
 
