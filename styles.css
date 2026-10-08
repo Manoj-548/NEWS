@@ -238,9 +238,10 @@ body.dark-theme {
     display: grid;
     grid-template-columns: 340px 1fr;
     gap: 12px;
-    padding: 8px 12px;
-    max-width: 1920px;
-    margin: 0 auto;
+    padding: 8px 12px 8px 6px;
+    width: 100vw;
+    max-width: 100%;
+    margin: 0;
     height: calc(100vh - 52px);
     overflow: hidden;
     transition: all 0.3s ease;
@@ -422,6 +423,13 @@ body.dark-theme {
     font-size: 0.78rem;
     margin-bottom: 6px;
     transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-select option, .form-select optgroup {
+    background-color: #0b0f19;
+    color: #ffffff;
+    padding: 6px;
+    font-size: 0.82rem;
 }
 
 .form-select:focus, .form-input:focus, .form-textarea:focus {
