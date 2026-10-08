@@ -293,7 +293,7 @@ body.dark-theme {
    Main Layout Structure
    ========================================================================== */
 
-.studio-container {
+.studio-container { grid-template-columns: 1fr !important; }
     display: grid;
     grid-template-columns: 340px 1fr;
     gap: 12px;
