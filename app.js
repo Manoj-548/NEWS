@@ -426,10 +426,11 @@ function setupEventListeners() {
             translateStoryScript(state.currentStory, state.currentLanguage);
         }
 
-        // Real-Time Live Switch: If speaking or broadcast active, restart speech in new voice!
-        if (state.isSpeaking || document.getElementById("unmuteBanner").classList.contains("hidden")) {
-            startNewsBroadcast();
-        }
+        // Hide unmute banner and immediately start broadcast in target language
+        const unmuteBanner = document.getElementById("unmuteBanner");
+        if (unmuteBanner) unmuteBanner.classList.add("hidden");
+        
+        startNewsBroadcast();
     });
 
     document.getElementById("voiceSelect").addEventListener("change", (e) => {
@@ -659,9 +660,24 @@ function setupEventListeners() {
                 translateStoryScript(state.currentStory, state.currentLanguage);
             }
 
-            if (state.isSpeaking) {
-                startNewsBroadcast();
+            // Hide unmute banner if visible
+            const unmuteBanner = document.getElementById("unmuteBanner");
+            if (unmuteBanner) unmuteBanner.classList.add("hidden");
+
+            // Ensure view mode is 3D Broadcast Studio
+            const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
+            const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
+            const canvasWrapper = document.getElementById("canvasWrapper");
+            const aiChatHubViewport = document.getElementById("aiChatHubViewport");
+            if (modeBroadcastBtn && modeAiChatBtn) {
+                modeBroadcastBtn.classList.add("active");
+                modeAiChatBtn.classList.remove("active");
+                if (canvasWrapper) canvasWrapper.classList.remove("hidden");
+                if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
             }
+
+            // Immediately start broadcast in selected language
+            startNewsBroadcast();
         });
     });
 
