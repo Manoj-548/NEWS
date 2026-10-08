@@ -59,6 +59,10 @@ body.dark-theme {
     background: var(--primary-blue);
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* ==========================================================================
    Top Broadcast Header
    ========================================================================== */
@@ -198,7 +202,7 @@ body.dark-theme {
 }
 
 /* Base class for all top header buttons & badges */
-.top-header button,
+.top-header button:not(.top-reporter-pill),
 .top-header .brand-badge,
 .top-header .stat-badge {
     height: 32px !important;
@@ -844,6 +848,7 @@ body.dark-theme {
 .canvas-wrapper {
     position: relative;
     width: 100%;
+    min-height: 400px;
     background: #000000;
     border-radius: 8px;
     overflow: hidden;
@@ -852,7 +857,6 @@ body.dark-theme {
     justify-content: center;
     align-items: center;
     flex: 1;
-    min-height: 0;
 }
 
 .canvas-wrapper.landscape-mode {
