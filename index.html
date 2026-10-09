@@ -3,173 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Male News Reporter Studio - YouTube Broadcast Visual Model</title>
-    <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal ch[...]
-    <!-- Google Fonts -->
+    <title>AI NEWS STUDIO - Live Broadcast</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Outfit:wght@400;600;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <style>
-        .broadcast-viewport-full {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-            height: 100%;
-            min-height: 0;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .canvas-wrapper-expanded {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            background: #000000;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 8px 30px rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .broadcast-controls-bottom {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            background: rgba(17, 22, 35, 0.95);
-            border: 1px solid rgba(0, 210, 255, 0.2);
-            border-radius: 8px;
-            padding: 12px 16px;
-            flex-shrink: 0;
-        }
-
-        .btn-control {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            transition: all 0.2s ease;
-        }
-
-        .btn-control.primary {
-            background: linear-gradient(135deg, #0088ff 0%, #0055ff 100%);
-            color: white;
-            border: none;
-        }
-
-        .btn-control.primary:hover {
-            filter: brightness(1.15);
-        }
-
-        .btn-control.warning {
-            background: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-            border-color: #ffc107;
-        }
-
-        .btn-control.danger {
-            background: rgba(255, 59, 48, 0.2);
-            color: #ff3b30;
-            border-color: #ff3b30;
-        }
-
-        .btn-control.secondary {
-            background: rgba(0, 210, 255, 0.1);
-            color: #00d2ff;
-            border-color: #00d2ff;
-        }
-
-        .btn-control:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .volume-control {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-main);
-        }
-
-        .volume-control input[type=range] {
-            width: 120px;
-            accent-color: var(--primary-neon);
-        }
-
-        .sidebar-toggle-btn {
-            position: fixed;
-            left: 12px;
-            top: 70px;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #0088ff, #00d2ff);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            z-index: 50;
-            box-shadow: 0 4px 15px rgba(0, 136, 255, 0.4);
-            transition: all 0.2s ease;
-        }
-
-        .sidebar-toggle-btn:hover {
-            filter: brightness(1.2);
-            transform: scale(1.05);
-        }
-
-        .sidebar-drawer {
-            position: fixed;
-            left: -340px;
-            top: 52px;
-            width: 320px;
-            height: calc(100vh - 52px);
-            background: var(--bg-panel);
-            border-right: 1px solid var(--border-color);
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.4);
-            z-index: 40;
-            transition: left 0.3s ease;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            padding: 12px;
-        }
-
-        .sidebar-drawer.open {
-            left: 0;
-        }
-
-        .sidebar-drawer::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar-drawer::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-
-        .sidebar-drawer::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-blue);
-        }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+        .top-header { z-index: 100; }
+        .sidebar-drawer { z-index: 40; }
+        .sidebar-toggle-btn { z-index: 50; }
+        .broadcast-controls-bottom { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 30; }
     </style>
 </head>
 <body class="dark-theme">
-    <!-- Top Broadcast Header Bar -->
+    <!-- Top Header -->
     <header class="top-header">
         <div class="brand-title">
             <div class="pulse-red"></div>
@@ -177,10 +27,9 @@
             <span>AI NEWS STUDIO <small>v2.5 PRO</small></span>
         </div>
         
-        <!-- Top Screen Reporter Selection Pill Bar -->
         <div class="top-reporter-switcher">
             <span class="top-reporter-label"><i class="fa-solid fa-robot text-neon"></i> REPORTER:</span>
-            <div class="top-reporter-pills" id="topHeaderAnchorPills">
+            <div class="top-reporter-pills">
                 <button class="top-reporter-pill active" data-model="nexus_3d">🤖 NEXUS-3D</button>
                 <button class="top-reporter-pill" data-model="humanoid_creature">🤖 NEXUS-9</button>
                 <button class="top-reporter-pill" data-model="indian_ditto_male">👳 Arjun</button>
@@ -190,414 +39,71 @@
             </div>
         </div>
 
-        <div class="channel-identity-bar">
-            <span class="label">CHANNEL IDENTITY:</span>
-            <div id="channelBrandBadge" class="brand-badge secret-mode">
-                <i class="fa-solid fa-user-secret"></i>
-                <span id="channelBrandText">SECRET / REVEALING SOON</span>
-            </div>
-            <button id="toggleRevealBtn" class="btn-reveal" title="Toggle Channel Name Reveal">
-                <i class="fa-solid fa-eye"></i> Unveil
-            </button>
-        </div>
-
         <div class="quick-stats">
-            <button id="devModeToggleBtn" class="btn-sm btn-outline dev-toggle-btn" title="Toggle Developer Mode">
-                <i class="fa-solid fa-user-gear"></i> Dev
-            </button>
             <span class="stat-badge"><i class="fa-solid fa-language"></i> <span id="currentLangLabel">Hindi</span></span>
-            <span class="stat-badge"><i class="fa-solid fa-display"></i> 16:9</span>
-            <button id="snapThumbnailBtn" class="btn-action primary dev-only-inline hidden" style="width:auto; padding: 7px 12px;">
-                <i class="fa-solid fa-camera"></i> 📸
-            </button>
-            <button id="recordBtn" class="btn-record dev-only-inline hidden">
-                <i class="fa-solid fa-circle"></i> REC
-            </button>
         </div>
     </header>
 
-    <!-- Sidebar Toggle Button -->
+    <!-- Sidebar Toggle -->
     <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
         <i class="fa-solid fa-sliders"></i>
     </button>
 
-    <!-- Sidebar Drawer (Overlay) -->
+    <!-- Sidebar -->
     <aside id="mainControlPanel" class="sidebar-drawer">
-        
-        <!-- DEVELOPER EXCLUSIVE: YouTube Channel Auto-Publisher -->
-        <div class="panel-section dev-upload-section">
-            <h3><i class="fa-brands fa-youtube" style="color:#ff0000;"></i> YouTube Publisher</h3>
-            
-            <div class="yt-status-box">
-                <i class="fa-solid fa-circle-check text-success"></i>
-                <span>NEXUS NEWS 24</span>
-            </div>
-
-            <label for="ytPrivacySelect" class="form-label">Privacy:</label>
-            <select id="ytPrivacySelect" class="form-select">
-                <option value="public">🌐 Public</option>
-                <option value="unlisted">🔗 Unlisted</option>
-                <option value="private">🔒 Private</option>
-            </select>
-
-            <div class="grid-2col" style="margin-top: 8px;">
-                <button id="uploadToYouTubeBtn" class="btn-action primary" style="background: linear-gradient(135deg, #ff0000 0%, #b30000 100%); font-size: 0.76rem;">
-                    <i class="fa-brands fa-youtube"></i> Upload
-                </button>
-                <button id="downloadVideoBtn" class="btn-action primary" style="background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); font-size: 0.76rem;">
-                    <i class="fa-solid fa-download"></i> Download
-                </button>
-            </div>
-        </div>
-
         <div class="panel-section">
-            <h3><i class="fa-solid fa-newspaper"></i> News Feed</h3>
-            <div class="feed-tabs">
-                <button class="tab-btn active" data-tab="preset-feed"><i class="fa-solid fa-fire"></i> Trending</button>
-                <button class="tab-btn" data-tab="ai-chat-feed"><i class="fa-solid fa-comments"></i> AI</button>
-                <button class="tab-btn" data-tab="custom-feed"><i class="fa-solid fa-paste"></i> Custom</button>
-                <button class="tab-btn" data-tab="rss-feed"><i class="fa-solid fa-rss"></i> RSS</button>
-            </div>
-
-            <!-- Tab 1: Preset Feeds -->
-            <div id="preset-feed" class="tab-content active">
-                <label for="newsCategorySelect" class="form-label">News Topic:</label>
-                <select id="newsCategorySelect" class="form-select">
-                    <option value="india_tech" selected>🇮🇳 India AI & Semiconductor</option>
-                    <option value="isro_space">🚀 ISRO Space Missions</option>
-                    <option value="india_economy">📈 Indian Markets</option>
-                    <option value="tech">🌐 Technology & AI</option>
-                    <option value="world">🌍 World News</option>
-                    <option value="finance">📈 Global Markets</option>
-                    <option value="science">🔬 Space & Science</option>
-                    <option value="sports">🏆 Sports & Gaming</option>
-                </select>
-
-                <div class="news-list" id="presetNewsList">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-
-            <!-- Tab 2: AI Chat -->
-            <div id="ai-chat-feed" class="tab-content">
-                <div class="ai-chat-box">
-                    <div class="chat-header">
-                        <i class="fa-solid fa-robot text-neon"></i> <span>AI Assistant</span>
-                    </div>
-                    <div class="chat-messages" id="aiChatMessages">
-                        <div class="chat-msg bot-msg">
-                            👋 Ask me anything about news!
-                        </div>
-                    </div>
-                    <div class="chat-input-area mt-8">
-                        <input type="text" id="aiChatInput" class="form-input" placeholder="e.g., ISRO news in Kannada...">
-                        <button id="sendAiChatBtn" class="btn-action primary mt-5">
-                            <i class="fa-solid fa-paper-plane"></i> Ask AI
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 3: Custom Text -->
-            <div id="custom-feed" class="tab-content">
-                <label for="customNewsTitle" class="form-label">Headline:</label>
-                <input type="text" id="customNewsTitle" class="form-input" placeholder="Breaking News Title">
-                
-                <label for="customNewsBody" class="form-label">Script:</label>
-                <textarea id="customNewsBody" class="form-textarea" rows="5" placeholder="Enter news script..."></textarea>
-                
-                <button id="loadCustomBtn" class="btn-action primary">
-                    <i class="fa-solid fa-bolt"></i> Load
-                </button>
-            </div>
-
-            <!-- Tab 4: RSS Feed -->
-            <div id="rss-feed" class="tab-content">
-                <label for="rssUrlInput" class="form-label">RSS Feed URL:</label>
-                <input type="text" id="rssUrlInput" class="form-input" placeholder="https://news.google.com/rss...">
-                <button id="fetchRssBtn" class="btn-action">
-                    <i class="fa-solid fa-download"></i> Fetch
-                </button>
-            </div>
-        </div>
-
-        <!-- Language & Voice Controls -->
-        <div class="panel-section">
-            <h3><i class="fa-solid fa-language"></i> Language & Voice</h3>
-            
-            <label for="languageSelect" class="form-label">Language:</label>
+            <h3><i class="fa-solid fa-language"></i> Language</h3>
             <select id="languageSelect" class="form-select">
-                <optgroup label="🇮🇳 Indian Languages">
-                    <option value="hi-IN" selected>🇮🇳 Hindi (हिन्दी)</option>
-                    <option value="en-IN">🇮🇳 English (India)</option>
-                    <option value="ta-IN">🇮🇳 Tamil (தமிழ்)</option>
-                    <option value="te-IN">🇮🇳 Telugu (తెలుగు)</option>
-                    <option value="bn-IN">🇮🇳 Bengali (বাংলা)</option>
-                    <option value="mr-IN">🇮🇳 Marathi (मराठी)</option>
-                    <option value="gu-IN">🇮🇳 Gujarati (ગુજરાતી)</option>
-                    <option value="kn-IN">🇮🇳 Kannada (ಕನ್ನಡ)</option>
-                    <option value="ml-IN">🇮🇳 Malayalam (മലയാളം)</option>
-                    <option value="pa-IN">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
-                </optgroup>
-                <optgroup label="🌍 World Languages">
-                    <option value="en-US">🇺🇸 English (US)</option>
-                    <option value="es-ES">🇪🇸 Spanish</option>
-                    <option value="fr-FR">🇫🇷 French</option>
-                    <option value="de-DE">🇩🇪 German</option>
-                    <option value="zh-CN">🇨🇳 Mandarin</option>
-                    <option value="ja-JP">🇯🇵 Japanese</option>
-                    <option value="ar-SA">🇸🇦 Arabic</option>
-                </optgroup>
+                <option value="hi-IN" selected>🇮🇳 Hindi</option>
+                <option value="en-US">🇺🇸 English</option>
+                <option value="kn-IN">🇮🇳 Kannada</option>
+                <option value="ta-IN">🇮🇳 Tamil</option>
+                <option value="te-IN">🇮🇳 Telugu</option>
             </select>
-
-            <label for="voiceGenderSelect" class="form-label mt-8">Voice Gender:</label>
-            <select id="voiceGenderSelect" class="form-select">
-                <option value="male" selected>👔 Male</option>
-                <option value="female">👩 Female</option>
-            </select>
-
-            <label for="voiceSelect" class="form-label">Voice Model:</label>
-            <select id="voiceSelect" class="form-select">
-                <!-- Populated dynamically -->
-            </select>
-
-            <div class="slider-group">
-                <div class="slider-item">
-                    <label>Speed: <span id="rateVal">1.0x</span></label>
-                    <input type="range" id="speechRate" min="0.7" max="1.4" step="0.05" value="1.0">
-                </div>
-                <div class="slider-item">
-                    <label>Pitch: <span id="pitchVal">0.95</span></label>
-                    <input type="range" id="speechPitch" min="0.6" max="1.3" step="0.05" value="0.95">
-                </div>
-            </div>
         </div>
 
-        <!-- Presenter & Studio -->
         <div class="panel-section">
-            <h3><i class="fa-solid fa-person-rays"></i> Presenter & Studio</h3>
-            
-            <label for="anchorModelSelect" class="form-label">Presenter:</label>
-            <select id="anchorModelSelect" class="form-select">
-                <optgroup label="🤖 Robots">
-                    <option value="nexus_3d" selected>🤖 NEXUS-3D</option>
-                    <option value="humanoid_creature">🤖 NEXUS-9</option>
-                </optgroup>
-                <optgroup label="🇮🇳 Indian">
-                    <option value="indian_ditto_male">👳 Arjun</option>
-                    <option value="indian_female">👩 Priya</option>
-                    <option value="indian_ditto_exec">💼 Vikram</option>
-                </optgroup>
-                <optgroup label="🌍 Global">
-                    <option value="human_ditto_male">👤 Alexander</option>
-                </optgroup>
+            <h3><i class="fa-solid fa-newspaper"></i> News</h3>
+            <select id="newsCategorySelect" class="form-select">
+                <option value="india_tech">🇮🇳 India AI</option>
+                <option value="isro_space">🚀 ISRO</option>
+                <option value="tech">🌐 Technology</option>
+                <option value="world">🌍 World News</option>
+                <option value="finance">📈 Finance</option>
             </select>
+        </div>
 
-            <label for="studioBgSelect" class="form-label">Background:</label>
-            <select id="studioBgSelect" class="form-select">
-                <option value="bg_modern">🌆 High-Tech Studio</option>
-                <option value="bg_glass">🏙️ Glass Newsroom</option>
-                <option value="bg_hologram">🔮 Hologram Grid</option>
-            </select>
+        <div class="panel-section">
+            <h3><i class="fa-solid fa-comments"></i> Custom News</h3>
+            <textarea id="customNewsBody" class="form-textarea" rows="5" placeholder="Enter your news..."></textarea>
+            <button id="loadCustomBtn" class="btn-action primary" style="margin-top: 8px;">Load</button>
         </div>
     </aside>
 
-    <!-- Main Broadcast Container -->
-    <div class="studio-container" style="grid-template-columns: 1fr;">
-        <main class="broadcast-viewport-full">
-            
-            <!-- Viewer Remote Control Bar -->
-            <div class="viewer-remote-bar">
-                <div class="remote-header-row">
-                    <div class="remote-title">
-                        <i class="fa-solid fa-gamepad text-neon"></i>
-                        <span>LIVE BROADCAST</span>
-                    </div>
-                    <div class="remote-mode-tag">
-                        <i class="fa-solid fa-circle text-success" style="font-size: 0.55rem;"></i> READY
-                    </div>
-                </div>
-                
-                <div class="remote-rows-container">
-                    <!-- Language Switcher -->
-                    <div class="remote-row">
-                        <span class="remote-label"><i class="fa-solid fa-language"></i> Language:</span>
-                        <div class="remote-pills" id="quickLangPills">
-                            <button class="remote-pill active" data-lang="hi-IN">🇮🇳 Hindi</button>
-                            <button class="remote-pill" data-lang="kn-IN">🇮🇳 Kannada</button>
-                            <button class="remote-pill" data-lang="ta-IN">🇮🇳 Tamil</button>
-                            <button class="remote-pill" data-lang="te-IN">🇮🇳 Telugu</button>
-                            <button class="remote-pill" data-lang="bn-IN">🇮🇳 Bengali</button>
-                            <button class="remote-pill" data-lang="mr-IN">🇮🇳 Marathi</button>
-                            <button class="remote-pill" data-lang="en-US">🇺🇸 English</button>
-                            <button class="remote-pill" data-lang="es-ES">🇪🇸 Spanish</button>
-                            <button class="remote-pill" data-lang="fr-FR">🇫🇷 French</button>
-                        </div>
-                    </div>
+    <!-- Canvas -->
+    <canvas id="broadcastCanvas" width="1280" height="720"></canvas>
 
-                    <!-- Presenter Switcher -->
-                    <div class="remote-row">
-                        <span class="remote-label"><i class="fa-solid fa-robot text-neon"></i> Presenter:</span>
-                        <div class="remote-pills" id="quickAnchorPills">
-                            <button class="remote-pill active" data-model="nexus_3d">🤖 NEXUS-3D</button>
-                            <button class="remote-pill" data-model="humanoid_creature">🤖 NEXUS-9</button>
-                            <button class="remote-pill" data-model="indian_ditto_male">👳 Arjun</button>
-                            <button class="remote-pill" data-model="indian_female">👩 Priya</button>
-                            <button class="remote-pill" data-model="indian_ditto_exec">💼 Vikram</button>
-                            <button class="remote-pill" data-model="human_ditto_male">👤 Alexander</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Broadcast Canvas (Expanded) -->
-            <div class="viewport-card">
-                <div class="screen-header">
-                    <div class="screen-info">
-                        <span class="badge live-badge"><i class="fa-solid fa-circle"></i> LIVE</span>
-                        <span id="screenTitle" class="screen-title">BREAKING NEWS</span>
-                    </div>
-                    <div class="screen-actions">
-                        <button id="fullscreenBtn" class="btn-icon" title="Fullscreen">
-                            <i class="fa-solid fa-expand"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="canvasWrapper" class="canvas-wrapper-expanded landscape-mode">
-                    <canvas id="broadcastCanvas" width="1280" height="720"></canvas>
-
-                    <div id="unmuteBanner" class="unmute-banner">
-                        <i class="fa-solid fa-volume-high pulse"></i>
-                        <span>CLICK TO UNMUTE</span>
-                    </div>
-
-                    <div id="teleprompterSubtitleBox" class="subtitle-overlay style-yellow_black">
-                        <div id="subtitleTicker" class="subtitle-text">
-                            Waiting for news broadcast...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Broadcast Controls -->
-                <div class="broadcast-controls-bottom">
-                    <button id="startSpeechBtn" class="btn-control primary">
-                        <i class="fa-solid fa-play"></i> <span id="playBtnText">Start Broadcast</span>
-                    </button>
-                    <button id="pauseSpeechBtn" class="btn-control warning" disabled>
-                        <i class="fa-solid fa-pause"></i> Pause
-                    </button>
-                    <button id="stopSpeechBtn" class="btn-control danger" disabled>
-                        <i class="fa-solid fa-square"></i> Stop
-                    </button>
-                    <button id="nextNewsBtn" class="btn-control secondary">
-                        <i class="fa-solid fa-forward"></i> Next
-                    </button>
-
-                    <div class="volume-control">
-                        <i class="fa-solid fa-volume-high"></i>
-                        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1">
-                    </div>
-                </div>
-            </div>
-        </main>
+    <!-- Subtitle -->
+    <div id="teleprompterSubtitleBox" class="subtitle-overlay style-yellow_black">
+        <div id="subtitleTicker" class="subtitle-text">AI NEWS STUDIO - READY TO BROADCAST</div>
     </div>
 
-    <!-- Channel Reveal Banner -->
-    <div id="revealBanner" class="reveal-banner hidden">
-        <div class="reveal-content">
-            <span class="reveal-tag">SPECIAL ANNOUNCEMENT</span>
-            <h2 id="modalChannelTitle">CLASSIFIED CHANNEL NAME</h2>
-            <p>Official YouTube News Station</p>
-        </div>
-    </div>
-
-    <!-- Edit Channel Name Modal -->
-    <div id="brandModal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <h3><i class="fa-solid fa-shield-halved"></i> Channel Identity</h3>
-            <p>Customize your YouTube news channel identity.</p>
-            
-            <label for="channelNameInput" class="form-label">Channel Name:</label>
-            <input type="text" id="channelNameInput" class="form-input" value="NEXUS NEWS 24">
-
-            <label for="secretPlaceholderInput" class="form-label">Secret Teaser:</label>
-            <input type="text" id="secretPlaceholderInput" class="form-input" value="SECRET CHANNEL / REVEALING SOON">
-
-            <div class="checkbox-item mt-15">
-                <input type="checkbox" id="secretModeToggle" checked>
-                <label for="secretModeToggle">Keep Channel Secret</label>
-            </div>
-
-            <div class="modal-actions">
-                <button id="saveBrandBtn" class="btn-action primary">Save</button>
-                <button id="closeBrandModalBtn" class="btn-action secondary">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading Screen -->
-    <div id="appLoaderScreen" class="app-loader-overlay">
-        <div class="loader-card">
-            <div class="spinner-ring"></div>
-            <div class="loader-logo"><i class="fa-solid fa-satellite-dish"></i> AI NEWS STUDIO</div>
-            <h3 class="loader-title">INITIALIZING...</h3>
-            <p class="loader-subtitle">Loading News Reporter Model & Teleprompter Feeds</p>
-            <div class="loader-progress-bar"><div class="progress-fill" id="loaderFill"></div></div>
-        </div>
+    <!-- Controls -->
+    <div class="broadcast-controls-bottom">
+        <button id="startSpeechBtn" class="btn-control primary">
+            <i class="fa-solid fa-play"></i> Start
+        </button>
+        <button id="pauseSpeechBtn" class="btn-control warning" disabled>
+            <i class="fa-solid fa-pause"></i> Pause
+        </button>
+        <button id="stopSpeechBtn" class="btn-control danger" disabled>
+            <i class="fa-solid fa-square"></i> Stop
+        </button>
+        <button id="nextNewsBtn" class="btn-control secondary">
+            <i class="fa-solid fa-forward"></i> Next
+        </button>
     </div>
 
     <script src="app.js"></script>
-    <script>
-        // Sidebar Toggle
-        document.getElementById('sidebarToggleBtn').addEventListener('click', () => {
-            const sidebar = document.getElementById('mainControlPanel');
-            sidebar.classList.toggle('open');
-        });
-
-        // Close sidebar when clicking outside
-        document.addEventListener('click', (e) => {
-            const sidebar = document.getElementById('mainControlPanel');
-            const toggle = document.getElementById('sidebarToggleBtn');
-            if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-        });
-
-        // Broadcast language and presenter pills
-        document.querySelectorAll('[data-lang]').forEach((btn) => {
-            btn.addEventListener('click', function() {
-                if (typeof window.switchBroadcastLanguage === 'function') {
-                    window.switchBroadcastLanguage(this.dataset.lang);
-                    document.querySelectorAll('[data-lang]').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                }
-            });
-        });
-
-        document.querySelectorAll('[data-model]').forEach((btn) => {
-            btn.addEventListener('click', function() {
-                if (typeof window.switchPresenterModel === 'function') {
-                    window.switchPresenterModel(this.dataset.model);
-                    document.querySelectorAll('[data-model]').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                }
-            });
-        });
-
-        // Default startup broadcast
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                if (typeof window.switchPresenterModel === 'function') {
-                    window.switchPresenterModel('nexus_3d');
-                }
-                if (typeof window.switchBroadcastLanguage === 'function') {
-                    window.switchBroadcastLanguage('hi-IN');
-                }
-                const unmute = document.getElementById('unmuteBanner');
-                if (unmute) unmute.classList.add('hidden');
-            }, 500);
-        });
-    </script>
 </body>
 </html>
