@@ -1,98 +1,84 @@
 (function () {
-  const ensureOnce = () => {
-    const aside = document.getElementById('mainControlPanel');
-    const root = document.querySelector('.studio-container');
-    if (aside) {
-      aside.classList.remove('hidden');
-      aside.style.display = 'flex';
-      aside.style.flexDirection = 'column';
-      aside.style.overflowY = 'auto';
-      aside.style.maxHeight = '100%';
-      aside.style.paddingRight = '6px';
+  const ensureSidebarVisible = () => {
+    const sidebar = document.getElementById('mainControlPanel');
+    const container = document.querySelector('.studio-container');
+    if (sidebar) {
+      sidebar.classList.remove('hidden');
+      sidebar.style.display = 'flex';
+      sidebar.style.flexDirection = 'column';
+      sidebar.style.overflowY = 'auto';
+      sidebar.style.maxHeight = '100%';
+      sidebar.style.minWidth = '290px';
+      sidebar.style.width = '320px';
+      sidebar.style.scrollbarWidth = 'thin';
     }
-    if (root) {
-      root.style.display = 'grid';
-      root.style.gridTemplateColumns = '320px 1fr';
-      root.style.gap = '12px';
-      root.style.height = 'calc(100vh - 52px)';
-      root.style.width = '100vw';
-      root.style.maxWidth = '100%';
-      root.style.padding = '8px 12px 8px 6px';
-      root.style.overflow = 'hidden';
-      root.style.transition = 'all 0.3s ease';
+    if (container) {
+      container.style.display = 'grid';
+      container.style.gridTemplateColumns = '320px 1fr';
+      container.style.gap = '12px';
+      container.style.height = 'calc(100vh - 52px)';
+      container.style.overflow = 'hidden';
+      container.style.padding = '8px 12px 8px 6px';
     }
+  };
 
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    tabButtons.forEach((btn) => {
+  const ensureButtonsVisible = () => {
+    document.querySelectorAll('[data-model], [data-lang]').forEach((btn) => {
       btn.style.display = 'inline-flex';
       btn.style.alignItems = 'center';
       btn.style.justifyContent = 'center';
+      btn.style.gap = '6px';
     });
-
-    document.querySelectorAll('.tab-content').forEach((tab) => {
-      tab.style.display = tab.id === 'preset-feed' ? 'block' : 'none';
-    });
-
-    const currentTab = document.querySelector('.tab-btn.active');
-    if (currentTab) {
-      const tabToShow = document.getElementById(currentTab.dataset.tab);
-      if (tabToShow) tabToShow.style.display = 'block';
-    }
   };
 
-  function activateDefaultBroadcast() {
-    if (!window.__newsFixActivated) {
-      window.__newsFixActivated = true;
-      setTimeout(() => {
-        const appReady = !!(window.switchPresenterModel && window.switchBroadcastLanguage && window.startNewsBroadcast);
-        if (!appReady) return;
-
-        const currentSelectedLanguage = document.getElementById('languageSelect');
-        if (currentSelectedLanguage) currentSelectedLanguage.value = 'hi-IN';
-        if (window.switchBroadcastLanguage) window.switchBroadcastLanguage('hi-IN');
-
-        const currentModel = document.getElementById('anchorModelSelect');
-        if (currentModel) currentModel.value = 'nexus_3d';
-        if (window.switchPresenterModel) window.switchPresenterModel('nexus_3d');
-
-        const unmuteBanner = document.getElementById('unmuteBanner');
-        if (unmuteBanner) unmuteBanner.classList.add('hidden');
-      }, 250);
-    }
-  }
-
-  function bindPillClicks() {
+  const bindSelectionHandlers = () => {
     document.querySelectorAll('[data-model]').forEach((btn) => {
-      btn.onclick = function () {
-        if (window.switchPresenterModel) {
+      btn.addEventListener('click', () => {
+        if (typeof window.switchPresenterModel === 'function') {
           window.switchPresenterModel(btn.dataset.model);
         }
-      };
+      });
     });
 
     document.querySelectorAll('[data-lang]').forEach((btn) => {
-      btn.onclick = function () {
-        if (window.switchBroadcastLanguage) {
+      btn.addEventListener('click', () => {
+        if (typeof window.switchBroadcastLanguage === 'function') {
           window.switchBroadcastLanguage(btn.dataset.lang);
         }
-      };
+      });
     });
-  }
+  };
 
-  const bootstrap = () => {
-    ensureOnce();
-    bindPillClicks();
-    activateDefaultBroadcast();
+  const forceDefaultBroadcast = () => {
+    const payload = () => {
+      if (typeof window.switchPresenterModel === 'function') {
+        window.switchPresenterModel('nexus_3d');
+      }
+      if (typeof window.switchBroadcastLanguage === 'function') {
+        window.switchBroadcastLanguage('hi-IN');
+      }
+      const unmute = document.getElementById('unmuteBanner');
+      if (unmute) unmute.classList.add('hidden');
+      const main = document.getElementById('mainControlPanel');
+      if (main) main.classList.remove('hidden');
+    };
+
+    setTimeout(payload, 150);
+    setTimeout(payload, 700);
+  };
+
+  const init = () => {
+    ensureSidebarVisible();
+    ensureButtonsVisible();
+    bindSelectionHandlers();
+    forceDefaultBroadcast();
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootstrap);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    bootstrap();
+    init();
   }
 
-  window.addEventListener('load', () => {
-    ensureOnce();
-    activateDefaultBroadcast();
-  });
+  window.FIXES = { ensureSidebarVisible, ensureButtonsVisible, bindSelectionHandlers, forceDefaultBroadcast };
 })();
