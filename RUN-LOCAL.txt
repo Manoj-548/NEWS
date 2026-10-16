@@ -1,0 +1,17 @@
+AI NEWS STUDIO — run on YOUR Windows PC
+========================================
+
+Chrome error "localhost refused to connect" means Node is not running
+on THIS computer. This Arena chat cannot open ports on your laptop.
+
+In PowerShell:
+
+  cd "C:\Users\LORDS FITNES\NEWS"
+  git pull origin main
+  node server.js
+
+Then open:  http://localhost:3000
+
+Or double-click start.bat in this folder.
+
+Need Node.js LTS: https://nodejs.org
