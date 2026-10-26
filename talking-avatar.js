@@ -120,7 +120,7 @@
   function compositeRealMouth(profile, base, f, crop, w, h, vis) {
     const openImg = visemeOpen[profile.id];
     if (!openImg || !openImg.complete || !openImg.naturalWidth) return;
-    if (vis.shape === "closed" || vis.open < 0.12) return;
+    if (vis.shape === "closed" || vis.open < 0.14) return;
 
     const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
     const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
@@ -129,22 +129,24 @@
     const om = OPEN_MOUTH[profile.id] || { cx: 0.5, mouthY: 0.5, faceW: 0.25 };
     const onw = openImg.naturalWidth;
     const onh = openImg.naturalHeight;
-    const pW = Math.max(12, om.faceW * onw * 0.7);
-    const pH = Math.max(10, om.faceW * onw * 0.55);
+    const pW = Math.max(8, om.faceW * onw * 0.34);
+    const pH = Math.max(6, om.faceW * onw * 0.22);
     const pX = om.cx * onw - pW / 2;
-    const pY = om.mouthY * onh - pH * 0.45;
+    const pY = om.mouthY * onh - pH * 0.42;
     if (pX < 0 || pY < 0 || pX + pW > onw || pY + pH > onh) return;
 
-    const dW = faceW * 0.55 * (vis.width || 1);
-    const dH = faceW * 0.42 * (0.7 + vis.open * 0.5);
-    const alpha = Math.min(1, (vis.open - 0.1) / 0.55);
+    let dW = faceW * 0.22 * (vis.width || 1);
+    let dH = faceW * 0.085;
+    if (vis.shape === "open") dH = faceW * (0.07 + 0.05 * vis.open);
+    else if (vis.shape === "round") { dW = faceW * 0.16; dH = faceW * 0.11; }
+    else if (vis.shape === "wide") { dW = faceW * 0.26; dH = faceW * 0.065; }
+    else if (vis.shape === "teeth") { dW = faceW * 0.23; dH = faceW * 0.07; }
 
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(mx, my, dW * 0.5, dH * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(mx, my, dW * 0.5, dH * 0.55, 0, 0, Math.PI * 2);
     ctx.clip();
-    ctx.globalAlpha = alpha;
-    ctx.drawImage(openImg, pX, pY, pW, pH, mx - dW / 2, my - dH * 0.45, dW, dH);
+    ctx.drawImage(openImg, pX, pY, pW, pH, mx - dW / 2, my - dH * 0.42, dW, dH);
     ctx.restore();
   }
 
