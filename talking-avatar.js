@@ -1,72 +1,135 @@
-/* Photoreal news readers. No cartoon face, no sticker mouth — the photo's own lips move. */
+/* Photoreal presenters. Mouth sits on the real lips. Visemes follow each letter/word. */
 (function () {
   const LANDMARKS = {
-    nova_kade:       { cx: 0.50, eyeY: 0.250, mouthY: 0.338, chinY: 0.385, faceW: 0.14 },
-    lyra_nova:       { cx: 0.50, eyeY: 0.285, mouthY: 0.342, chinY: 0.390, faceW: 0.11 },
-    arjun_mehra:     { cx: 0.50, eyeY: 0.255, mouthY: 0.335, chinY: 0.385, faceW: 0.15 },
-    priya_nair:      { cx: 0.50, eyeY: 0.275, mouthY: 0.345, chinY: 0.395, faceW: 0.16 },
-    rajesh_sharma:   { cx: 0.50, eyeY: 0.282, mouthY: 0.338, chinY: 0.385, faceW: 0.12 },
-    meera_kapoor:    { cx: 0.50, eyeY: 0.280, mouthY: 0.358, chinY: 0.410, faceW: 0.12 },
+    nova_kade:       { cx: 0.50, eyeY: 0.250, mouthY: 0.329, chinY: 0.385, faceW: 0.14 },
+    lyra_nova:       { cx: 0.50, eyeY: 0.285, mouthY: 0.298, chinY: 0.390, faceW: 0.11 },
+    arjun_mehra:     { cx: 0.50, eyeY: 0.255, mouthY: 0.339, chinY: 0.385, faceW: 0.15 },
+    priya_nair:      { cx: 0.50, eyeY: 0.275, mouthY: 0.318, chinY: 0.395, faceW: 0.16 },
+    rajesh_sharma:   { cx: 0.50, eyeY: 0.282, mouthY: 0.381, chinY: 0.385, faceW: 0.12 },
+    meera_kapoor:    { cx: 0.50, eyeY: 0.280, mouthY: 0.324, chinY: 0.410, faceW: 0.12 },
     alexander_hayes: { cx: 0.50, eyeY: 0.265, mouthY: 0.345, chinY: 0.395, faceW: 0.15 },
-    sofia_reyes:     { cx: 0.50, eyeY: 0.310, mouthY: 0.362, chinY: 0.420, faceW: 0.11 },
-    marcus_cole:     { cx: 0.50, eyeY: 0.265, mouthY: 0.355, chinY: 0.400, faceW: 0.14 }
+    sofia_reyes:     { cx: 0.50, eyeY: 0.310, mouthY: 0.346, chinY: 0.420, faceW: 0.11 },
+    marcus_cole:     { cx: 0.50, eyeY: 0.265, mouthY: 0.375, chinY: 0.400, faceW: 0.14 }
   };
-
-  let mouthBuf = null;
-  let mouthBufCtx = null;
 
   function marks(profile) {
     return LANDMARKS[profile?.id] || profile?.face || { cx: 0.5, eyeY: 0.26, mouthY: 0.34, chinY: 0.39, faceW: 0.14 };
   }
 
-  function ensureMouthBuf(rw, rh) {
-    if (!mouthBuf) {
-      mouthBuf = document.createElement("canvas");
-      mouthBufCtx = mouthBuf.getContext("2d");
+  window.visemeForChar = function visemeForChar(ch) {
+    if (!ch || /\s/.test(ch)) return { open: 0.06, width: 1, shape: "rest" };
+    const c = String(ch).toUpperCase();
+    const raw = String(ch);
+
+    if (/[MBP]/.test(c) || /[मपबभप]/.test(raw) || /[ಮಪಬಭ]/.test(raw) || /[மபப]/.test(raw) || /[మపబభ]/.test(raw))
+      return { open: 0.02, width: 0.78, shape: "closed" };
+    if (/[FV]/.test(c) || /[फव]/.test(raw) || /[ಫವ]/.test(raw))
+      return { open: 0.18, width: 1.08, shape: "teeth" };
+    if (/[SZCJ]/.test(c) || /[सशषचज]/.test(raw))
+      return { open: 0.2, width: 1.14, shape: "wide" };
+    if (c === "W" || c === "Q")
+      return { open: 0.28, width: 0.74, shape: "round" };
+    if (c === "L" || /[लळ]/.test(raw))
+      return { open: 0.26, width: 1.02, shape: "rest" };
+    if (c === "R" || /[रऱ]/.test(raw))
+      return { open: 0.24, width: 0.95, shape: "rest" };
+
+    if (/[AÁÀÂÄĀ]/.test(c) || /[अआााा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw) || /[അആാ]/.test(raw))
+      return { open: 0.78, width: 1.1, shape: "open" };
+    if (/[EÉÈÊËIÍÌÎÏY]/.test(c) || /[इईएऐिीेैयेी]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீய]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
+      return { open: 0.34, width: 1.26, shape: "wide" };
+    if (/[OÓÒÔÖUÚÙÛÜ]/.test(c) || /[उऊओऔुूोौु]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw) || /[ఉఊఒఓుూొో]/.test(raw))
+      return { open: 0.5, width: 0.68, shape: "round" };
+
+    if (/[0-9]/.test(c)) return { open: 0.3, width: 1.0, shape: "rest" };
+    return { open: 0.2, width: 1.0, shape: "rest" };
+  };
+
+  function lettersOf(word) {
+    const out = [];
+    for (const ch of String(word || "")) {
+      const cp = ch.codePointAt(0);
+      if (cp === 0x094d || cp === 0x093c || cp === 0x0ccd || cp === 0x0bcd || cp === 0x0c4d || cp === 0x0d4d) continue;
+      if (/[\s.,!?;:।'"()[\]{}…—–-]/.test(ch)) continue;
+      out.push(ch);
     }
-    if (mouthBuf.width !== rw || mouthBuf.height !== rh) {
-      mouthBuf.width = rw;
-      mouthBuf.height = rh;
-    }
-    return mouthBufCtx;
+    return out;
   }
 
-  function warpPhotoMouth(mx, my, faceW, open, widen) {
-    const rw = Math.max(12, Math.round(faceW * 0.38));
-    const rh = Math.max(8, Math.round(faceW * 0.20));
-    const rx = Math.round(mx - rw / 2);
-    const ry = Math.round(my - rh * 0.42);
-    if (rx < 0 || ry < 0 || rx + rw > canvas.width || ry + rh > canvas.height) return;
-
-    let slice;
-    try {
-      slice = ctx.getImageData(rx, ry, rw, rh);
-    } catch (e) {
+  function driveLetterVisemes(delta) {
+    const speaking = !!(state.isSpeaking && !state.isPaused);
+    if (!speaking) {
+      state.visemeMouthOpen *= 0.8;
+      if (state.visemeMouthOpen < 0.04) state.visemeMouthOpen = 0;
+      state.visemeMouthWidth = 1;
+      state.visemeShape = "rest";
+      state.currentLetter = "";
       return;
     }
+    const words = state.scriptWords || [];
+    const idx = Math.max(0, state.currentWordIndex || 0);
+    if (state._visemeWord !== idx) {
+      state._visemeWord = idx;
+      state.letterPhase = 0;
+    }
+    const word = words[idx] || "";
+    const letters = lettersOf(word);
+    const rate = 7 * (state.speechRate || 1);
+    state.letterPhase = (state.letterPhase || 0) + delta * rate;
+    let ch = "A";
+    if (letters.length) {
+      ch = letters[Math.floor(state.letterPhase) % letters.length];
+    }
+    state.currentLetter = ch;
+    const v = window.visemeForChar(ch);
+    const k = 0.5;
+    state.visemeMouthOpen += (v.open - (state.visemeMouthOpen || 0)) * k;
+    state.visemeMouthWidth += (v.width - (state.visemeMouthWidth || 1)) * k;
+    state.visemeShape = v.shape;
+  }
 
-    const buf = ensureMouthBuf(rw, rh);
-    buf.putImageData(slice, 0, 0);
+  window.updateFacialAnimations = function (delta) {
+    state.breathPhase += delta * 1.6;
+    if (Math.random() < 0.006 && state.eyeBlink === 0) state.eyeBlink = 1;
+    if (state.eyeBlink > 0) {
+      state.eyeBlink -= delta * 9;
+      if (state.eyeBlink < 0) state.eyeBlink = 0;
+    }
+    driveLetterVisemes(delta);
+  };
 
-    const stretch = 1 + Math.min(1, open) * 0.22;
-    const dH = rh * stretch;
-    const dY = ry - (dH - rh) * 0.28;
-    const dW = rw * (0.98 + (widen - 1) * 0.06);
-    const dX = mx - dW / 2;
+  function drawLetterViseme(mx, my, faceW, vis) {
+    const open = vis.open || 0;
+    const shape = vis.shape || "rest";
+    if (open < 0.07 || shape === "closed") return;
+
+    const lipW = Math.max(8, faceW * 0.17 * (vis.width || 1));
+    let gapW = lipW * 0.4;
+    let gapH = lipW * 0.18;
+    if (shape === "open") { gapW = lipW * 0.42; gapH = lipW * 0.28 * open; }
+    else if (shape === "round") { gapW = lipW * 0.28; gapH = lipW * 0.3; }
+    else if (shape === "wide") { gapW = lipW * 0.5; gapH = lipW * 0.13; }
+    else if (shape === "teeth") { gapW = lipW * 0.46; gapH = lipW * 0.12; }
+    else { gapW = lipW * 0.38; gapH = lipW * 0.16 * Math.max(0.4, open); }
+
+    gapH = Math.max(1.6, gapH);
+    gapW = Math.max(3, gapW);
 
     ctx.save();
+    ctx.fillStyle = "rgba(42, 16, 18, 0.72)";
+    ctx.strokeStyle = "rgba(154, 72, 80, 0.9)";
+    ctx.lineWidth = Math.max(1.4, faceW * 0.011);
     ctx.beginPath();
-    ctx.ellipse(mx, my + (stretch - 1) * rh * 0.2, dW * 0.48, dH * 0.46, 0, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(mouthBuf, dX, dY, dW, dH);
-
-    const gapH = Math.max(1, 1.2 + open * 4.5);
-    const gapW = dW * 0.16 * (0.9 + open * 0.2);
-    ctx.globalAlpha = 0.28 + open * 0.28;
-    ctx.fillStyle = "rgba(48, 22, 24, 0.85)";
-    ctx.beginPath();
-    ctx.ellipse(mx, my + gapH * 0.15, gapW, gapH, 0, 0, Math.PI * 2);
+    ctx.ellipse(mx, my, gapW, gapH, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
+
+    if (shape === "teeth" || (shape === "open" && open > 0.45)) {
+      ctx.fillStyle = "rgba(243, 236, 228, 0.92)";
+      const tw = gapW * 1.45;
+      const th = Math.max(1.4, Math.min(gapH * 0.45, faceW * 0.018));
+      ctx.fillRect(mx - tw / 2, my - gapH * 0.55, tw, th);
+    }
     ctx.restore();
   }
 
@@ -78,9 +141,12 @@
     const nw = img.naturalWidth;
     const nh = img.naturalHeight;
     const speaking = !!(typeof state !== "undefined" && state.isSpeaking && !state.isPaused);
-    const open = speaking ? Math.max(0.04, state.visemeMouthOpen || 0.2) : (state.visemeMouthOpen || 0);
-    const widen = speaking ? (state.visemeMouthWidth || 1) : 1;
-    const breath = Math.sin(state.breathPhase || 0) * (speaking ? 1.6 : 0.6);
+    const vis = {
+      open: speaking ? (state.visemeMouthOpen || 0) : (state.visemeMouthOpen || 0),
+      width: state.visemeMouthWidth || 1,
+      shape: state.visemeShape || "rest"
+    };
+    const breath = Math.sin(state.breathPhase || 0) * (speaking ? 1.4 : 0.5);
 
     ctx.save();
     ctx.translate(0, breath);
@@ -104,11 +170,11 @@
 
     ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
 
-    if (open > 0.06) {
+    if (vis.open > 0.07 && vis.shape !== "closed") {
       const mx = ((f.cx * nw - sx) / srcW) * w;
       const my = ((f.mouthY * nh - sy) / srcH) * h;
       const faceW = (f.faceW * nw / srcW) * w;
-      warpPhotoMouth(mx, my, faceW, Math.min(1, open), widen);
+      drawLetterViseme(mx, my, faceW, vis);
     }
 
     ctx.restore();
