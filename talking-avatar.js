@@ -1,4 +1,4 @@
-/* Photoreal presenters. Real open-mouth photos composite onto the real lips. No painted oval. */
+/* Photoreal lip-sync: swap real mouth-shape photos. Never paint an oval. */
 (function () {
   const LANDMARKS = {
     nova_kade:       { cx: 0.50, eyeY: 0.250, mouthY: 0.329, chinY: 0.385, faceW: 0.14 },
@@ -12,44 +12,46 @@
     marcus_cole:     { cx: 0.50, eyeY: 0.265, mouthY: 0.375, chinY: 0.400, faceW: 0.14 }
   };
 
-  const OPEN_MOUTH = {
-    nova_kade:       { cx: 0.50, mouthY: 0.50, faceW: 0.28 },
-    lyra_nova:       { cx: 0.50, mouthY: 0.58, faceW: 0.14 },
-    arjun_mehra:     { cx: 0.50, mouthY: 0.47, faceW: 0.28 },
-    priya_nair:      { cx: 0.50, mouthY: 0.46, faceW: 0.32 },
-    rajesh_sharma:   { cx: 0.50, mouthY: 0.47, faceW: 0.22 },
-    meera_kapoor:    { cx: 0.50, mouthY: 0.475, faceW: 0.16 },
-    alexander_hayes: { cx: 0.50, mouthY: 0.50, faceW: 0.28 },
-    sofia_reyes:     { cx: 0.50, mouthY: 0.56, faceW: 0.14 },
-    marcus_cole:     { cx: 0.50, mouthY: 0.48, faceW: 0.28 }
-  };
+  const VISEME_ID = { closed: 0, rest: 1, wide: 2, open: 3, round: 4, teeth: 5 };
 
-  const visemeOpen = {};
-  Object.keys(LANDMARKS).forEach(function (id) {
+  const visemeBank = {};
+  function loadImg(src) {
     const img = new Image();
-    img.src = "assets/viseme_open_" + id + ".jpg";
-    visemeOpen[id] = img;
+    img.src = src;
+    return img;
+  }
+  Object.keys(LANDMARKS).forEach(function (id) {
+    visemeBank[id] = {
+      A: loadImg("assets/viseme_open_" + id + ".jpg"),
+      E: loadImg("assets/viseme_E_" + id + ".jpg"),
+      O: loadImg("assets/viseme_O_" + id + ".jpg"),
+      F: loadImg("assets/viseme_F_" + id + ".jpg")
+    };
   });
+
+  function ready(img) {
+    return !!(img && img.complete && img.naturalWidth > 0);
+  }
 
   function marks(profile) {
     return LANDMARKS[profile?.id] || profile?.face || { cx: 0.5, eyeY: 0.26, mouthY: 0.34, chinY: 0.39, faceW: 0.14 };
   }
 
   window.visemeForChar = function visemeForChar(ch) {
-    if (!ch || /\s/.test(ch)) return { open: 0.06, width: 1, shape: "rest" };
+    if (!ch || /\s/.test(ch)) return { open: 0.05, width: 1, shape: "rest" };
     const c = String(ch).toUpperCase();
     const raw = String(ch);
-    if (/[MBP]/.test(c) || /[मपबभप]/.test(raw) || /[ಮಪಬಭ]/.test(raw) || /[மபப]/.test(raw) || /[మపబభ]/.test(raw))
-      return { open: 0.02, width: 0.78, shape: "closed" };
+    if (/[MBP]/.test(c) || /[मपबभ]/.test(raw) || /[ಮಪಬ]/.test(raw) || /[மப]/.test(raw) || /[మపబ]/.test(raw))
+      return { open: 0, width: 0.8, shape: "closed" };
     if (/[FV]/.test(c) || /[फव]/.test(raw))
-      return { open: 0.22, width: 1.08, shape: "teeth" };
+      return { open: 0.25, width: 1.05, shape: "teeth" };
     if (/[AÁÀÂÄĀ]/.test(c) || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw))
-      return { open: 0.9, width: 1.1, shape: "open" };
-    if (/[EÉÈÊËIÍÌÎÏY]/.test(c) || /[इईएऐिीेै]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீ]/.test(raw))
-      return { open: 0.45, width: 1.22, shape: "wide" };
-    if (/[OÓÒÔÖUÚÙÛÜ]/.test(c) || /[उऊओऔुूोौ]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw))
-      return { open: 0.7, width: 0.72, shape: "round" };
-    return { open: 0.28, width: 1.0, shape: "rest" };
+      return { open: 0.85, width: 1.08, shape: "open" };
+    if (/[EÉÈÊËIÍÌÎÏY]/.test(c) || /[इईएऐिीेै]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீ]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
+      return { open: 0.4, width: 1.22, shape: "wide" };
+    if (/[OÓÒÔÖUÚÙÛÜW]/.test(c) || /[उऊओऔुूोौ]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw) || /[ఉఊఒఓుూొో]/.test(raw))
+      return { open: 0.65, width: 0.7, shape: "round" };
+    return { open: 0.22, width: 1, shape: "rest" };
   };
 
   function lettersOf(word) {
@@ -63,13 +65,34 @@
     return out;
   }
 
+  window.wordToVisemes = function wordToVisemes(word) {
+    return lettersOf(word).map(function (ch) {
+      const v = window.visemeForChar(ch);
+      return { char: ch, viseme: v.shape, id: VISEME_ID[v.shape] ?? 1, open: v.open };
+    });
+  };
+
+  window.wordToVec = function wordToVec(word) {
+    const vec = [0, 0, 0, 0, 0, 0];
+    const seq = window.wordToVisemes(word);
+    seq.forEach(function (x) { vec[x.id] += 1; });
+    const n = seq.length || 1;
+    return vec.map(function (x) { return x / n; });
+  };
+
+  window.scriptToVisemeVec = function scriptToVisemeVec(text) {
+    return String(text || "").split(/\s+/).filter(Boolean).map(function (w) {
+      return { word: w, visemes: window.wordToVisemes(w), vec: window.wordToVec(w) };
+    });
+  };
+
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
     if (!speaking) {
-      state.visemeMouthOpen *= 0.75;
+      state.visemeMouthOpen *= 0.7;
       if (state.visemeMouthOpen < 0.04) state.visemeMouthOpen = 0;
-      state.visemeMouthWidth = 1;
-      state.visemeShape = "rest";
+      state.visemeShape = "closed";
+      state.currentLetter = "";
       return;
     }
     const words = state.scriptWords || [];
@@ -77,13 +100,16 @@
     if (state._visemeWord !== idx) {
       state._visemeWord = idx;
       state.letterPhase = 0;
+      const w = words[idx] || "";
+      state.currentWordVec = window.wordToVec(w);
     }
     const letters = lettersOf(words[idx] || "");
-    state.letterPhase = (state.letterPhase || 0) + delta * 7 * (state.speechRate || 1);
+    state.letterPhase = (state.letterPhase || 0) + delta * 8 * (state.speechRate || 1);
     const ch = letters.length ? letters[Math.floor(state.letterPhase) % letters.length] : "A";
     const v = window.visemeForChar(ch);
-    state.visemeMouthOpen += (v.open - (state.visemeMouthOpen || 0)) * 0.5;
-    state.visemeMouthWidth += (v.width - (state.visemeMouthWidth || 1)) * 0.5;
+    state.currentLetter = ch;
+    state.visemeMouthOpen += (v.open - (state.visemeMouthOpen || 0)) * 0.55;
+    state.visemeMouthWidth += (v.width - (state.visemeMouthWidth || 1)) * 0.55;
     state.visemeShape = v.shape;
   }
 
@@ -97,7 +123,20 @@
     driveLetterVisemes(delta);
   };
 
-  function cropParams(img, f, w, h) {
+  function pickVisemePhoto(profile, shape) {
+    const base = profile.asset ? assetImages[profile.asset] : null;
+    const bank = visemeBank[profile.id] || {};
+    if (shape === "closed" || !shape) return base;
+    if (shape === "wide" && ready(bank.E)) return bank.E;
+    if (shape === "round" && ready(bank.O)) return bank.O;
+    if (shape === "teeth" && ready(bank.F)) return bank.F;
+    if (ready(bank.A)) return bank.A;
+    if (ready(bank.O)) return bank.O;
+    if (ready(bank.E)) return bank.E;
+    return base;
+  }
+
+  function cropAndDraw(img, f, w, h) {
     const nw = img.naturalWidth;
     const nh = img.naturalHeight;
     const headTop = Math.max(0, (f.eyeY || 0.26) - 0.16);
@@ -114,65 +153,24 @@
     if (sx + srcW > nw) sx = Math.max(0, nw - srcW);
     if (sy < 0) sy = 0;
     if (sy + srcH > nh) sy = Math.max(0, nh - srcH);
-    return { nw, nh, sx, sy, srcW, srcH };
-  }
-
-  function compositeRealMouth(profile, base, f, crop, w, h, vis) {
-    const openImg = visemeOpen[profile.id];
-    if (!openImg || !openImg.complete || !openImg.naturalWidth) return;
-    if (vis.shape === "closed" || vis.open < 0.14) return;
-
-    const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
-    const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
-    const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-
-    const om = OPEN_MOUTH[profile.id] || { cx: 0.5, mouthY: 0.5, faceW: 0.25 };
-    const onw = openImg.naturalWidth;
-    const onh = openImg.naturalHeight;
-    const pW = Math.max(8, om.faceW * onw * 0.34);
-    const pH = Math.max(6, om.faceW * onw * 0.22);
-    const pX = om.cx * onw - pW / 2;
-    const pY = om.mouthY * onh - pH * 0.42;
-    if (pX < 0 || pY < 0 || pX + pW > onw || pY + pH > onh) return;
-
-    let dW = faceW * 0.22 * (vis.width || 1);
-    let dH = faceW * 0.085;
-    if (vis.shape === "open") dH = faceW * (0.07 + 0.05 * vis.open);
-    else if (vis.shape === "round") { dW = faceW * 0.16; dH = faceW * 0.11; }
-    else if (vis.shape === "wide") { dW = faceW * 0.26; dH = faceW * 0.065; }
-    else if (vis.shape === "teeth") { dW = faceW * 0.23; dH = faceW * 0.07; }
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(mx, my, dW * 0.5, dH * 0.55, 0, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(openImg, pX, pY, pW, pH, mx - dW / 2, my - dH * 0.42, dW, dH);
-    ctx.restore();
+    ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
   }
 
   function drawPhotorealReader(profile, w, h) {
-    const img = profile.asset ? assetImages[profile.asset] : null;
-    if (!img || !img.complete || !img.naturalWidth) return false;
+    const base = profile.asset ? assetImages[profile.asset] : null;
+    if (!base || !base.complete || !base.naturalWidth) return false;
 
     const f = marks(profile);
     const speaking = !!(typeof state !== "undefined" && state.isSpeaking && !state.isPaused);
-    const vis = {
-      open: state.visemeMouthOpen || 0,
-      width: state.visemeMouthWidth || 1,
-      shape: state.visemeShape || "rest"
-    };
-    const breath = Math.sin(state.breathPhase || 0) * (speaking ? 1.2 : 0.4);
+    const shape = speaking ? (state.visemeShape || "open") : "closed";
+    const img = pickVisemePhoto(profile, shape) || base;
+    const breath = Math.sin(state.breathPhase || 0) * (speaking ? 1.1 : 0.4);
 
     ctx.save();
     ctx.translate(0, breath);
     ctx.imageSmoothingEnabled = true;
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
-
-    const crop = cropParams(img, f, w, h);
-    ctx.drawImage(img, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-
-    if (speaking) compositeRealMouth(profile, img, f, crop, w, h, vis);
-
+    cropAndDraw(img, f, w, h);
     ctx.restore();
     return true;
   }
