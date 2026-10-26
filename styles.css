@@ -1438,7 +1438,9 @@ body.dark-theme {
 .chat-hub-viewport {
     display: flex;
     flex-direction: column;
-    height: 480px;
+    flex: 1;
+    min-height: 420px;
+    height: 100%;
     background: linear-gradient(180deg, rgba(13, 17, 26, 0.95) 0%, rgba(20, 26, 41, 0.95) 100%);
     border-radius: 10px;
     border: 1px solid rgba(0, 210, 255, 0.2);
@@ -1509,13 +1511,54 @@ body.dark-theme {
 }
 
 .hub-messages-box {
-    flex: 1;
+    flex: 0 1 180px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding-right: 6px;
     margin-bottom: 10px;
+    min-height: 90px;
+}
+
+.hub-composer {
+    flex: 1;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #071018;
+    border: 1px solid rgba(0, 210, 255, 0.45);
+    border-radius: 12px;
+    padding: 12px;
+}
+.hub-editor {
+    flex: 1;
+    min-height: 120px !important;
+    width: 100% !important;
+    color: #ffffff !important;
+    background: #0b1220 !important;
+    border: 1px solid rgba(0, 210, 255, 0.35) !important;
+    font-size: 1rem !important;
+    line-height: 1.45;
+    resize: vertical;
+}
+.hub-composer-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.hub-send-btn {
+    width: auto !important;
+    min-width: 220px;
+    height: 42px;
+    padding: 0 18px;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+.hub-hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
 }
 
 .hub-input-row {
@@ -1526,15 +1569,12 @@ body.dark-theme {
 
 .hub-input {
     flex: 1;
-    height: 38px;
-    font-size: 0.82rem;
-}
-
-.hub-send-btn {
-    height: 38px;
-    padding: 0 16px;
-    white-space: nowrap;
-    font-size: 0.8rem;
+    min-width: 0;
+    width: auto !important;
+    height: 42px;
+    font-size: 0.9rem;
+    color: #fff !important;
+    background: #0b1220 !important;
 }
 
 /* Screen Loading Overlay */

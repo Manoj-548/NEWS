@@ -469,21 +469,19 @@
                 </button>
             </div>
 
-            <!-- Chat Conversation Feed -->
             <div id="hubChatMessages" class="hub-messages-box">
                 <div class="chat-msg bot-msg">
-                    👋 <strong>Welcome to AI News Intelligence Hub!</strong><br>
-                    I am your AI News Presenter assistant. I can research, translate, and format news in 28+ languages (including Kannada, Hindi, Tamil, Telugu, Marathi, Gujarati, etc.).<br><br>
-                    Type a query or click a quick prompt chip above to generate an instant teleprompter news script for your 3D Humanoid Anchor!
+                    👋 <strong>NEXUS News Desk AI</strong> — ask for a bulletin in any language. I will write a presenter script and the on-air anchor will read it.
                 </div>
             </div>
 
-            <!-- Chat Input Controls -->
-            <div class="hub-input-row">
-                <input type="text" id="hubChatInput" class="form-input hub-input" placeholder="Ask AI news question (e.g., 'Summarize ISRO space news in Kannada')...">
-                <button id="hubSendBtn" class="btn-action primary hub-send-btn">
-                    <i class="fa-solid fa-paper-plane"></i> Ask AI & Generate Script
-                </button>
+            <div class="hub-composer">
+                <label class="form-label" for="hubChatInput">Type your news question here</label>
+                <textarea id="hubChatInput" class="form-textarea hub-editor" rows="6" placeholder="Example: Breaking news on ISRO Gaganyaan in Hindi. Or: 2-minute world markets bulletin in English."></textarea>
+                <div class="hub-composer-actions">
+                    <button id="hubSendBtn" class="btn-action primary hub-send-btn" type="button">Ask AI &amp; Broadcast</button>
+                    <span class="hub-hint">Ctrl+Enter to send · script goes to the anchor</span>
+                </div>
             </div>
         </div>
 

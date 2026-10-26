@@ -1128,6 +1128,78 @@ function handleAiChatQuery() {
     handleHubChatQuery(q);
 }
 
+function detectNewsLanguage(q) {
+    const s = q.toLowerCase();
+    const rules = [
+        ["kannada", "kn-IN"], ["ಕನ್ನಡ", "kn-IN"],
+        ["tamil", "ta-IN"], ["தமிழ்", "ta-IN"],
+        ["telugu", "te-IN"], ["తెలుగు", "te-IN"],
+        ["hindi", "hi-IN"], ["हिन्दी", "hi-IN"], ["हिंदी", "hi-IN"],
+        ["bengali", "bn-IN"], ["বাংলা", "bn-IN"],
+        ["marathi", "mr-IN"], ["मराठी", "mr-IN"],
+        ["gujarati", "gu-IN"], ["ગુજરાતી", "gu-IN"],
+        ["malayalam", "ml-IN"], ["മലയാളം", "ml-IN"],
+        ["punjabi", "pa-IN"], ["ਪੰਜਾਬੀ", "pa-IN"],
+        ["urdu", "ur-IN"],
+        ["spanish", "es-ES"], ["french", "fr-FR"], ["german", "de-DE"],
+        ["japanese", "ja-JP"], ["mandarin", "zh-CN"], ["chinese", "zh-CN"],
+        ["arabic", "ar-SA"], ["english", "en-IN"]
+    ];
+    for (const [k, lang] of rules) {
+        if (s.includes(k)) return lang;
+    }
+    return state.currentLanguage || "en-IN";
+}
+
+function buildNewsBrief(query) {
+    const lang = detectNewsLanguage(query);
+    const q = query.toLowerCase();
+    const briefs = {
+        isro: {
+            title: "ISRO Gaganyaan — Mission Desk",
+            en: "Good evening. This is the space desk. ISRO reports the Gaganyaan crew module has cleared high-altitude abort and re-entry tests. Officials say human spaceflight preparations remain on schedule. We will bring you the next window as soon as it is confirmed.",
+            hi: "नमस्कार। अंतरिक्ष डेस्क से इस समय की बड़ी खबर। इसरो ने गगनयान क्रू मॉड्यूल के उच्च ऊंचाई abort और री-एंट्री परीक्षण पूरे होने की पुष्टि की है। मानव अंतरिक्ष उड़ान की तैयारी निर्धारित समय पर है।"
+        },
+        chip: {
+            title: "India Semiconductor & AI Mission",
+            en: "Good evening from the technology desk. India has opened new semiconductor fabrication lines under the national chips mission. Officials say the plants will supply AI processors and auto-grade electronics. More on capacity and jobs as the numbers are released.",
+            hi: "नमस्कार। टेक्नोलॉजी डेस्क से। भारत के सेमीकंडक्टर मिशन के तहत नई चिप फैब्रिकेशन लाइनें उत्पादन शुरू कर चुकी हैं। इन संयंत्रों से एआई प्रोसेसर और ऑटो इलेक्ट्रॉनिक्स बनेंगे।"
+        },
+        market: {
+            title: "Markets & Economy Close",
+            en: "In business news, global indices finished mixed as investors weighed inflation data and central bank guidance. Indian benchmarks tracked the wider Asian session. We will return with the closing numbers and the rupee.",
+            hi: "कारोबार की खबर। वैश्विक बाजार मिश्रित बंद हुए। भारतीय सूचकांक एशियाई सत्र के साथ चले। समापन आंकड़े और रुपये की स्थिति के साथ हम लौटेंगे।"
+        },
+        cricket: {
+            title: "Sports Desk — Cricket",
+            en: "On the sports desk, international cricket continues with tight contests and record crowds. Selectors will name the next squad shortly. Stay with us for scores and the dressing-room reaction.",
+            hi: "खेल डेस्क। अंतरराष्ट्रीय क्रिकेट में कड़े मुकाबले और रिकॉर्ड भीड़ देखी जा रही है। अगले स्क्वाड का ऐलान जल्द होगा।"
+        },
+        world: {
+            title: "World News Tonight",
+            en: "Turning to international headlines. Diplomats are working a new climate and energy framework while markets watch the security picture. We will stay on this story through the night.",
+            hi: "अंतरराष्ट्रीय सुर्खियां। जलवायु और ऊर्जा पर नई रूपरेखा की चर्चा जारी है। हम इस खबर पर पूरे प्रसारण में बने रहेंगे।"
+        }
+    };
+
+    let key = "world";
+    if (q.includes("isro") || q.includes("gaganyaan") || q.includes("space") || q.includes("चंद्र") || q.includes("इसरो")) key = "isro";
+    else if (q.includes("semi") || q.includes("chip") || q.includes("ai") || q.includes("सेमी") || q.includes("एआई")) key = "chip";
+    else if (q.includes("market") || q.includes("stock") || q.includes("sensex") || q.includes("nifty") || q.includes("बाजार")) key = "market";
+    else if (q.includes("cricket") || q.includes("sport") || q.includes("क्रिकेट")) key = "cricket";
+
+    const pack = briefs[key];
+    const native = {
+        "hi-IN": pack.hi, "kn-IN": pack.hi, "ta-IN": pack.hi, "te-IN": pack.hi,
+        "bn-IN": pack.hi, "mr-IN": pack.hi, "gu-IN": pack.hi, "ml-IN": pack.hi, "pa-IN": pack.hi
+    };
+    let script = native[lang] || pack.en;
+    if (query.length > 12 && !q.includes("summarize")) {
+        script += " You asked: " + query.replace(/\s+/g, " ").slice(0, 180) + ". We are treating that as tonight's lead.";
+    }
+    return { title: pack.title, script, lang, category: "News Desk AI" };
+}
+
 function handleHubChatQuery(queryText) {
     const container = document.getElementById("hubChatMessages") || document.getElementById("aiChatMessages");
     const input = document.getElementById("hubChatInput");
@@ -1138,11 +1210,9 @@ function handleHubChatQuery(queryText) {
     const live = document.getElementById("liveChatInput");
     if (live) live.value = "";
     if (!container) {
-        loadStoryIntoTeleprompter({
-            title: "AI News Briefing",
-            script: query,
-            category: "AI Chat"
-        });
+        const brief0 = buildNewsBrief(query);
+        loadStoryIntoTeleprompter({ title: brief0.title, script: brief0.script, category: brief0.category });
+        switchBroadcastLanguage(brief0.lang);
         startNewsBroadcast();
         return;
     }
@@ -1154,47 +1224,17 @@ function handleHubChatQuery(queryText) {
     container.appendChild(userMsg);
     container.scrollTop = container.scrollHeight;
 
-    // 2. Generate Multi-lingual AI Response Script
     setTimeout(() => {
+        const brief = buildNewsBrief(query);
         const botMsg = document.createElement("div");
         botMsg.className = "chat-msg bot-msg";
-
-        let responseTitle = "AI News Intelligence Briefing";
-        let responseScript = "";
-        let targetLang = "hi-IN";
-
-        const lowerQ = query.toLowerCase();
-
-        if (lowerQ.includes("kannada") || lowerQ.includes("ಕನ್ನಡ") || lowerQ.includes("isro")) {
-            targetLang = "kn-IN";
-            responseTitle = "ISRO Gaganyaan Mission Briefing (Kannada)";
-            responseScript = "ನಮಸ್ಕಾರ. ಇಂದಿನ ಪ್ರಮುಖ ವರದಿ. ಭಾರತೀಯ ಬಾಹ್ಯಾಕಾಶ ಸಂಶೋಧನಾ ಸಂಸ್ಥೆ ಈಸ್ರೋ ಗಗನನೌಕೆ ಯೋಜನೆಯ ಪರೀಕ್ಷೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಳಿಸಿದೆ. ಮುಂಬರುವ ಮಾನವ ಸಹಿತ ಬಾಹ್ಯಾಕಾಶ ಯಾನಕ್ಕೆ ಸಿದ್ಧತೆಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ.";
-            botMsg.innerHTML = `🤖 <strong>ISRO Mission Briefing (ಕನ್ನಡ - Kannada)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
-        } else if (lowerQ.includes("hindi") || lowerQ.includes("हिन्दी") || lowerQ.includes("semiconductor")) {
-            targetLang = "hi-IN";
-            responseTitle = "India AI & Semiconductor Briefing (Hindi)";
-            responseScript = "नमस्कार। आज के मुख्य समाचार। भारत में सेमीकंडक्टर और कृत्रिम बुद्धिमत्ता मिशन में बड़ी सफलता प्राप्त हुई है। नई चिप विनिर्माण इकाइयां देश में चिप उत्पादन शुरू कर चुकी हैं।";
-            botMsg.innerHTML = `🤖 <strong>AI Mission Briefing (हिन्दी - Hindi)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
-        } else if (lowerQ.includes("tamil") || lowerQ.includes("தமிழ்") || lowerQ.includes("quantum")) {
-            targetLang = "ta-IN";
-            responseTitle = "Quantum Tech Briefing (Tamil)";
-            responseScript = "வணக்கம். இன்றைய முக்கிய செய்திகள். செயற்கை நுண்ணறிவு மற்றும் சூப்பர் கம்ப்யூட்டிங் துறையில் விஞ்ஞானிகள் பெரும் சாதனை படைத்துள்ளனர். புதிய குவாண்டம் தொழில்நுட்பம் அறிமுகம் செய்யப்பட்டுள்ளது.";
-            botMsg.innerHTML = `🤖 <strong>Quantum Tech Briefing (தமிழ் - Tamil)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
-        } else if (lowerQ.includes("telugu") || lowerQ.includes("తెలుగు")) {
-            targetLang = "te-IN";
-            responseTitle = "AI Tech Summary (Telugu)";
-            responseScript = "నమస్కారం. నేటి ముఖ్యాంశాలు. కృత్రిమ మేధస్సు మరియు సూపర్ కంప్యూటింగ్ రంగంలో శాస్త్రవేత్తలు గొప్ప విజయాన్ని సాధించారు.";
-            botMsg.innerHTML = `🤖 <strong>AI Tech Briefing (తెలుగు - Telugu)</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
-        } else {
-            targetLang = "en-US";
-            responseTitle = `Global AI News Intelligence: "${query.substring(0, 30)}"`;
-            responseScript = `Good evening. Here is your AI news intelligence summary regarding "${query}". Research labs across global innovation hubs report major technological advancements, deep learning breakthroughs, and next-generation AI automation.`;
-            botMsg.innerHTML = `🤖 <strong>AI News Intelligence Briefing</strong>:<br>${responseScript}<br><br><button class="btn-sm btn-action primary mt-5" onclick="loadChatBriefingToTeleprompter('${responseTitle}', \`${responseScript}\`, '${targetLang}')"><i class="fa-solid fa-play"></i> 🚀 Send Script to 3D Robot & Broadcast Live</button>`;
-        }
-
+        botMsg.innerHTML = `<strong>${brief.title}</strong><br>${brief.script}<br><br><em>Sending this bulletin to the on-air anchor…</em>`;
         container.appendChild(botMsg);
         container.scrollTop = container.scrollHeight;
-    }, 500);
+        if (typeof loadChatBriefingToTeleprompter === "function") {
+            loadChatBriefingToTeleprompter(brief.title, brief.script, brief.lang);
+        }
+    }, 250);
 }
 
 // Global helper function for chat buttons
@@ -1855,22 +1895,17 @@ function renderAdvancedAnchor(profile, w, h) {
         return;
     }
 
-    // Locked-off studio camera: fill the frame, no wobble, no cartoon mouth.
-    const ir = img.naturalWidth / img.naturalHeight;
-    const cr = w / h;
-    let dw, dh, dx, dy;
-    if (ir > cr) {
-        dh = h;
-        dw = h * ir;
-        dx = (w - dw) / 2;
-        dy = 0;
-    } else {
-        dw = w;
-        dh = w / ir;
-        dx = 0;
-        dy = (h - dh) / 2;
-    }
-    ctx.drawImage(img, dx, dy, dw, dh);
+    // TV close-up: crop the still so the presenter fills the screen. No wobble, no cartoon mouth.
+    const zoom = profile.coverZoom || 1.28;
+    const fy = profile.coverY || 0.38;
+    const srcW = img.naturalWidth / zoom;
+    const srcH = img.naturalHeight / zoom;
+    let sx = (img.naturalWidth - srcW) / 2;
+    let sy = img.naturalHeight * fy - srcH / 2;
+    if (sy < 0) sy = 0;
+    if (sy + srcH > img.naturalHeight) sy = img.naturalHeight - srcH;
+    if (sx < 0) sx = 0;
+    ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
 }
 
 function drawPresenterLowerThird(profile, w, h) {
