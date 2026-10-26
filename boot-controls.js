@@ -61,6 +61,7 @@
         if (typeof startNewsBroadcast === "function") startNewsBroadcast();
       },
       sendAiChatBtn: () => { if (typeof handleAiChatQuery === "function") handleAiChatQuery(); },
+      liveChatSendBtn: () => { if (typeof handleAiChatQuery === "function") handleAiChatQuery(); },
       hubSendBtn: () => {
         const q = document.getElementById("hubChatInput")?.value;
         if (typeof handleHubChatQuery === "function") handleHubChatQuery(q);
@@ -132,5 +133,13 @@
 
   document.addEventListener("click", onClick, true);
   document.addEventListener("change", onChange, true);
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+      if (ev.target && (ev.target.id === "liveChatInput" || ev.target.id === "aiChatInput" || ev.target.id === "hubChatInput")) {
+        ev.preventDefault();
+        if (typeof handleAiChatQuery === "function") handleAiChatQuery();
+      }
+    }
+  });
   window.bindStudioDelegation = function () {};
 })();

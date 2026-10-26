@@ -441,8 +441,27 @@ body.dark-theme {
     color: white;
 }
 
+.tab-content {
+    display: none;
+}
 .tab-content.active {
     display: block;
+}
+
+.live-chat-dock {
+    background: #080c14;
+    border: 1px solid rgba(0, 210, 255, 0.35);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.live-chat-text {
+    min-height: 88px;
+    resize: vertical;
+    color: #ffffff !important;
+    background: #0b1220 !important;
+    border: 1px solid rgba(0, 210, 255, 0.35) !important;
+    font-size: 0.85rem !important;
 }
 
 /* AI Chat Assistant UI */

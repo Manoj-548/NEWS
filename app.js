@@ -1107,10 +1107,12 @@ function translateStoryScript(story, targetLang) {
 
 // 💬 Main Viewport AI Chat Intelligence Hub Handler (Center Screen)
 function handleAiChatQuery() {
+    const live = document.getElementById("liveChatInput");
     const input = document.getElementById("aiChatInput");
-    const q = (input && input.value) ? input.value.trim() : "";
+    const hub = document.getElementById("hubChatInput");
+    const q = ((live && live.value) || (input && input.value) || (hub && hub.value) || "").trim();
     if (!q) {
-        studioToast("Type a news question first");
+        studioToast("Type a news question in the AI Chat box");
         return;
     }
     const left = document.getElementById("aiChatMessages");
@@ -1120,16 +1122,30 @@ function handleAiChatQuery() {
         userMsg.textContent = q;
         left.appendChild(userMsg);
     }
+    if (live) live.value = "";
+    if (input) input.value = "";
+    if (hub) hub.value = "";
     handleHubChatQuery(q);
 }
 
 function handleHubChatQuery(queryText) {
-    const container = document.getElementById("hubChatMessages");
+    const container = document.getElementById("hubChatMessages") || document.getElementById("aiChatMessages");
     const input = document.getElementById("hubChatInput");
-    if (!queryText || !queryText.trim() || !container) return;
+    if (!queryText || !queryText.trim()) return;
 
     const query = queryText.trim();
     if (input) input.value = "";
+    const live = document.getElementById("liveChatInput");
+    if (live) live.value = "";
+    if (!container) {
+        loadStoryIntoTeleprompter({
+            title: "AI News Briefing",
+            script: query,
+            category: "AI Chat"
+        });
+        startNewsBroadcast();
+        return;
+    }
 
     // 1. Append User Query Message
     const userMsg = document.createElement("div");
@@ -1611,14 +1627,15 @@ function drawMaleAnchorModel() {
     const w = canvas.width;
     const h = canvas.height;
     const profile = getAnchorProfile(state.anchorModel);
-    ctx.save();
-    const breathY = Math.sin(state.breathPhase) * 2.5;
-    const sway = (state.shoulderSway || 0) * 0.4;
-    ctx.translate(w / 2 + sway, h / 2 + breathY);
-    ctx.rotate((state.headTilt * Math.PI) / 180);
-    ctx.translate(-w / 2 - sway, -h / 2 - breathY);
-    renderAdvancedAnchor(profile, w, h);
-    ctx.restore();
+    if (profile.kind === "robot") {
+        ctx.save();
+        const breathY = Math.sin(state.breathPhase) * 2;
+        ctx.translate(0, breathY);
+        renderAdvancedAnchor(profile, w, h);
+        ctx.restore();
+    } else {
+        renderAdvancedAnchor(profile, w, h);
+    }
     drawPresenterLowerThird(profile, w, h);
 }
 
@@ -1838,62 +1855,22 @@ function renderAdvancedAnchor(profile, w, h) {
         return;
     }
 
-    const speaking = state.isSpeaking && !state.isPaused;
-    const zoom = speaking ? (1.015 + state.visemeMouthOpen * 0.01) : 1.0;
-    const aspect = img.naturalWidth / img.naturalHeight;
-    let renderH = h * 1.04 * zoom;
-    let renderW = renderH * aspect;
-    if (renderW < w) {
-        renderW = w * zoom;
-        renderH = renderW / aspect;
+    // Locked-off studio camera: fill the frame, no wobble, no cartoon mouth.
+    const ir = img.naturalWidth / img.naturalHeight;
+    const cr = w / h;
+    let dw, dh, dx, dy;
+    if (ir > cr) {
+        dh = h;
+        dw = h * ir;
+        dx = (w - dw) / 2;
+        dy = 0;
+    } else {
+        dw = w;
+        dh = w / ir;
+        dx = 0;
+        dy = (h - dh) / 2;
     }
-    const x = (w - renderW) / 2 + (state.gazeX || 0) * 10;
-    const y = h - renderH + 10;
-
-    ctx.drawImage(img, x, y, renderW, renderH);
-
-    const face = profile.face || {};
-    const fx = x + renderW * (face.cx || 0.5);
-    const fyMouth = y + renderH * (face.mouthY || 0.40);
-    const fyEye = y + renderH * (face.eyeY || 0.32);
-    const faceW = renderW * (face.faceW || 0.15);
-
-    if (state.eyeBlink > 0.2) {
-        ctx.fillStyle = "rgba(18, 10, 8, " + Math.min(0.8, state.eyeBlink) + ")";
-        const ew = faceW * 0.17;
-        const eh = 3 + state.eyeBlink * 6;
-        const spread = faceW * 0.21;
-        ctx.beginPath();
-        ctx.ellipse(fx - spread, fyEye, ew, eh, 0, 0, Math.PI * 2);
-        ctx.ellipse(fx + spread, fyEye, ew, eh, 0, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    if (speaking && state.visemeMouthOpen > 0.12) {
-        const mw = faceW * 0.14 * state.visemeMouthWidth;
-        const mh = 2.5 + state.visemeMouthOpen * 9;
-        ctx.fillStyle = "rgba(70, 16, 24, " + (0.18 + state.visemeMouthOpen * 0.28) + ")";
-        ctx.beginPath();
-        ctx.ellipse(fx, fyMouth, mw, mh, 0, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    if (profile.kind === "human_bot") {
-        const pulse = 0.25 + Math.sin(Date.now() / 180) * 0.2;
-        ctx.strokeStyle = "rgba(0, 245, 212, " + pulse + ")";
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.moveTo(fx - faceW * 0.30, fyEye - 10);
-        ctx.quadraticCurveTo(fx - faceW * 0.18, fyEye - 4, fx - faceW * 0.10, fyEye);
-        ctx.moveTo(fx + faceW * 0.30, fyEye - 10);
-        ctx.quadraticCurveTo(fx + faceW * 0.18, fyEye - 4, fx + faceW * 0.10, fyEye);
-        ctx.stroke();
-        ctx.fillStyle = "rgba(0, 245, 212, " + (0.15 + pulse * 0.35) + ")";
-        ctx.beginPath();
-        ctx.arc(fx - faceW * 0.21, fyEye, 2.2, 0, Math.PI * 2);
-        ctx.arc(fx + faceW * 0.21, fyEye, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-    }
+    ctx.drawImage(img, dx, dy, dw, dh);
 }
 
 function drawPresenterLowerThird(profile, w, h) {
