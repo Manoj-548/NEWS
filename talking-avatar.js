@@ -1,4 +1,4 @@
-/* Photoreal presenters. Mouth sits on the real lips. Visemes follow each letter/word. */
+/* Photoreal presenters. No sticker mouth — only the photo’s own lips move. */
 (function () {
   const LANDMARKS = {
     nova_kade:       { cx: 0.50, eyeY: 0.250, mouthY: 0.329, chinY: 0.385, faceW: 0.14 },
@@ -34,7 +34,7 @@
     if (c === "R" || /[रऱ]/.test(raw))
       return { open: 0.24, width: 0.95, shape: "rest" };
 
-    if (/[AÁÀÂÄĀ]/.test(c) || /[अआााा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw) || /[അആാ]/.test(raw))
+    if (/[AÁÀÂÄĀ]/.test(c) || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw) || /[അആാ]/.test(raw))
       return { open: 0.78, width: 1.1, shape: "open" };
     if (/[EÉÈÊËIÍÌÎÏY]/.test(c) || /[इईएऐिीेैयेी]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீய]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
       return { open: 0.34, width: 1.26, shape: "wide" };
@@ -77,9 +77,7 @@
     const rate = 7 * (state.speechRate || 1);
     state.letterPhase = (state.letterPhase || 0) + delta * rate;
     let ch = "A";
-    if (letters.length) {
-      ch = letters[Math.floor(state.letterPhase) % letters.length];
-    }
+    if (letters.length) ch = letters[Math.floor(state.letterPhase) % letters.length];
     state.currentLetter = ch;
     const v = window.visemeForChar(ch);
     const k = 0.5;
@@ -98,38 +96,37 @@
     driveLetterVisemes(delta);
   };
 
-  function drawLetterViseme(mx, my, faceW, vis) {
+  function warpPhotoLips(img, f, nw, nh, sx, sy, srcW, srcH, w, h, vis) {
     const open = vis.open || 0;
     const shape = vis.shape || "rest";
-    if (open < 0.07 || shape === "closed") return;
+    if (open < 0.08 || shape === "closed") return;
 
-    const lipW = Math.max(8, faceW * 0.17 * (vis.width || 1));
-    let gapW = lipW * 0.4;
-    let gapH = lipW * 0.18;
-    if (shape === "open") { gapW = lipW * 0.42; gapH = lipW * 0.28 * open; }
-    else if (shape === "round") { gapW = lipW * 0.28; gapH = lipW * 0.3; }
-    else if (shape === "wide") { gapW = lipW * 0.5; gapH = lipW * 0.13; }
-    else if (shape === "teeth") { gapW = lipW * 0.46; gapH = lipW * 0.12; }
-    else { gapW = lipW * 0.38; gapH = lipW * 0.16 * Math.max(0.4, open); }
+    const mx = ((f.cx * nw - sx) / srcW) * w;
+    const my = ((f.mouthY * nh - sy) / srcH) * h;
 
-    gapH = Math.max(1.6, gapH);
-    gapW = Math.max(3, gapW);
+    const sW = Math.max(10, f.faceW * nw * 0.46);
+    const sH = Math.max(8, f.faceW * nw * 0.24);
+    const sX = f.cx * nw - sW / 2;
+    const sY = f.mouthY * nh - sH * 0.42;
+    if (sX < 0 || sY < 0 || sX + sW > nw || sY + sH > nh) return;
+
+    let stretch = 1 + Math.min(1, open) * 0.28;
+    let wMul = vis.width || 1;
+    if (shape === "open") stretch = 1 + open * 0.42;
+    else if (shape === "round") { stretch = 1 + open * 0.34; wMul = 0.88; }
+    else if (shape === "wide") { stretch = 1 + open * 0.2; wMul = 1.1; }
+    else if (shape === "teeth") stretch = 1 + open * 0.16;
+
+    const dW = (sW / srcW) * w * wMul;
+    const dH = (sH / srcH) * h * stretch;
+    const dX = mx - dW / 2;
+    const dY = my - dH * 0.4;
 
     ctx.save();
-    ctx.fillStyle = "rgba(42, 16, 18, 0.72)";
-    ctx.strokeStyle = "rgba(154, 72, 80, 0.9)";
-    ctx.lineWidth = Math.max(1.4, faceW * 0.011);
     ctx.beginPath();
-    ctx.ellipse(mx, my, gapW, gapH, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    if (shape === "teeth" || (shape === "open" && open > 0.45)) {
-      ctx.fillStyle = "rgba(243, 236, 228, 0.92)";
-      const tw = gapW * 1.45;
-      const th = Math.max(1.4, Math.min(gapH * 0.45, faceW * 0.018));
-      ctx.fillRect(mx - tw / 2, my - gapH * 0.55, tw, th);
-    }
+    ctx.ellipse(mx, my + (stretch - 1) * dH * 0.1, dW * 0.48, dH * 0.46, 0, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, sX, sY, sW, sH, dX, dY, dW, dH);
     ctx.restore();
   }
 
@@ -142,7 +139,7 @@
     const nh = img.naturalHeight;
     const speaking = !!(typeof state !== "undefined" && state.isSpeaking && !state.isPaused);
     const vis = {
-      open: speaking ? (state.visemeMouthOpen || 0) : (state.visemeMouthOpen || 0),
+      open: state.visemeMouthOpen || 0,
       width: state.visemeMouthWidth || 1,
       shape: state.visemeShape || "rest"
     };
@@ -170,11 +167,8 @@
 
     ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
 
-    if (vis.open > 0.07 && vis.shape !== "closed") {
-      const mx = ((f.cx * nw - sx) / srcW) * w;
-      const my = ((f.mouthY * nh - sy) / srcH) * h;
-      const faceW = (f.faceW * nw / srcW) * w;
-      drawLetterViseme(mx, my, faceW, vis);
+    if (speaking) {
+      warpPhotoLips(img, f, nw, nh, sx, sy, srcW, srcH, w, h, vis);
     }
 
     ctx.restore();
