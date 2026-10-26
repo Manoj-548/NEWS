@@ -83,7 +83,9 @@ const server = http.createServer((req, res) => {
         const ext = path.extname(filePath).toLowerCase();
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
         const extra = {
-            'Cache-Control': ext === '.html' ? 'no-store, no-cache, must-revalidate' : 'public, max-age=60'
+            'Cache-Control': (ext === '.html' || ext === '.js' || ext === '.css')
+                ? 'no-store, no-cache, must-revalidate'
+                : 'public, max-age=60'
         };
 
         if (method === 'HEAD') {

@@ -2029,20 +2029,7 @@ function drawProceduralMaleAnchor(w, h) {
     ctx.fillRect(centerX - 42, bodyY - 82, 30, 5);
     ctx.fillRect(centerX + 12, bodyY - 82, 30, 5);
 
-    // 5. Dynamic Mouth Viseme Sync
-    const mouthY = bodyY - 28;
-    ctx.fillStyle = "#9f1239";
-    if (state.isSpeaking && state.visemeMouthOpen > 0) {
-        ctx.beginPath();
-        ctx.ellipse(centerX, mouthY, 18 * state.visemeMouthWidth, 10 * state.visemeMouthOpen, 0, 0, Math.PI * 2);
-        ctx.fill();
-    } else {
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = "#9f1239";
-        ctx.beginPath();
-        ctx.arc(centerX, mouthY - 4, 15, 0.2, Math.PI - 0.2);
-        ctx.stroke();
-    }
+    // No painted mouth on a photoreal / procedural face.
 }
 
 // 4. Draw Lower Thirds & Scrolling News Ticker
