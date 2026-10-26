@@ -109,9 +109,13 @@
                 <div class="live-chat-dock">
                     <label class="form-label" for="liveChatInput">AI Chat — type here, then the anchor reads it</label>
                     <textarea id="liveChatInput" class="form-textarea live-chat-text" rows="4" placeholder="Type a news question or script, e.g. Summarize today's ISRO news in Hindi..."></textarea>
-                    <button id="liveChatSendBtn" class="btn-action primary" type="button">
-                        Ask AI &amp; Have Anchor Read It
-                    </button>
+                    <div class="chat-action-row">
+                        <button id="voiceChatBtn" class="btn-action" type="button">🎤 Voice chat</button>
+                        <button id="liveChatSendBtn" class="btn-action primary" type="button">Ask AI &amp; Have Anchor Read It</button>
+                    </div>
+                    <button id="ingestNewsBtn" class="btn-action" type="button">🌍 Fetch today's live world news</button>
+                    <div id="liveNewsStatus" class="hub-hint">Live wire idle</div>
+                    <button id="makeYtVideoBtn" class="btn-action primary" type="button">🎬 Make YouTube news video</button>
                 </div>
 
                 <div class="feed-tabs">
@@ -569,6 +573,8 @@
 
     <div id="studioToast" class="studio-toast hidden"></div>
     <script src="app.js"></script>
+    <script src="talking-avatar.js"></script>
+    <script src="news-desk.js"></script>
     <script src="boot-controls.js"></script>
     <script src="fix-news-ui.js"></script>
     <script>

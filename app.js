@@ -1351,6 +1351,10 @@ function startNewsBroadcast() {
     currentUtterance.rate = state.speechRate;
     currentUtterance.pitch = state.speechPitch;
     currentUtterance.volume = state.volume;
+    const gender = document.getElementById("voiceGenderSelect")?.value || getAnchorProfile?.(state.anchorModel)?.gender || "male";
+    if (typeof pickVoiceForLanguage === "function") {
+        state.currentVoice = pickVoiceForLanguage(state.currentLanguage, gender) || state.currentVoice;
+    }
     if (state.currentVoice) currentUtterance.voice = state.currentVoice;
 
     currentUtterance.onboundary = (event) => {

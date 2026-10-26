@@ -455,6 +455,18 @@ body.dark-theme {
     padding: 10px;
     margin-bottom: 10px;
 }
+.chat-action-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.chat-action-row .btn-action { width: auto; flex: 1; }
+#voiceChatBtn.listening {
+    background: #ff3b30;
+    border-color: #ff3b30;
+    color: #fff;
+    animation: pulse 1s infinite;
+}
 .live-chat-text {
     min-height: 88px;
     resize: vertical;
