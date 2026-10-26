@@ -26,7 +26,7 @@ const state = {
     isPaused: false,
     
     // Visual & Canvas Model
-    anchorModel: "nexus_3d", // nexus_3d (3D Humanoid Robot by default), humanoid_creature, indian_ditto_male, indian_female, indian_ditto_exec, human_ditto_male
+    anchorModel: "nova_kade", // human-looking male news bot by default
     studioBg: "bg_modern",
     lightingTheme: "prime_blue", // prime_blue, red_alert, gold_luxury, cyber_neon
     aspectRatio: "16:9", // 16:9 or 9:16
@@ -38,8 +38,13 @@ const state = {
     visemeMouthOpen: 0, // 0 to 1
     visemeMouthWidth: 1, // 0.8 to 1.2
     eyeBlink: 0, // 0 to 1
-    headTilt: 0, // degrees
+    headTilt: 0,
     breathPhase: 0,
+    gazeX: 0,
+    shoulderSway: 0,
+    gesturePhase: 0,
+    resumeText: "",
+    userHasStarted: false,
     
     // Media Recording
     mediaRecorder: null,
@@ -154,6 +159,103 @@ const languageTranslations = {
     }
 };
 
+
+// --- Presenter catalog (names match the on-screen avatar) ---
+const ANCHOR_PROFILES = {
+    nova_kade: {
+        id: "nova_kade", name: "Kade Nova", short: "Kade",
+        title: "Human-Look Male News Bot", gender: "male", kind: "human_bot",
+        asset: "nova_kade", color: "#00f5d4",
+        face: { cx: 0.50, mouthY: 0.395, eyeY: 0.318, faceW: 0.15 }
+    },
+    lyra_nova: {
+        id: "lyra_nova", name: "Lyra Nova", short: "Lyra",
+        title: "Human-Look Female News Bot", gender: "female", kind: "human_bot",
+        asset: "lyra_nova", color: "#7dd3fc",
+        face: { cx: 0.50, mouthY: 0.40, eyeY: 0.322, faceW: 0.14 }
+    },
+    arjun_mehra: {
+        id: "arjun_mehra", name: "Arjun Mehra", short: "Arjun",
+        title: "Prime Time Indian Male Anchor", gender: "male", kind: "human",
+        asset: "indian_real_look", color: "#60a5fa",
+        face: { cx: 0.50, mouthY: 0.405, eyeY: 0.325, faceW: 0.16 }
+    },
+    priya_nair: {
+        id: "priya_nair", name: "Priya Nair", short: "Priya",
+        title: "National Desk Female Anchor", gender: "female", kind: "human",
+        asset: "indian_female", color: "#f9a8d4",
+        face: { cx: 0.50, mouthY: 0.40, eyeY: 0.320, faceW: 0.15 }
+    },
+    rajesh_sharma: {
+        id: "rajesh_sharma", name: "Rajesh Sharma", short: "Rajesh",
+        title: "Executive Business Anchor", gender: "male", kind: "human",
+        asset: "indian_ditto_exec", color: "#c4b5fd",
+        face: { cx: 0.50, mouthY: 0.40, eyeY: 0.322, faceW: 0.15 }
+    },
+    meera_kapoor: {
+        id: "meera_kapoor", name: "Meera Kapoor", short: "Meera",
+        title: "World Bulletin Female Anchor", gender: "female", kind: "human",
+        asset: "meera_kapoor", color: "#fca5a5",
+        face: { cx: 0.50, mouthY: 0.405, eyeY: 0.325, faceW: 0.15 }
+    },
+    alexander_hayes: {
+        id: "alexander_hayes", name: "Alexander Hayes", short: "Alexander",
+        title: "Global Nightly News", gender: "male", kind: "human",
+        asset: "human_ditto_male", color: "#93c5fd",
+        face: { cx: 0.50, mouthY: 0.398, eyeY: 0.318, faceW: 0.15 }
+    },
+    sofia_reyes: {
+        id: "sofia_reyes", name: "Sofia Reyes", short: "Sofia",
+        title: "International Desk Female Anchor", gender: "female", kind: "human",
+        asset: "sofia_reyes", color: "#fdba74",
+        face: { cx: 0.50, mouthY: 0.40, eyeY: 0.322, faceW: 0.15 }
+    },
+    marcus_cole: {
+        id: "marcus_cole", name: "Marcus Cole", short: "Marcus",
+        title: "Capitol Correspondent", gender: "male", kind: "human",
+        asset: "human_ditto_exec", color: "#a5b4fc",
+        face: { cx: 0.50, mouthY: 0.40, eyeY: 0.320, faceW: 0.15 }
+    },
+    nexus_3d: {
+        id: "nexus_3d", name: "NEXUS-3D", short: "NEXUS",
+        title: "Mechanical Android Presenter", gender: "male", kind: "robot",
+        asset: null, color: "#00d2ff",
+        face: { cx: 0.50, mouthY: 0.42, eyeY: 0.30, faceW: 0.18 }
+    }
+};
+
+const ANCHOR_ALIASES = {
+    humanoid_creature: "nova_kade",
+    indian_ditto_male: "arjun_mehra",
+    indian_female: "priya_nair",
+    indian_ditto_exec: "rajesh_sharma",
+    human_ditto_male: "alexander_hayes",
+    human_ditto_exec: "marcus_cole",
+    nexus_3d: "nexus_3d"
+};
+
+function getAnchorProfile(id) {
+    const key = ANCHOR_PROFILES[id] ? id : (ANCHOR_ALIASES[id] || "nova_kade");
+    return ANCHOR_PROFILES[key] || ANCHOR_PROFILES.nova_kade;
+}
+
+function studioToast(msg, ms) {
+    let el = document.getElementById("studioToast");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "studioToast";
+        el.className = "studio-toast";
+        document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add("show");
+    el.classList.remove("hidden");
+    clearTimeout(studioToast._t);
+    studioToast._t = setTimeout(() => {
+        el.classList.remove("show");
+    }, ms || 2400);
+}
+
 // --- DOM Elements Cache ---
 let canvas, ctx;
 let speechSynth = window.speechSynthesis;
@@ -162,22 +264,21 @@ let assetImages = {};
 
 // Main Application Entry Point
 function initApp() {
-    try {
-        initDOMReferences();
-        loadAssetImages();
-        initSpeechSynthesis();
-        initCanvas();
-        setupEventListeners();
-        updateDeveloperModeDisplay();
-        loadNewsCategory("india_tech");
-        updateChannelBrandDisplay();
-        startAnimationLoop();
-        runScreenLoadingSequence();
-    } catch (err) {
-        console.error("Error during app initialization:", err);
-        // Safety fallback: force dismiss loading screen if any initialization error occurs
-        dismissAppLoader();
-    }
+    const step = (name, fn) => {
+        try { fn(); } catch (err) { console.error("init step failed:", name, err); }
+    };
+    step("dom", initDOMReferences);
+    step("assets", loadAssetImages);
+    step("speech", initSpeechSynthesis);
+    step("canvas", initCanvas);
+    step("events", setupEventListeners);
+    step("devmode", updateDeveloperModeDisplay);
+    step("news", () => loadNewsCategory("india_tech"));
+    step("brand", updateChannelBrandDisplay);
+    step("loop", startAnimationLoop);
+    step("loader", runScreenLoadingSequence);
+    step("boot", typeof bindStudioDelegation === "function" ? bindStudioDelegation : () => {});
+    dismissAppLoader();
 }
 
 if (document.readyState === "loading") {
@@ -265,6 +366,10 @@ function loadAssetImages() {
         indian_female: "assets/indian_female_anchor_professional_1791430739477.png",
         indian_ditto_exec: "assets/indian_male_anchor_executive_1791429086352.png",
         humanoid_creature: "assets/humanoid_cyber_creature_anchor_1791429294078.png",
+        nova_kade: "assets/humanoid_cyber_creature_anchor_1791429294078.png",
+        lyra_nova: "assets/lyra_nova_female_news_bot.png",
+        meera_kapoor: "assets/meera_kapoor_female_anchor.png",
+        sofia_reyes: "assets/sofia_reyes_female_anchor.png",
         human_ditto_male: "assets/human_ditto_male_anchor_1791428857506.png",
         human_ditto_exec: "assets/human_ditto_executive_anchor_1791428874110.png",
         anchor_studio: "assets/male_news_anchor_studio_1791428485018.png",
@@ -295,7 +400,7 @@ function initSpeechSynthesis() {
         
         voiceSelect.innerHTML = "";
         
-        const selectedLang = document.getElementById("languageSelect").value || "en-US";
+        const selectedLang = document.getElementById("languageSelect")?.value || "en-US";
         const targetGender = genderSelect ? genderSelect.value : "male";
         
         // Filter voices matching language
@@ -329,12 +434,21 @@ function initSpeechSynthesis() {
 
 // Initialize Broadcast Canvas Resolution
 function initCanvas() {
-    if (state.aspectRatio === "16:9") {
-        canvas.width = 1280;
-        canvas.height = 720;
-    } else {
+    if (!canvas) canvas = document.getElementById("broadcastCanvas");
+    if (!canvas) return;
+    if (!ctx) ctx = canvas.getContext("2d");
+    const wrap = document.getElementById("canvasWrapper");
+    const rect = wrap ? wrap.getBoundingClientRect() : null;
+    if (state.aspectRatio === "9:16") {
         canvas.width = 720;
         canvas.height = 1280;
+    } else {
+        canvas.width = 1280;
+        canvas.height = 720;
+    }
+    if (rect && rect.width > 50 && rect.height > 50) {
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
     }
 }
 
@@ -377,51 +491,44 @@ function setupEventListeners() {
     });
 
     // Preset Category Selector
-    document.getElementById("newsCategorySelect").addEventListener("change", (e) => {
-        loadNewsCategory(e.target.value);
-    });
+    on("newsCategorySelect", "change", (e) => loadNewsCategory(e.target.value));
 
     // Load Custom Text
-    document.getElementById("loadCustomBtn").addEventListener("click", () => {
-        const title = document.getElementById("customNewsTitle").value.trim() || "Custom Breaking Story";
-        const script = document.getElementById("customNewsBody").value.trim();
-        if (!script) {
-            alert("Please enter news script text to load into teleprompter.");
-            return;
-        }
+    on("loadCustomBtn", "click", () => {
+        const title = (document.getElementById("customNewsTitle")?.value || "").trim() || "Custom Breaking Story";
+        const script = (document.getElementById("customNewsBody")?.value || "").trim();
+        if (!script) { studioToast("Enter a news script first"); return; }
         loadStoryIntoTeleprompter({ title, script, category: "Custom Script" });
+        startNewsBroadcast();
+        studioToast("Custom script loaded");
     });
 
     // Fetch RSS Feed
-    document.getElementById("fetchRssBtn").addEventListener("click", fetchRssFeed);
+    on("fetchRssBtn", "click", fetchRssFeed);
 
     // Real-Time Language & Distinct Voice Switching Engine
-    document.getElementById("languageSelect").addEventListener("change", (e) => {
-        switchBroadcastLanguage(e.target.value);
-    });
+    on("languageSelect", "change", (e) => switchBroadcastLanguage(e.target.value));
 
-    document.getElementById("voiceSelect").addEventListener("change", (e) => {
+    on("voiceSelect", "change", (e) => {
         state.currentVoice = state.availableVoices.find(v => v.name === e.target.value);
     });
 
-    document.getElementById("speechRate").addEventListener("input", (e) => {
+    on("speechRate", "input", (e) => {
         state.speechRate = parseFloat(e.target.value);
-        document.getElementById("rateVal").textContent = `${state.speechRate}x`;
+        const rv = document.getElementById("rateVal");
+        if (rv) rv.textContent = `${state.speechRate}x`;
     });
 
-    document.getElementById("speechPitch").addEventListener("input", (e) => {
+    on("speechPitch", "input", (e) => {
         state.speechPitch = parseFloat(e.target.value);
-        document.getElementById("pitchVal").textContent = state.speechPitch;
+        const pv = document.getElementById("pitchVal");
+        if (pv) pv.textContent = state.speechPitch;
     });
 
     // Visual Model Selectors
-    document.getElementById("anchorModelSelect").addEventListener("change", (e) => {
-        switchPresenterModel(e.target.value);
-    });
+    on("anchorModelSelect", "change", (e) => switchPresenterModel(e.target.value));
 
-    document.getElementById("studioBgSelect").addEventListener("change", (e) => {
-        state.studioBg = e.target.value;
-    });
+    on("studioBgSelect", "change", (e) => { state.studioBg = e.target.value; });
 
     // Voice Gender Switcher
     const voiceGenderSelect = document.getElementById("voiceGenderSelect");
@@ -447,23 +554,24 @@ function setupEventListeners() {
         snapBtn.addEventListener("click", downloadYouTubeThumbnail);
     }
 
-    document.getElementById("aspectRatioSelect").addEventListener("change", (e) => {
+    on("aspectRatioSelect", "change", (e) => {
         state.aspectRatio = e.target.value;
         const wrapper = document.getElementById("canvasWrapper");
+        const lab = document.getElementById("currentResLabel");
         if (state.aspectRatio === "16:9") {
-            wrapper.className = "canvas-wrapper landscape-mode";
-            document.getElementById("currentResLabel").textContent = "16:9 Landscape";
+            if (wrapper) wrapper.className = "canvas-wrapper landscape-mode";
+            if (lab) lab.textContent = "16:9 Landscape";
         } else {
-            wrapper.className = "canvas-wrapper shorts-mode";
-            document.getElementById("currentResLabel").textContent = "9:16 Shorts";
+            if (wrapper) wrapper.className = "canvas-wrapper shorts-mode";
+            if (lab) lab.textContent = "9:16 Shorts";
         }
         initCanvas();
     });
 
-    document.getElementById("subtitleStyleSelect").addEventListener("change", (e) => {
+    on("subtitleStyleSelect", "change", (e) => {
         state.subtitleStyle = e.target.value;
         const subBox = document.getElementById("teleprompterSubtitleBox");
-        subBox.className = `subtitle-overlay style-${state.subtitleStyle}`;
+        if (subBox) subBox.className = `subtitle-overlay style-${state.subtitleStyle}`;
     });
 
     // Picture in Picture File & Video Upload
@@ -570,23 +678,34 @@ function setupEventListeners() {
     });
 
     // Broadcast Controls
-    document.getElementById("startSpeechBtn").addEventListener("click", startNewsBroadcast);
-    document.getElementById("pauseSpeechBtn").addEventListener("click", pauseNewsBroadcast);
-    document.getElementById("stopSpeechBtn").addEventListener("click", stopNewsBroadcast);
-    document.getElementById("nextNewsBtn").addEventListener("click", playNextNewsStory);
+    on("startSpeechBtn", "click", startNewsBroadcast);
+    on("pauseSpeechBtn", "click", pauseNewsBroadcast);
+    on("stopSpeechBtn", "click", stopNewsBroadcast);
+    on("nextNewsBtn", "click", playNextNewsStory);
 
-    document.getElementById("volumeSlider").addEventListener("input", (e) => {
+    const vol = document.getElementById("volumeSlider");
+    if (vol) vol.addEventListener("input", (e) => {
         state.volume = parseFloat(e.target.value);
         if (currentUtterance) currentUtterance.volume = state.volume;
     });
 
+    const canvasWrap = document.getElementById("canvasWrapper");
+    if (canvasWrap) {
+        canvasWrap.addEventListener("click", () => {
+            const unmute = document.getElementById("unmuteBanner");
+            if (unmute) unmute.classList.add("hidden");
+            if (!state.isSpeaking) startNewsBroadcast();
+        });
+    }
+
     // Recording Controls
-    document.getElementById("recordBtn").addEventListener("click", toggleRecording);
-    document.getElementById("stopRecordBtn").addEventListener("click", toggleRecording);
+    on("recordBtn", "click", toggleRecording);
+    on("stopRecordBtn", "click", toggleRecording);
 
     // Fullscreen Toggle
-    document.getElementById("fullscreenBtn").addEventListener("click", () => {
+    on("fullscreenBtn", "click", () => {
         const elem = document.getElementById("canvasWrapper");
+        if (!elem) return;
         if (!document.fullscreenElement) {
             elem.requestFullscreen().catch(err => console.warn(err));
         } else {
@@ -638,36 +757,28 @@ function setupEventListeners() {
 
 // Presenter / Reporter Model Selection Handlers
 function switchPresenterModel(model) {
-    state.anchorModel = model;
+    const profile = getAnchorProfile(model);
+    state.anchorModel = profile.id;
 
-    // Sync Top Header Pills
-    document.querySelectorAll("#topHeaderAnchorPills .top-reporter-pill").forEach(p => {
-        if (p.dataset.model === model) p.classList.add("active");
-        else p.classList.remove("active");
+    document.querySelectorAll("[data-model]").forEach(p => {
+        p.classList.toggle("active", p.dataset.model === profile.id || ANCHOR_ALIASES[p.dataset.model] === profile.id);
     });
 
-    // Sync Quick Anchor Remote Pills
-    document.querySelectorAll("#quickAnchorPills .remote-pill").forEach(p => {
-        if (p.dataset.model === model) p.classList.add("active");
-        else p.classList.remove("active");
-    });
-
-    // Sync Select Dropdown
     const modelSelect = document.getElementById("anchorModelSelect");
-    if (modelSelect && modelSelect.value !== model) modelSelect.value = model;
+    if (modelSelect) {
+        const opt = Array.from(modelSelect.options).find(o => o.value === profile.id);
+        if (opt) modelSelect.value = profile.id;
+    }
 
-    // Auto-assign voice gender matching character
     const genderSelect = document.getElementById("voiceGenderSelect");
     if (genderSelect) {
-        if (model === "indian_female" || model === "humanoid_creature") {
-            genderSelect.value = "female";
-        } else {
-            genderSelect.value = "male";
-        }
+        genderSelect.value = profile.gender === "female" ? "female" : "male";
         initSpeechSynthesis();
     }
 
-    // Ensure 3D Broadcast Studio mode is active & news reader window is visible
+    const nameLabel = document.getElementById("currentAnchorLabel");
+    if (nameLabel) nameLabel.textContent = profile.name;
+
     const modeBroadcastBtn = document.getElementById("viewModeBroadcastBtn");
     const modeAiChatBtn = document.getElementById("viewModeAiChatBtn");
     const canvasWrapper = document.getElementById("canvasWrapper");
@@ -684,15 +795,20 @@ function switchPresenterModel(model) {
         if (aiChatHubViewport) aiChatHubViewport.classList.add("hidden");
     }
 
-    // Hide unmute banner
     const unmuteBanner = document.getElementById("unmuteBanner");
     if (unmuteBanner) unmuteBanner.classList.add("hidden");
 
-    // AUTOMATE WORKFLOW: Immediately start news broadcast with selected reporter!
+    if (!state.scriptText) {
+        const cat = document.getElementById("newsCategorySelect")?.value || "india_tech";
+        loadNewsCategory(cat);
+    }
+
+    state.userHasStarted = true;
     startNewsBroadcast();
+    studioToast(`${profile.name} is on air — ${profile.title}`);
 
     if (viewportCard) {
-        viewportCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        viewportCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 }
 
@@ -851,14 +967,16 @@ function updateChannelBrandDisplay() {
     const badge = document.getElementById("channelBrandBadge");
     const brandText = document.getElementById("channelBrandText");
     
+    if (!badge || !brandText) return;
+    const revealBtn = document.getElementById("toggleRevealBtn");
     if (state.isSecretMode && !state.isChannelRevealed) {
         badge.className = "brand-badge secret-mode";
         brandText.innerHTML = `<i class="fa-solid fa-user-secret"></i> ${state.secretPlaceholder}`;
-        document.getElementById("toggleRevealBtn").innerHTML = `<i class="fa-solid fa-eye"></i> Unveil Channel`;
+        if (revealBtn) revealBtn.innerHTML = `<i class="fa-solid fa-eye"></i> Unveil Channel`;
     } else {
         badge.className = "brand-badge revealed-mode";
         brandText.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${state.channelName}`;
-        document.getElementById("toggleRevealBtn").innerHTML = `<i class="fa-solid fa-eye-slash"></i> Hide Channel`;
+        if (revealBtn) revealBtn.innerHTML = `<i class="fa-solid fa-eye-slash"></i> Hide Channel`;
     }
 }
 
@@ -988,6 +1106,23 @@ function translateStoryScript(story, targetLang) {
 }
 
 // 💬 Main Viewport AI Chat Intelligence Hub Handler (Center Screen)
+function handleAiChatQuery() {
+    const input = document.getElementById("aiChatInput");
+    const q = (input && input.value) ? input.value.trim() : "";
+    if (!q) {
+        studioToast("Type a news question first");
+        return;
+    }
+    const left = document.getElementById("aiChatMessages");
+    if (left) {
+        const userMsg = document.createElement("div");
+        userMsg.className = "chat-msg user-msg";
+        userMsg.textContent = q;
+        left.appendChild(userMsg);
+    }
+    handleHubChatQuery(q);
+}
+
 function handleHubChatQuery(queryText) {
     const container = document.getElementById("hubChatMessages");
     const input = document.getElementById("hubChatInput");
@@ -1089,84 +1224,89 @@ window.loadChatBriefingToTeleprompter = function(title, script, targetLang = "hi
 
 // Fetch RSS via proxy
 async function fetchRssFeed() {
-    const url = document.getElementById("rssUrlInput").value.trim();
-    if (!url) {
-        alert("Please enter a valid RSS feed URL.");
-        return;
-    }
-
+    const url = (document.getElementById("rssUrlInput")?.value || "").trim();
+    const fallback = () => {
+        loadStoryIntoTeleprompter({
+            title: "Live Wire: Global Markets & Tech Desk",
+            script: "Good evening. We are ingesting a live news brief. Global markets closed mixed while technology and space agencies issued new mission updates. Stay with us for continuing coverage from the NEXUS newsroom.",
+            category: "Live RSS Fallback"
+        });
+        startNewsBroadcast();
+        studioToast("RSS unavailable — loaded studio brief");
+    };
+    if (!url) { fallback(); return; }
     try {
-        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+        const res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
         const xmlText = await res.text();
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, "text/xml");
         const items = xmlDoc.querySelectorAll("item");
-
-        if (items.length === 0) {
-            alert("No news items found in RSS feed.");
-            return;
-        }
-
+        if (!items.length) { fallback(); return; }
         const firstItem = items[0];
         const title = firstItem.querySelector("title")?.textContent || "RSS News Story";
-        const description = firstItem.querySelector("description")?.textContent.replace(/<[^>]*>/g, '') || title;
-        
-        loadStoryIntoTeleprompter({
-            title,
-            script: `${title}. ${description}`,
-            category: "Live RSS Feed"
-        });
-        alert(`Ingested top RSS story: "${title}"`);
+        const description = (firstItem.querySelector("description")?.textContent || "").replace(/<[^>]*>/g, "") || title;
+        loadStoryIntoTeleprompter({ title, script: title + ". " + description, category: "Live RSS Feed" });
+        startNewsBroadcast();
+        studioToast("RSS story loaded");
     } catch (err) {
-        console.error("RSS fetch error:", err);
-        alert("Could not load RSS feed. Loading sample breaking news story instead.");
+        console.warn("RSS fetch error:", err);
+        fallback();
     }
 }
 
 // --- Speech Synthesis & Teleprompter Sync ---
 function startNewsBroadcast() {
-    if (!state.scriptText) return;
+    if (!state.scriptText) {
+        const cat = document.getElementById("newsCategorySelect")?.value || "india_tech";
+        loadNewsCategory(cat);
+    }
+    if (!state.scriptText) {
+        studioToast("Load a news story first");
+        return;
+    }
 
-    if (state.isPaused) {
-        speechSynth.resume();
+    state.userHasStarted = true;
+    const unmuteBanner = document.getElementById("unmuteBanner");
+    if (unmuteBanner) unmuteBanner.classList.add("hidden");
+
+    if (state.isPaused && !state.resumeText) {
+        try { speechSynth.resume(); } catch (e) {}
         state.isSpeaking = true;
         state.isPaused = false;
         updateBroadcastButtons();
         return;
     }
 
-    stopNewsBroadcast(); // Cancel previous speech
+    stopNewsBroadcast(true);
 
-    currentUtterance = new SpeechSynthesisUtterance(state.scriptText);
-    currentUtterance.lang = state.currentLanguage;
+    const speakText = state.resumeText || state.scriptText;
+    state.resumeText = "";
+
+    if (!speechSynth) {
+        state.isSpeaking = true;
+        state.isPaused = false;
+        updateBroadcastButtons();
+        studioToast("No speech engine — animating silently");
+        return;
+    }
+
+    currentUtterance = new SpeechSynthesisUtterance(speakText);
+    currentUtterance.lang = state.currentLanguage || "en-US";
     currentUtterance.rate = state.speechRate;
     currentUtterance.pitch = state.speechPitch;
     currentUtterance.volume = state.volume;
+    if (state.currentVoice) currentUtterance.voice = state.currentVoice;
 
-    if (state.currentVoice) {
-        currentUtterance.voice = state.currentVoice;
-    }
-
-    // Word boundary lip-sync & teleprompter tracking
     currentUtterance.onboundary = (event) => {
         if (event.name === "word") {
             const charIdx = event.charIndex;
-            // Calculate word index based on char offset
-            const subText = state.scriptText.substring(0, charIdx);
+            const subText = speakText.substring(0, charIdx);
             state.currentWordIndex = subText.split(/\s+/).length - 1;
-            
-            // Trigger viseme mouth movement
-            state.visemeMouthOpen = 0.6 + Math.random() * 0.4;
+            state.visemeMouthOpen = 0.55 + Math.random() * 0.45;
             state.visemeMouthWidth = 0.8 + Math.random() * 0.4;
-
-            // Highlight word in teleprompter
             renderTeleprompterText();
-            const activeElem = document.getElementById(`tp-word-${state.currentWordIndex}`);
-            if (activeElem) {
-                activeElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-
-            // Update visible Subtitle snippet
+            const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
+            if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
             const currentSnippet = state.scriptWords.slice(Math.max(0, state.currentWordIndex - 2), state.currentWordIndex + 6).join(" ");
             const liveSub = document.getElementById("subtitleTicker");
             if (liveSub) liveSub.textContent = currentSnippet || state.scriptText;
@@ -1189,31 +1329,52 @@ function startNewsBroadcast() {
     };
 
     currentUtterance.onerror = (e) => {
-        console.error("SpeechSynthesis error:", e);
-        state.isSpeaking = false;
-        document.querySelector(".teleprompter-card")?.classList.remove("speaking-active");
+        if (e && e.error === "interrupted") return;
+        console.warn("SpeechSynthesis error:", e);
+        state.isSpeaking = true;
+        state.isPaused = false;
         updateBroadcastButtons();
     };
 
-    speechSynth.speak(currentUtterance);
-}
-
-function pauseNewsBroadcast() {
-    if (speechSynth.speaking && !speechSynth.paused) {
-        speechSynth.pause();
-        state.isSpeaking = false;
-        state.isPaused = true;
-        document.querySelector(".teleprompter-card")?.classList.remove("speaking-active");
+    try {
+        speechSynth.cancel();
+        speechSynth.speak(currentUtterance);
+        state.isSpeaking = true;
+        state.isPaused = false;
+        updateBroadcastButtons();
+    } catch (err) {
+        state.isSpeaking = true;
+        studioToast("Voice blocked — presenter is still animating");
         updateBroadcastButtons();
     }
 }
 
-function stopNewsBroadcast() {
-    speechSynth.cancel();
+function pauseNewsBroadcast() {
+    if (state.isPaused) {
+        startNewsBroadcast();
+        return;
+    }
+    if (!state.isSpeaking) return;
+    const remaining = state.scriptWords.slice(Math.max(0, state.currentWordIndex)).join(" ");
+    state.resumeText = remaining || state.scriptText;
+    try { speechSynth.cancel(); } catch (e) {}
+    state.isSpeaking = false;
+    state.isPaused = true;
+    state.visemeMouthOpen = 0;
+    document.querySelector(".teleprompter-card")?.classList.remove("speaking-active");
+    updateBroadcastButtons();
+    studioToast("Broadcast paused");
+}
+
+function stopNewsBroadcast(keepScript) {
+    try { speechSynth && speechSynth.cancel(); } catch (e) {}
     state.isSpeaking = false;
     state.isPaused = false;
     state.visemeMouthOpen = 0;
-    state.currentWordIndex = 0;
+    if (!keepScript) {
+        state.currentWordIndex = 0;
+        state.resumeText = "";
+    }
     document.querySelector(".teleprompter-card")?.classList.remove("speaking-active");
     renderTeleprompterText();
     updateBroadcastButtons();
@@ -1222,11 +1383,22 @@ function stopNewsBroadcast() {
 function playNextNewsStory() {
     stopNewsBroadcast();
     const select = document.getElementById("newsCategorySelect");
-    const stories = presetNewsData[select.value] || presetNewsData.tech;
+    const catKeys = Object.keys(presetNewsData);
+    let cat = select?.value || "india_tech";
+    let stories = presetNewsData[cat] || presetNewsData.tech;
     const currentIdx = stories.findIndex(s => s.title === state.currentStory?.title);
-    const nextIdx = (currentIdx + 1) % stories.length;
-    loadStoryIntoTeleprompter(stories[nextIdx]);
+    let nextIdx = currentIdx + 1;
+    if (nextIdx >= stories.length) {
+        const catIdx = Math.max(0, catKeys.indexOf(cat));
+        cat = catKeys[(catIdx + 1) % catKeys.length];
+        if (select) select.value = cat;
+        stories = presetNewsData[cat];
+        nextIdx = 0;
+        loadNewsCategory(cat);
+    }
+    loadStoryIntoTeleprompter(stories[nextIdx] || stories[0]);
     startNewsBroadcast();
+    studioToast("Next story");
 }
 
 function updateBroadcastButtons() {
@@ -1264,12 +1436,28 @@ function startAnimationLoop() {
             updateFacialAnimations(delta);
 
             // Draw Canvas Layers
+            if (!canvas || !ctx) {
+                canvas = document.getElementById("broadcastCanvas");
+                ctx = canvas ? canvas.getContext("2d") : null;
+                if (!ctx) return;
+            }
             drawStudioBackground();
             drawMediaPIP();
             drawMaleAnchorModel();
             drawLowerThirdsAndTicker();
         } catch (err) {
             console.error("Error in animation render loop:", err);
+            try {
+                if (!ctx || !canvas) return;
+                ctx.fillStyle = "#07111f";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#00d2ff";
+                ctx.font = "bold 42px sans-serif";
+                ctx.fillText("NEXUS NEWS LIVE", 80, canvas.height / 2);
+                ctx.font = "20px sans-serif";
+                ctx.fillStyle = "#e2e8f0";
+                ctx.fillText("Click Start AI News Broadcast", 80, canvas.height / 2 + 40);
+            } catch (e2) {}
         }
 
         requestAnimationFrame(renderFrame);
@@ -1280,33 +1468,34 @@ function startAnimationLoop() {
 
 // Procedural Blink & Micro Motions
 function updateFacialAnimations(delta) {
-    state.breathPhase += delta * 1.5;
-    
-    // Natural Blink every ~4 seconds
-    if (Math.random() < 0.005 && state.eyeBlink === 0) {
+    state.breathPhase += delta * 1.6;
+    state.gesturePhase = (state.gesturePhase || 0) + delta * (state.isSpeaking ? 3.2 : 1.1);
+
+    if (Math.random() < 0.006 && state.eyeBlink === 0) {
         state.eyeBlink = 1;
     }
     if (state.eyeBlink > 0) {
-        state.eyeBlink -= delta * 8;
+        state.eyeBlink -= delta * 9;
         if (state.eyeBlink < 0) state.eyeBlink = 0;
     }
 
-    // Dynamic Viseme Lip-Sync Engine for ALL Humanoid Robots & Presenters
     if (state.isSpeaking && !state.isPaused) {
         state.visemePhase = (state.visemePhase || 0) + delta * 18.0;
-        // Dual sine wave modulation for natural human & robotic speech cadence
         const primaryWave = Math.sin(state.visemePhase);
         const secondaryWave = Math.sin(state.visemePhase * 0.45);
         const combined = (primaryWave * 0.7 + secondaryWave * 0.3 + 1) / 2;
-        
-        state.visemeMouthOpen = 0.25 + combined * 0.75; // Dynamic mouth opening 0.25 to 1.0
-        state.visemeMouthWidth = 0.82 + Math.cos(state.visemePhase * 0.5) * 0.32;
+        state.visemeMouthOpen = 0.22 + combined * 0.78;
+        state.visemeMouthWidth = 0.82 + Math.cos(state.visemePhase * 0.5) * 0.28;
+        state.headTilt = Math.sin(state.breathPhase * 1.4) * 2.4;
+        state.gazeX = Math.sin(state.breathPhase * 0.5) * 0.35;
+        state.shoulderSway = Math.sin(state.gesturePhase) * 2.2;
     } else {
-        state.visemeMouthOpen = 0;
+        state.visemeMouthOpen *= 0.85;
         state.visemeMouthWidth = 1;
+        state.headTilt = Math.sin(state.breathPhase * 0.8) * 1.1;
+        state.gazeX = Math.sin(state.breathPhase * 0.25) * 0.15;
+        state.shoulderSway = Math.sin(state.breathPhase * 0.6) * 0.8;
     }
-
-    state.headTilt = Math.sin(state.breathPhase * 0.8) * 1.5;
 }
 
 // 1. Draw Studio Background
@@ -1421,44 +1610,16 @@ function drawMediaPIP() {
 function drawMaleAnchorModel() {
     const w = canvas.width;
     const h = canvas.height;
-
+    const profile = getAnchorProfile(state.anchorModel);
     ctx.save();
-
-    // Subtle head tilt & breathing shift
-    const breathY = Math.sin(state.breathPhase) * 2;
-    ctx.translate(w / 2, h / 2 + breathY);
+    const breathY = Math.sin(state.breathPhase) * 2.5;
+    const sway = (state.shoulderSway || 0) * 0.4;
+    ctx.translate(w / 2 + sway, h / 2 + breathY);
     ctx.rotate((state.headTilt * Math.PI) / 180);
-    ctx.translate(-w / 2, -h / 2 - breathY);
-
-    const realIndianImg = assetImages.indian_real_look || assetImages.indian_ditto_male;
-
-    if (state.anchorModel === "nexus_3d") {
-        // Render Interactive 3D Humanoid Cyber Android Presenter
-        drawHumanoid3DAnchor(w, h);
-    } else if (state.anchorModel === "humanoid_creature") {
-        // Render Photorealistic Humanoid Cyber Creature Robot
-        if (assetImages.humanoid_creature && assetImages.humanoid_creature.complete && assetImages.humanoid_creature.naturalWidth > 0) {
-            renderRealAnchorImage(assetImages.humanoid_creature, w, h);
-        } else {
-            drawHumanoid3DAnchor(w, h);
-        }
-    } else if (state.anchorModel === "indian_female") {
-        const femaleImg = assetImages.indian_female || realIndianImg;
-        renderRealAnchorImage(femaleImg, w, h);
-    } else if (state.anchorModel === "indian_ditto_exec") {
-        const execImg = assetImages.indian_ditto_exec || realIndianImg;
-        renderRealAnchorImage(execImg, w, h);
-    } else if (state.anchorModel === "human_ditto_male") {
-        const dittoImg = assetImages.human_ditto_male || realIndianImg;
-        renderRealAnchorImage(dittoImg, w, h);
-    } else if (state.anchorModel === "human_ditto_exec") {
-        const execImg = assetImages.human_ditto_exec || realIndianImg;
-        renderRealAnchorImage(execImg, w, h);
-    } else {
-        renderRealAnchorImage(realIndianImg, w, h);
-    }
-
+    ctx.translate(-w / 2 - sway, -h / 2 - breathY);
+    renderAdvancedAnchor(profile, w, h);
     ctx.restore();
+    drawPresenterLowerThird(profile, w, h);
 }
 
 // Helper: Safe Canvas RoundRect Compatibility
@@ -1666,39 +1827,107 @@ function drawHumanoid3DAnchor(w, h) {
 
 // Helper: Render Real Photorealistic Anchor Image with Dynamic Viseme Lip Sync
 function renderRealAnchorImage(img, w, h) {
-    if (!img || !img.complete || img.naturalWidth === 0) {
+    const profile = getAnchorProfile(state.anchorModel);
+    renderAdvancedAnchor(profile, w, h);
+}
+
+function renderAdvancedAnchor(profile, w, h) {
+    const img = profile.asset ? assetImages[profile.asset] : null;
+    if (profile.kind === "robot" || !img || !img.complete || img.naturalWidth === 0) {
         drawHumanoid3DAnchor(w, h);
         return;
     }
 
-    const aspect = (img.width && img.height) ? (img.width / img.height) : 1.0;
-    const renderH = h * 0.96;
-    const renderW = Math.max(w * 0.46, renderH * aspect);
-    const anchorX = (w - renderW) / 2;
-    const anchorY = h - renderH + 15;
-
-    ctx.drawImage(img, anchorX, anchorY, renderW, renderH);
-
-    // Natural Character Lip-Sync Action
-    if (state.isSpeaking && state.visemeMouthOpen > 0) {
-        const mouthX = w / 2;
-        const mouthY = anchorY + renderH * 0.445;
-        const mouthRadiusX = 14 * state.visemeMouthWidth;
-        const mouthRadiusY = 6 * state.visemeMouthOpen;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(mouthX, mouthY, mouthRadiusX, mouthRadiusY, 0, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(180, 80, 90, 0.25)";
-        ctx.fill();
-
-        ctx.strokeStyle = "rgba(220, 120, 130, 0.4)";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(mouthX, mouthY + mouthRadiusY * 0.4, mouthRadiusX * 0.7, 0.2, Math.PI - 0.2);
-        ctx.stroke();
-        ctx.restore();
+    const speaking = state.isSpeaking && !state.isPaused;
+    const zoom = speaking ? (1.015 + state.visemeMouthOpen * 0.01) : 1.0;
+    const aspect = img.naturalWidth / img.naturalHeight;
+    let renderH = h * 1.04 * zoom;
+    let renderW = renderH * aspect;
+    if (renderW < w) {
+        renderW = w * zoom;
+        renderH = renderW / aspect;
     }
+    const x = (w - renderW) / 2 + (state.gazeX || 0) * 10;
+    const y = h - renderH + 10;
+
+    ctx.drawImage(img, x, y, renderW, renderH);
+
+    const face = profile.face || {};
+    const fx = x + renderW * (face.cx || 0.5);
+    const fyMouth = y + renderH * (face.mouthY || 0.40);
+    const fyEye = y + renderH * (face.eyeY || 0.32);
+    const faceW = renderW * (face.faceW || 0.15);
+
+    if (state.eyeBlink > 0.2) {
+        ctx.fillStyle = "rgba(18, 10, 8, " + Math.min(0.8, state.eyeBlink) + ")";
+        const ew = faceW * 0.17;
+        const eh = 3 + state.eyeBlink * 6;
+        const spread = faceW * 0.21;
+        ctx.beginPath();
+        ctx.ellipse(fx - spread, fyEye, ew, eh, 0, 0, Math.PI * 2);
+        ctx.ellipse(fx + spread, fyEye, ew, eh, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    if (speaking && state.visemeMouthOpen > 0.12) {
+        const mw = faceW * 0.14 * state.visemeMouthWidth;
+        const mh = 2.5 + state.visemeMouthOpen * 9;
+        ctx.fillStyle = "rgba(70, 16, 24, " + (0.18 + state.visemeMouthOpen * 0.28) + ")";
+        ctx.beginPath();
+        ctx.ellipse(fx, fyMouth, mw, mh, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    if (profile.kind === "human_bot") {
+        const pulse = 0.25 + Math.sin(Date.now() / 180) * 0.2;
+        ctx.strokeStyle = "rgba(0, 245, 212, " + pulse + ")";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(fx - faceW * 0.30, fyEye - 10);
+        ctx.quadraticCurveTo(fx - faceW * 0.18, fyEye - 4, fx - faceW * 0.10, fyEye);
+        ctx.moveTo(fx + faceW * 0.30, fyEye - 10);
+        ctx.quadraticCurveTo(fx + faceW * 0.18, fyEye - 4, fx + faceW * 0.10, fyEye);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(0, 245, 212, " + (0.15 + pulse * 0.35) + ")";
+        ctx.beginPath();
+        ctx.arc(fx - faceW * 0.21, fyEye, 2.2, 0, Math.PI * 2);
+        ctx.arc(fx + faceW * 0.21, fyEye, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawPresenterLowerThird(profile, w, h) {
+    const boxW = 420;
+    const boxH = 64;
+    const bx = 28;
+    const by = h - 128;
+    ctx.save();
+    ctx.fillStyle = "rgba(6, 10, 18, 0.82)";
+    drawRoundRect(ctx, bx, by, boxW, boxH, 8);
+    ctx.fill();
+    ctx.fillStyle = profile.color || "#00d2ff";
+    ctx.fillRect(bx, by, 6, boxH);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 22px Outfit, Inter, sans-serif";
+    ctx.fillText(profile.name, bx + 20, by + 28);
+    ctx.fillStyle = profile.color || "#00d2ff";
+    ctx.font = "600 13px Inter, sans-serif";
+    ctx.fillText(profile.title.toUpperCase(), bx + 20, by + 50);
+    if (state.isSpeaking && !state.isPaused) {
+        ctx.fillStyle = "#ff3b30";
+        ctx.beginPath();
+        ctx.arc(bx + boxW - 22, by + 20, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "700 11px Inter, sans-serif";
+        ctx.fillText("ON AIR", bx + boxW - 78, by + 24);
+        for (let i = 0; i < 5; i++) {
+            const bh = 6 + Math.abs(Math.sin(Date.now() / 90 + i)) * 16;
+            ctx.fillStyle = profile.color || "#00d2ff";
+            ctx.fillRect(bx + boxW - 78 + i * 8, by + 54 - bh, 5, bh);
+        }
+    }
+    ctx.restore();
 }
 
 // Procedural Realistic Indian Male Anchor Drawing (Replacing old cartoon bot)
@@ -1879,9 +2108,10 @@ function startRecording() {
     state.isRecording = true;
     state.recordStartTime = Date.now();
 
-    document.getElementById("recordBtn").classList.add("recording");
-    document.getElementById("recordBtnText").textContent = "Stop Recording";
-    document.getElementById("recordStatusCard").classList.remove("hidden");
+    document.getElementById("recordBtn")?.classList.add("recording");
+    const rbt = document.getElementById("recordBtnText");
+    if (rbt) rbt.textContent = "Stop Recording";
+    document.getElementById("recordStatusCard")?.classList.remove("hidden");
 
     state.recordInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - state.recordStartTime) / 1000);
@@ -1897,9 +2127,10 @@ function stopRecording() {
         state.isRecording = false;
         clearInterval(state.recordInterval);
 
-        document.getElementById("recordBtn").classList.remove("recording");
-        document.getElementById("recordBtnText").textContent = "Record YouTube Video";
-        document.getElementById("recordStatusCard").classList.add("hidden");
+        document.getElementById("recordBtn")?.classList.remove("recording");
+        const rbt2 = document.getElementById("recordBtnText");
+        if (rbt2) rbt2.textContent = "Record YouTube Video";
+        document.getElementById("recordStatusCard")?.classList.add("hidden");
     }
 }
 
@@ -2017,3 +2248,6 @@ window.switchBroadcastLanguage = switchBroadcastLanguage;
 window.switchPresenterModel = switchPresenterModel;
 window.startNewsBroadcast = startNewsBroadcast;
 window.dismissAppLoader = dismissAppLoader;
+
+window.handleAiChatQuery = handleAiChatQuery;
+window.getAnchorProfile = getAnchorProfile;

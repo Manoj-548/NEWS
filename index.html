@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Male News Reporter Studio - YouTube Broadcast Visual Model</title>
+    <title>AI News Studio — Live Male & Female Anchors</title>
     <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal channel branding.">
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -24,12 +24,16 @@
         <div class="top-reporter-switcher">
             <span class="top-reporter-label"><i class="fa-solid fa-robot text-neon"></i> REPORTER:</span>
             <div class="top-reporter-pills" id="topHeaderAnchorPills">
-                <button class="top-reporter-pill active" data-model="nexus_3d">🤖 NEXUS-3D (Robot)</button>
-                <button class="top-reporter-pill" data-model="humanoid_creature">🤖 NEXUS-9 (Robot)</button>
-                <button class="top-reporter-pill" data-model="indian_ditto_male">👳 Arjun</button>
-                <button class="top-reporter-pill" data-model="indian_female">👩‍💼 Priya</button>
-                <button class="top-reporter-pill" data-model="indian_ditto_exec">💼 Vikram</button>
-                <button class="top-reporter-pill" data-model="human_ditto_male">👤 Alexander</button>
+                <button class="top-reporter-pill active" data-model="nova_kade">🤖 Kade Nova</button>
+                <button class="top-reporter-pill" data-model="lyra_nova">🤖 Lyra Nova</button>
+                <button class="top-reporter-pill" data-model="arjun_mehra">🎤 Arjun Mehra</button>
+                <button class="top-reporter-pill" data-model="priya_nair">🎤 Priya Nair</button>
+                <button class="top-reporter-pill" data-model="rajesh_sharma">💼 Rajesh Sharma</button>
+                <button class="top-reporter-pill" data-model="meera_kapoor">🎤 Meera Kapoor</button>
+                <button class="top-reporter-pill" data-model="alexander_hayes">🎤 Alexander Hayes</button>
+                <button class="top-reporter-pill" data-model="sofia_reyes">🎤 Sofia Reyes</button>
+                <button class="top-reporter-pill" data-model="marcus_cole">💼 Marcus Cole</button>
+                <button class="top-reporter-pill" data-model="nexus_3d">⚙️ NEXUS-3D</button>
             </div>
         </div>
 
@@ -51,6 +55,7 @@
             <button id="devModeToggleBtn" class="btn-sm btn-outline dev-toggle-btn" title="Toggle Developer / Uploader Mode">
                 <i class="fa-solid fa-user-gear"></i> <span id="devModeStatusText">Developer Mode: OFF (Viewer View)</span>
             </button>
+            <span class="stat-badge"><i class="fa-solid fa-user"></i> <span id="currentAnchorLabel">Kade Nova</span></span>
             <span class="stat-badge"><i class="fa-solid fa-language"></i> <span id="currentLangLabel">Hindi (हिन्दी)</span></span>
             <span class="stat-badge"><i class="fa-solid fa-display"></i> <span id="currentResLabel">16:9 Landscape</span></span>
             <button id="snapThumbnailBtn" class="btn-action primary dev-only-inline hidden" style="width:auto; padding: 7px 12px; background: linear-gradient(135deg, #7209b7, #3a0ca3);">
@@ -251,18 +256,21 @@
                 
                 <label for="anchorModelSelect" class="form-label">News Anchor Presenter Model:</label>
                 <select id="anchorModelSelect" class="form-select">
-                    <optgroup label="🤖 3D Humanoid & Cyber Presenters">
-                        <option value="nexus_3d" selected>🤖 NEXUS-3D (Humanoid 3D Cyber Android Anchor)</option>
-                        <option value="humanoid_creature">🤖 NEXUS-9 (Human-Like Synthetic Cyber Creature Anchor)</option>
+                    <optgroup label="🤖 Human-Looking News Bots">
+                        <option value="nova_kade" selected>🤖 Kade Nova — Human-Look Male News Bot</option>
+                        <option value="lyra_nova">🤖 Lyra Nova — Human-Look Female News Bot</option>
+                        <option value="nexus_3d">⚙️ NEXUS-3D — Mechanical Android</option>
                     </optgroup>
-                    <optgroup label="🇮🇳 Indian Presenters">
-                        <option value="indian_ditto_male">👳 Arjun Sharma (Professional Indian Male Anchor - Bandhgala Suit)</option>
-                        <option value="indian_female">👩‍💼 Priya Sharma (Professional Indian Female Anchor - Navy Suit)</option>
-                        <option value="indian_ditto_exec">💼 Vikram Mehta (Executive Indian Male Anchor - Dark Suit)</option>
+                    <optgroup label="🇮🇳 Indian News Anchors">
+                        <option value="arjun_mehra">🎤 Arjun Mehra — Prime Time Male Anchor</option>
+                        <option value="priya_nair">🎤 Priya Nair — National Desk Female Anchor</option>
+                        <option value="rajesh_sharma">💼 Rajesh Sharma — Executive Business Anchor</option>
+                        <option value="meera_kapoor">🎤 Meera Kapoor — World Bulletin Female Anchor</option>
                     </optgroup>
-                    <optgroup label="🌍 Global Presenters">
-                        <option value="human_ditto_male">👤 Alexander Vance (Hyper-Realistic Global Male AI Anchor)</option>
-                        <option value="human_ditto_exec">💼 Marcus Vance (Executive AI Presenter)</option>
+                    <optgroup label="🌍 Global News Anchors">
+                        <option value="alexander_hayes">🎤 Alexander Hayes — Global Nightly News</option>
+                        <option value="sofia_reyes">🎤 Sofia Reyes — International Desk Female Anchor</option>
+                        <option value="marcus_cole">💼 Marcus Cole — Capitol Correspondent</option>
                     </optgroup>
                 </select>
 
@@ -358,12 +366,16 @@
                     <div class="remote-row">
                         <span class="remote-label"><i class="fa-solid fa-robot text-neon"></i> Presenter Model:</span>
                         <div class="remote-pills" id="quickAnchorPills">
-                            <button class="remote-pill active" data-model="nexus_3d">🤖 NEXUS-3D Robot</button>
-                            <button class="remote-pill" data-model="humanoid_creature">🤖 NEXUS-9 Robot</button>
-                            <button class="remote-pill" data-model="indian_ditto_male">👳 Arjun (Male)</button>
-                            <button class="remote-pill" data-model="indian_female">👩‍💼 Priya (Female)</button>
-                            <button class="remote-pill" data-model="indian_ditto_exec">💼 Vikram (Exec)</button>
-                            <button class="remote-pill" data-model="human_ditto_male">👤 Alexander</button>
+                            <button class="remote-pill active" data-model="nova_kade">🤖 Kade Nova (Male Bot)</button>
+                            <button class="remote-pill" data-model="lyra_nova">🤖 Lyra Nova (Female Bot)</button>
+                            <button class="remote-pill" data-model="arjun_mehra">🎤 Arjun Mehra</button>
+                            <button class="remote-pill" data-model="priya_nair">🎤 Priya Nair</button>
+                            <button class="remote-pill" data-model="rajesh_sharma">💼 Rajesh Sharma</button>
+                            <button class="remote-pill" data-model="meera_kapoor">🎤 Meera Kapoor</button>
+                            <button class="remote-pill" data-model="alexander_hayes">🎤 Alexander Hayes</button>
+                            <button class="remote-pill" data-model="sofia_reyes">🎤 Sofia Reyes</button>
+                            <button class="remote-pill" data-model="marcus_cole">💼 Marcus Cole</button>
+                            <button class="remote-pill" data-model="nexus_3d">⚙️ NEXUS-3D</button>
                         </div>
                     </div>
                 </div>
@@ -408,7 +420,7 @@
             <!-- Click to Enable Audio Audio Overlay -->
             <div id="unmuteBanner" class="unmute-banner">
                 <i class="fa-solid fa-volume-high pulse"></i>
-                <span>CLICK ANYWHERE TO UNMUTE AI VOICE BROADCAST</span>
+                        <span>CLICK TO START LIVE NEWS BROADCAST</span>
             </div>
 
             <!-- Realtime Teleprompter Subtitle Overlay over Canvas -->
@@ -548,7 +560,9 @@
         </div>
     </div>
 
+    <div id="studioToast" class="studio-toast hidden"></div>
     <script src="app.js"></script>
+    <script src="boot-controls.js"></script>
     <script src="fix-news-ui.js"></script>
     <script>
         (function () {
