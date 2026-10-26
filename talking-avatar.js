@@ -1,240 +1,177 @@
-/* Modern talkative digital news readers — mouths belong to the face, not a blob on a photo. */
+/* Photoreal news readers — real human photos, viseme on the actual mouth. */
 (function () {
-  const LOOKS = {
-    nova_kade: { gender: "male", skin: ["#e8c4a2", "#c9926a"], hair: "#1a1410", suit: "#1b2433", accent: "#00f5d4", bot: true, hairStyle: "short" },
-    lyra_nova: { gender: "female", skin: ["#f0d0b0", "#d4a07a"], hair: "#1c1210", suit: "#141820", accent: "#7dd3fc", bot: true, hairStyle: "bob" },
-    arjun_mehra: { gender: "male", skin: ["#d4a074", "#b07848"], hair: "#1a120e", suit: "#12315c", accent: "#60a5fa", bot: false, hairStyle: "short" },
-    priya_nair: { gender: "female", skin: ["#e0b089", "#c48a5c"], hair: "#140e0c", suit: "#1e3a6e", accent: "#f9a8d4", bot: false, hairStyle: "wave" },
-    rajesh_sharma: { gender: "male", skin: ["#c9956a", "#a67446"], hair: "#1a1410", suit: "#2c3340", accent: "#c4b5fd", bot: false, hairStyle: "side" },
-    meera_kapoor: { gender: "female", skin: ["#e2b48a", "#c48a58"], hair: "#1a100c", suit: "#6b1d32", accent: "#fca5a5", bot: false, hairStyle: "wave" },
-    alexander_hayes: { gender: "male", skin: ["#f0d0b4", "#d4a888"], hair: "#2a1c14", suit: "#1e3a5f", accent: "#93c5fd", bot: false, hairStyle: "side" },
-    sofia_reyes: { gender: "female", skin: ["#e6b890", "#c48a60"], hair: "#3a2418", suit: "#3d4450", accent: "#fdba74", bot: false, hairStyle: "wave" },
-    marcus_cole: { gender: "male", skin: ["#ebc9a6", "#c9a07c"], hair: "#1c1410", suit: "#252a36", accent: "#a5b4fc", bot: false, hairStyle: "short" },
-    nexus_3d: { gender: "male", skin: ["#cbd5e1", "#64748b"], hair: "#0f172a", suit: "#0f172a", accent: "#00d2ff", bot: true, hairStyle: "none", robot: true }
+  const LANDMARKS = {
+    nova_kade:       { cx: 0.50, eyeY: 0.250, mouthY: 0.338, chinY: 0.385, faceW: 0.14 },
+    lyra_nova:       { cx: 0.50, eyeY: 0.285, mouthY: 0.342, chinY: 0.390, faceW: 0.11 },
+    arjun_mehra:     { cx: 0.50, eyeY: 0.255, mouthY: 0.335, chinY: 0.385, faceW: 0.15 },
+    priya_nair:      { cx: 0.50, eyeY: 0.275, mouthY: 0.345, chinY: 0.395, faceW: 0.16 },
+    rajesh_sharma:   { cx: 0.50, eyeY: 0.282, mouthY: 0.338, chinY: 0.385, faceW: 0.12 },
+    meera_kapoor:    { cx: 0.50, eyeY: 0.280, mouthY: 0.365, chinY: 0.410, faceW: 0.12 },
+    alexander_hayes: { cx: 0.50, eyeY: 0.265, mouthY: 0.345, chinY: 0.395, faceW: 0.15 },
+    sofia_reyes:     { cx: 0.50, eyeY: 0.310, mouthY: 0.368, chinY: 0.420, faceW: 0.11 },
+    marcus_cole:     { cx: 0.50, eyeY: 0.265, mouthY: 0.355, chinY: 0.400, faceW: 0.14 }
   };
 
-  function lookOf(profile) {
-    return LOOKS[profile?.id] || LOOKS.nova_kade;
+  const skinCache = {};
+
+  function marks(profile) {
+    return LANDMARKS[profile?.id] || profile?.face || { cx: 0.5, eyeY: 0.26, mouthY: 0.34, chinY: 0.39, faceW: 0.14 };
   }
 
-  function rr(c, x, y, w, h, r) {
-    if (typeof c.roundRect === "function") { c.roundRect(x, y, w, h, r); return; }
-    c.beginPath();
-    c.moveTo(x + r, y);
-    c.arcTo(x + w, y, x + w, y + h, r);
-    c.arcTo(x + w, y + h, x, y + h, r);
-    c.arcTo(x, y + h, x, y, r);
-    c.arcTo(x, y, x + w, y, r);
-    c.closePath();
+  function sampleSkin(key, x, y) {
+    if (skinCache[key]) return skinCache[key];
+    try {
+      const p = ctx.getImageData(Math.max(0, x | 0), Math.max(0, y | 0), 1, 1).data;
+      skinCache[key] = "rgb(" + p[0] + "," + p[1] + "," + p[2] + ")";
+    } catch (e) {
+      skinCache[key] = "#c4a07a";
+    }
+    return skinCache[key];
   }
 
-  window.drawTalkingNewsReader = function drawTalkingNewsReader(profile, w, h) {
-    const look = lookOf(profile);
+  function drawHumanMouth(mx, my, faceW, open, widen, gender, skin) {
+    const mw = Math.max(8, faceW * 0.28 * widen);
+    const mh = Math.max(2.2, faceW * (0.028 + 0.13 * open));
+    const female = gender === "female";
+    const lip = female ? "#9a3f4c" : "#7a4540";
+    const lipHi = female ? "#c45d6a" : "#a05c56";
+    const inner = "#2a1014";
+
+    ctx.save();
+    ctx.translate(mx, my);
+
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.ellipse(0, mh * 0.05, mw * 1.28, Math.max(faceW * 0.065, mh * 1.55), 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = inner;
+    ctx.beginPath();
+    ctx.ellipse(0, mh * 0.08, mw * 0.92, mh * 0.82, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (open > 0.2) {
+      const tw = mw * 1.55;
+      const th = Math.min(faceW * 0.03, mh * 0.42);
+      ctx.fillStyle = "#f2ebe3";
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") ctx.roundRect(-tw / 2, -mh * 0.52, tw, th, 1.6);
+      else ctx.rect(-tw / 2, -mh * 0.52, tw, th);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(170,150,140,0.4)";
+      ctx.lineWidth = 0.7;
+      for (let i = -3; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo((i * tw) / 8, -mh * 0.52);
+        ctx.lineTo((i * tw) / 8, -mh * 0.52 + th);
+        ctx.stroke();
+      }
+      if (open > 0.55) {
+        ctx.fillStyle = "#c9a8a4";
+        ctx.beginPath();
+        ctx.ellipse(0, mh * 0.42, mw * 0.38, mh * 0.18, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.fillStyle = lip;
+    ctx.beginPath();
+    ctx.moveTo(-mw, -mh * 0.08);
+    ctx.quadraticCurveTo(-mw * 0.35, -mh * 0.78, 0, -mh * 0.48);
+    ctx.quadraticCurveTo(mw * 0.35, -mh * 0.78, mw, -mh * 0.08);
+    ctx.quadraticCurveTo(0, mh * 0.02, -mw, -mh * 0.08);
+    ctx.fill();
+
+    ctx.fillStyle = lipHi;
+    ctx.beginPath();
+    ctx.ellipse(0, mh * 0.48, mw * 0.96, Math.max(2.2, mh * 0.48), 0, 0, Math.PI);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(40,12,14,0.4)";
+    ctx.lineWidth = Math.max(1, faceW * 0.008);
+    ctx.beginPath();
+    ctx.moveTo(-mw * 0.92, 0);
+    ctx.quadraticCurveTo(0, mh * 0.12, mw * 0.92, 0);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawPhotorealReader(profile, w, h) {
+    const img = profile.asset ? assetImages[profile.asset] : null;
+    if (!img || !img.complete || !img.naturalWidth) return false;
+
+    const f = marks(profile);
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
     const speaking = !!(typeof state !== "undefined" && state.isSpeaking && !state.isPaused);
-    const t = (typeof state !== "undefined" && state.breathPhase) || (Date.now() / 400);
-    const open = speaking ? Math.max(0.08, state.visemeMouthOpen || 0.2) : 0.02;
+    const open = speaking ? Math.max(0.05, state.visemeMouthOpen || 0.2) : (state.visemeMouthOpen || 0);
     const widen = speaking ? (state.visemeMouthWidth || 1) : 1;
-    const blink = (typeof state !== "undefined" && state.eyeBlink) || 0;
-    const nod = speaking ? Math.sin(t * 2.1) * 5 : Math.sin(t * 0.7) * 1.5;
-    const sway = Math.sin(t * 0.9) * (speaking ? 4 : 1.5);
+    const breath = Math.sin((state.breathPhase || 0)) * (speaking ? 1.8 : 0.7);
 
-    const cx = w / 2 + sway;
-    const headY = h * 0.30 + nod;
-    const shoulderY = h * 0.52;
+    ctx.save();
+    ctx.translate(0, breath);
+    ctx.imageSmoothingEnabled = true;
+    if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
 
-    // Suit / torso
-    const suit = ctx.createLinearGradient(cx - 220, shoulderY, cx + 220, h);
-    suit.addColorStop(0, look.suit);
-    suit.addColorStop(1, "#05070c");
-    ctx.fillStyle = suit;
-    ctx.beginPath();
-    ctx.moveTo(cx - 260, h);
-    ctx.lineTo(cx - 170, shoulderY + 40);
-    ctx.lineTo(cx - 70, shoulderY);
-    ctx.lineTo(cx + 70, shoulderY);
-    ctx.lineTo(cx + 170, shoulderY + 40);
-    ctx.lineTo(cx + 260, h);
-    ctx.closePath();
-    ctx.fill();
+    const headTop = Math.max(0, f.eyeY - 0.16);
+    const chest = Math.min(1, f.chinY + 0.32);
+    let srcH = (chest - headTop) * nh;
+    let srcW = srcH * (w / Math.max(1, h));
+    if (srcW > nw) {
+      srcW = nw;
+      srcH = srcW * (h / Math.max(1, w));
+    }
+    let sx = f.cx * nw - srcW / 2;
+    let sy = headTop * nh;
+    if (sx < 0) sx = 0;
+    if (sx + srcW > nw) sx = Math.max(0, nw - srcW);
+    if (sy < 0) sy = 0;
+    if (sy + srcH > nh) sy = Math.max(0, nh - srcH);
 
-    // Shirt / lapel
-    ctx.fillStyle = look.bot ? "#0b1220" : "#f4f1ea";
-    ctx.beginPath();
-    ctx.moveTo(cx - 28, shoulderY + 8);
-    ctx.lineTo(cx, h * 0.78);
-    ctx.lineTo(cx + 28, shoulderY + 8);
-    ctx.closePath();
-    ctx.fill();
+    ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
 
-    if (!look.bot) {
-      ctx.strokeStyle = look.accent;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(cx - 8, shoulderY + 18);
-      ctx.lineTo(cx - 8, h * 0.72);
-      ctx.stroke();
-    } else {
-      ctx.fillStyle = look.accent;
-      ctx.shadowColor = look.accent;
-      ctx.shadowBlur = 16;
-      ctx.beginPath();
-      ctx.arc(cx, shoulderY + 70, 10, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      if (speaking) {
-        for (let i = 0; i < 5; i++) {
-          const bh = 6 + Math.abs(Math.sin(Date.now() / 80 + i)) * 18;
-          ctx.fillRect(cx - 22 + i * 10, shoulderY + 110 - bh, 6, bh);
-        }
-      }
+    const mx = ((f.cx * nw - sx) / srcW) * w;
+    const my = ((f.mouthY * nh - sy) / srcH) * h;
+    const faceW = (f.faceW * nw / srcW) * w;
+
+    if (open > 0.07) {
+      const skin = sampleSkin(profile.id, mx + faceW * 0.2, my - faceW * 0.12);
+      drawHumanMouth(mx, my, faceW, Math.min(1, open), widen, profile.gender, skin);
     }
 
-    // Neck
-    const neckG = ctx.createLinearGradient(cx, headY + 55, cx, shoulderY);
-    neckG.addColorStop(0, look.skin[0]);
-    neckG.addColorStop(1, look.skin[1]);
-    ctx.fillStyle = neckG;
-    ctx.fillRect(cx - 22, headY + 48, 44, 46);
+    ctx.restore();
+    return true;
+  }
 
-    // Head
-    const headG = ctx.createRadialGradient(cx - 12, headY - 18, 10, cx, headY, 78);
-    headG.addColorStop(0, look.skin[0]);
-    headG.addColorStop(1, look.skin[1]);
-    ctx.fillStyle = headG;
-    ctx.beginPath();
-    ctx.ellipse(cx, headY, 58, 72, 0, 0, Math.PI * 2);
-    ctx.fill();
+  window.drawTalkingNewsReader = function (profile, w, h) {
+    drawPhotorealReader(profile, w, h);
+  };
 
-    // Hair
-    if (look.hairStyle !== "none") {
-      ctx.fillStyle = look.hair;
-      ctx.beginPath();
-      if (look.hairStyle === "bob" || look.hairStyle === "wave") {
-        ctx.ellipse(cx, headY - 28, 64, 48, 0, Math.PI, 0);
-        ctx.fill();
-        ctx.fillRect(cx - 64, headY - 30, 18, 70);
-        ctx.fillRect(cx + 46, headY - 30, 18, 78);
-        if (look.hairStyle === "wave") {
-          ctx.beginPath();
-          ctx.ellipse(cx + 50, headY + 30, 16, 40, 0.4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else {
-        ctx.ellipse(cx, headY - 40, 60, 38, 0, Math.PI, Math.PI * 2);
-        ctx.fill();
-        ctx.fillRect(cx - 58, headY - 40, 14, 50);
-        ctx.fillRect(cx + 44, headY - 40, 14, 50);
-      }
+  window.renderAdvancedAnchor = function (profile, w, h) {
+    if (profile.kind === "robot" || profile.id === "nexus_3d") {
+      if (typeof drawHumanoid3DAnchor === "function") drawHumanoid3DAnchor(w, h);
+      return;
     }
-
-    if (look.bot) {
-      ctx.strokeStyle = look.accent;
-      ctx.globalAlpha = 0.55;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(cx - 50, headY - 8);
-      ctx.lineTo(cx - 20, headY + 6);
-      ctx.moveTo(cx + 50, headY - 8);
-      ctx.lineTo(cx + 20, headY + 6);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+    if (!drawPhotorealReader(profile, w, h)) {
+      if (typeof drawHumanoid3DAnchor === "function") drawHumanoid3DAnchor(w, h);
     }
-
-    // Brows
-    ctx.strokeStyle = look.hair;
-    ctx.lineWidth = 3.2;
-    ctx.lineCap = "round";
-    const browLift = speaking ? -2 : 0;
-    ctx.beginPath();
-    ctx.moveTo(cx - 38, headY - 18 + browLift);
-    ctx.lineTo(cx - 12, headY - 22 + browLift);
-    ctx.moveTo(cx + 12, headY - 22 + browLift);
-    ctx.lineTo(cx + 38, headY - 18 + browLift);
-    ctx.stroke();
-
-    // Eyes
-    const eyeOpen = blink > 0.4 ? 1 : 8;
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.ellipse(cx - 22, headY - 4, 10, eyeOpen, 0, 0, Math.PI * 2);
-    ctx.ellipse(cx + 22, headY - 4, 10, eyeOpen, 0, 0, Math.PI * 2);
-    ctx.fill();
-    if (eyeOpen > 3) {
-      ctx.fillStyle = "#1b140e";
-      const gaze = (typeof state !== "undefined" ? state.gazeX : 0) * 3;
-      ctx.beginPath();
-      ctx.arc(cx - 22 + gaze, headY - 4, 4.2, 0, Math.PI * 2);
-      ctx.arc(cx + 22 + gaze, headY - 4, 4.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#fff";
-      ctx.beginPath();
-      ctx.arc(cx - 20 + gaze, headY - 6, 1.4, 0, Math.PI * 2);
-      ctx.arc(cx + 24 + gaze, headY - 6, 1.4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Nose
-    ctx.strokeStyle = "rgba(90,50,30,0.45)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, headY + 2);
-    ctx.lineTo(cx + 1, headY + 18);
-    ctx.lineTo(cx + 7, headY + 22);
-    ctx.stroke();
-
-    // Mouth — real viseme on this face
-    const mx = cx;
-    const my = headY + 38;
-    const mw = 16 * widen;
-    const mh = 3 + open * 16;
-    ctx.fillStyle = "#7a2a36";
-    ctx.beginPath();
-    ctx.ellipse(mx, my, mw, Math.max(2.5, mh * 0.55), 0, 0, Math.PI * 2);
-    ctx.fill();
-    if (open > 0.18) {
-      ctx.fillStyle = "#2a0c12";
-      ctx.beginPath();
-      ctx.ellipse(mx, my + 1, mw * 0.72, mh * 0.42, 0, 0, Math.PI * 2);
-      ctx.fill();
-      if (open > 0.45) {
-        ctx.fillStyle = "#f3efe6";
-        ctx.fillRect(mx - mw * 0.45, my - mh * 0.15, mw * 0.9, 2.4);
-      }
-    } else {
-      ctx.strokeStyle = "#8a3a42";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(mx - 12, my);
-      ctx.quadraticCurveTo(mx, my + 3, mx + 12, my);
-      ctx.stroke();
-    }
-
-    // Mic
-    ctx.fillStyle = "#111";
-    ctx.fillRect(cx + 70, shoulderY + 20, 6, 90);
-    ctx.beginPath();
-    ctx.arc(cx + 73, shoulderY + 16, 10, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = look.accent;
-    ctx.font = "bold 9px sans-serif";
-    ctx.fillText("LIVE", cx + 58, shoulderY + 14);
   };
 
   window.drawMaleAnchorModel = function () {
     if (!canvas || !ctx) return;
     const w = canvas.width;
     const h = canvas.height;
-    const profile = typeof getAnchorProfile === "function" ? getAnchorProfile(state.anchorModel) : { id: state.anchorModel, name: "Anchor", title: "News Reader", color: "#00d2ff" };
-    if (profile.kind === "robot" || profile.id === "nexus_3d") {
-      if (typeof drawHumanoid3DAnchor === "function") drawHumanoid3DAnchor(w, h);
-      else window.drawTalkingNewsReader(profile, w, h);
-    } else {
-      window.drawTalkingNewsReader(profile, w, h);
-    }
+    const profile = typeof getAnchorProfile === "function"
+      ? getAnchorProfile(state.anchorModel)
+      : { id: state.anchorModel, name: "Anchor", title: "News Reader", color: "#00d2ff", kind: "human" };
+    window.renderAdvancedAnchor(profile, w, h);
     if (typeof drawPresenterLowerThird === "function") drawPresenterLowerThird(profile, w, h);
   };
 
-  window.renderAdvancedAnchor = function (profile, w, h) {
-    window.drawTalkingNewsReader(profile, w, h);
-  };
+  if (typeof ANCHOR_PROFILES !== "undefined") {
+    Object.keys(LANDMARKS).forEach(function (id) {
+      if (ANCHOR_PROFILES[id]) ANCHOR_PROFILES[id].face = LANDMARKS[id];
+    });
+  }
 })();
