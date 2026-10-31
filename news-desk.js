@@ -3,28 +3,44 @@
   function toast(m) { if (typeof studioToast === "function") studioToast(m); else console.log(m); }
 
   function isFemaleName(name) {
-    return /female|zira|samantha|victoria|susan|hazel|heera|swara|kalpana|priya|kendra|linda|veena|moira|fiona|karen|tessa|nicky|aria|sonia|raveena|eva|catherine|hazel|google uk english female|microsoft heera|heera|zira|woman/i.test(name);
+    return /female|woman|zira|samantha|victoria|susan|hazel|heera|swara|kalpana|priya|kendra|linda|veena|moira|fiona|karen|tessa|nicky|aria|sonia|raveena|eva|catherine|jenny|ana|elsa|helen|neerja|pavithra|aashi|ananya|google uk english female|microsoft heera|microsoft swara|microsoft kalpana|zira|hazel/i.test(name);
   }
   function isMaleName(name) {
-    return /male|david|mark|ravi|daniel|fred|alex|george|james|hemant|sean|thomas|richard|microsoft ravi|google uk english male|man\b/i.test(name);
+    return /male|\bman\b|david|mark|ravi|daniel|fred|\balex\b|george|james|hemant|sean|thomas|richard|dhruv|prabhat|rishi|microsoft ravi|microsoft hemant|google uk english male/i.test(name);
+  }
+  function voiceGender(name) {
+    if (isFemaleName(name)) return "female";
+    if (isMaleName(name)) return "male";
+    return "unknown";
   }
 
   window.pickVoiceForLanguage = function (lang, gender) {
     const voices = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
     if (!voices.length) return null;
+    const wantF = gender === "female";
+    const want = wantF ? "female" : "male";
     const code = (lang || "en-US").toLowerCase();
     const short = code.split("-")[0];
-    const exact = voices.filter((v) => v.lang.toLowerCase() === code);
-    const prefix = voices.filter((v) => v.lang.toLowerCase().startsWith(short));
-    const pool = exact.length ? exact : (prefix.length ? prefix : voices);
-    const wantF = gender === "female";
-    const gendered = pool.filter((v) => {
-      if (v.gender === "female") return wantF;
-      if (v.gender === "male") return !wantF;
-      return wantF ? isFemaleName(v.name) : isMaleName(v.name);
-    });
-    const rest = pool.filter((v) => (wantF ? !isMaleName(v.name) : !isFemaleName(v.name)));
-    return gendered[0] || rest[0] || pool[0] || voices[0];
+    let best = null;
+    let bestScore = -1e9;
+    for (let i = 0; i < voices.length; i++) {
+      const v = voices[i];
+      const vl = (v.lang || "").toLowerCase();
+      const g = voiceGender(v.name || "");
+      let s = 0;
+      if (vl === code) s += 120;
+      else if (vl.startsWith(short + "-") || vl === short) s += 80;
+      else if (short === "hi" && vl.startsWith("en")) s += 12;
+      else s -= 20;
+      if (g === want) s += 100;
+      else if (g !== "unknown") s -= 140;
+      if (v.localService) s += 18;
+      if (s > bestScore) {
+        bestScore = s;
+        best = v;
+      }
+    }
+    return best || voices[0];
   };
 
   const _oldInitSpeech = window.initSpeechSynthesis;

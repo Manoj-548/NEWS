@@ -384,28 +384,29 @@ function initSpeechSynthesis() {
         
         voiceSelect.innerHTML = "";
         
-        const selectedLang = document.getElementById("languageSelect")?.value || "en-US";
-        const targetGender = genderSelect ? genderSelect.value : "male";
-        
-        // Filter voices matching language
-        const matchingVoices = state.availableVoices.filter(v => v.lang.startsWith(selectedLang.split('-')[0]));
+        const selectedLang = document.getElementById("languageSelect")?.value || state.currentLanguage || "en-US";
+        const profileGender = getAnchorProfile?.(state.anchorModel)?.gender;
+        const targetGender = profileGender || (genderSelect ? genderSelect.value : "male");
+        if (genderSelect) genderSelect.value = targetGender === "female" ? "female" : "male";
+
+        const picked = typeof pickVoiceForLanguage === "function"
+            ? pickVoiceForLanguage(selectedLang, targetGender)
+            : null;
+        const matchingVoices = state.availableVoices.filter(v => v.lang.toLowerCase().startsWith(selectedLang.split("-")[0].toLowerCase()));
         const voicesToDisplay = matchingVoices.length > 0 ? matchingVoices : state.availableVoices;
-        
-        voicesToDisplay.forEach((voice, idx) => {
+
+        voicesToDisplay.forEach((voice) => {
             const option = document.createElement("option");
             option.value = voice.name;
             const nameLower = voice.name.toLowerCase();
-            const isFemale = nameLower.includes("female") || nameLower.includes("zira") || nameLower.includes("samantha") || nameLower.includes("victoria") || nameLower.includes("swara") || nameLower.includes("google hindi") && idx % 2 === 1;
-            const isMale = !isFemale;
-            
-            const matchesGender = targetGender === "female" ? isFemale : isMale;
-            
-            option.textContent = `${voice.name} (${voice.lang}) ${isFemale ? '👩 Female' : '👔 Male'}`;
-            if (matchesGender && !voiceSelect.value) option.selected = true;
+            const isFemale = /female|zira|heera|swara|samantha|hazel|veena|kalpana|victoria|susan/i.test(nameLower);
+            option.textContent = `${voice.name} (${voice.lang}) ${isFemale ? "👩 Female" : "👔 Male"}`;
+            if (picked && voice.name === picked.name) option.selected = true;
             voiceSelect.appendChild(option);
         });
 
-        if (voicesToDisplay.length > 0) {
+        if (picked) state.currentVoice = picked;
+        else if (voicesToDisplay.length > 0) {
             state.currentVoice = voicesToDisplay.find(v => v.name === voiceSelect.value) || voicesToDisplay[0];
         }
     }
@@ -424,11 +425,11 @@ function initCanvas() {
     const wrap = document.getElementById("canvasWrapper");
     const rect = wrap ? wrap.getBoundingClientRect() : null;
     if (state.aspectRatio === "9:16") {
-        canvas.width = 720;
-        canvas.height = 1280;
+        canvas.width = 1080;
+        canvas.height = 1920;
     } else {
-        canvas.width = 1280;
-        canvas.height = 720;
+        canvas.width = 1920;
+        canvas.height = 1080;
     }
     if (rect && rect.width > 50 && rect.height > 50) {
         canvas.style.width = "100%";
@@ -1332,9 +1333,7 @@ function startNewsBroadcast() {
     }
 
     currentUtterance = new SpeechSynthesisUtterance(speakText);
-    currentUtterance.lang = state.currentLanguage || "en-US";
-    currentUtterance.rate = state.speechRate;
-    currentUtterance.pitch = state.speechPitch;
+    currentUtterance.rate = state.speechRate || 1;
     currentUtterance.volume = state.volume;
     const profileNow = getAnchorProfile?.(state.anchorModel);
     const gender = (typeof syncVoiceToPresenter === "function"
@@ -1343,10 +1342,19 @@ function startNewsBroadcast() {
     if (typeof pickVoiceForLanguage === "function") {
         state.currentVoice = pickVoiceForLanguage(state.currentLanguage, gender) || state.currentVoice;
     }
-    if (state.currentVoice) currentUtterance.voice = state.currentVoice;
-    currentUtterance.pitch = gender === "female"
-        ? Math.min(1.2, (state.speechPitch || 1) * 1.08)
-        : Math.max(0.85, (state.speechPitch || 1) * 0.95);
+    if (state.currentVoice) {
+        currentUtterance.voice = state.currentVoice;
+        const vLang = (state.currentVoice.lang || "").toLowerCase();
+        const want = (state.currentLanguage || "en-IN").toLowerCase();
+        currentUtterance.lang = vLang.startsWith(want.split("-")[0]) ? state.currentVoice.lang : (state.currentLanguage || "en-IN");
+    } else {
+        currentUtterance.lang = state.currentLanguage || "en-IN";
+    }
+    currentUtterance.pitch = gender === "female" ? 1.22 : 0.86;
+    state._speakT0 = performance.now();
+    state._lastBoundary = 0;
+    state.currentWordIndex = 0;
+    state.letterPhase = 0;
 
     currentUtterance.onboundary = (event) => {
         if (event.name === "word" || event.name === "sentence" || !event.name) {
@@ -1356,6 +1364,7 @@ function startNewsBroadcast() {
             if (state.currentWordIndex < 0) state.currentWordIndex = 0;
             state.letterPhase = 0;
             state._visemeWord = state.currentWordIndex;
+            state._lastBoundary = performance.now();
             renderTeleprompterText();
             const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
             if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1368,6 +1377,7 @@ function startNewsBroadcast() {
     currentUtterance.onstart = () => {
         state.isSpeaking = true;
         state.isPaused = false;
+        state._speakT0 = performance.now();
         document.querySelector(".teleprompter-card")?.classList.add("speaking-active");
         updateBroadcastButtons();
     };

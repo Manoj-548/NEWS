@@ -1,4 +1,4 @@
-/* Head locked. Same-pose viseme photos. Face/mouth follow the voice. */
+/* HD portrait, no extra zoom. Mouth visemes follow the spoken words. */
 (function () {
   const LANDMARKS = {
     nova_kade:       { cx: 0.50, eyeY: 0.220, mouthY: 0.292, chinY: 0.355, faceW: 0.16 },
@@ -65,7 +65,7 @@
       return { open: 0.65, width: 0.7, shape: "round" };
     if (["a", "ay", "ai", "ah"].indexOf(t) >= 0 || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw))
       return { open: 0.85, width: 1.08, shape: "open" };
-    return { open: 0.35, width: 1, shape: "open" };
+    return { open: 0.45, width: 1, shape: "open" };
   };
 
   function lettersOf(word) {
@@ -119,25 +119,24 @@
   function targetWeights(id, shape, open) {
     const z = { A: 0, E: 0, O: 0, F: 0 };
     const allow = MATCHED[id] || {};
-    const s = Math.min(1, Math.max(0, open));
     function put(key, amt) {
       if (amt <= 0) return;
       if (allow[key]) z[key] += amt;
-      else if (allow.A) z.A += amt * 0.85;
-      else if (allow.O) z.O += amt * 0.7;
-      else if (allow.E) z.E += amt * 0.7;
+      else if (allow.A) z.A += amt * 0.9;
+      else if (allow.O) z.O += amt * 0.75;
+      else if (allow.E) z.E += amt * 0.75;
     }
-    if (shape === "closed" || s < 0.04) return z;
-    if (shape === "wide") put("E", Math.max(0.55, s));
-    else if (shape === "round") put("O", Math.max(0.6, s));
-    else if (shape === "teeth") put("F", Math.max(0.5, s));
-    else if (shape === "open") put("A", Math.max(0.7, s));
-    else put("A", Math.max(0.45, s));
+    if (shape === "closed" || open < 0.04) return z;
+    if (shape === "wide") put("E", 0.95);
+    else if (shape === "round") put("O", 0.95);
+    else if (shape === "teeth") put("F", 0.9);
+    else if (shape === "open") put("A", 0.98);
+    else put("A", 0.7);
     const sum = z.A + z.E + z.O + z.F;
     if (sum > 1) {
       z.A /= sum; z.E /= sum; z.O /= sum; z.F /= sum;
     }
-    if (sum < 0.45 && shape !== "closed") put("A", 0.7);
+    if (sum < 0.5) put("A", 0.9);
     return z;
   }
 
@@ -146,16 +145,32 @@
   }
 
   const IDLE_CYCLE = [
-    { char: "a", viseme: "open", open: 0.82 },
-    { char: "e", viseme: "wide", open: 0.42 },
-    { char: "o", viseme: "round", open: 0.68 },
-    { char: "a", viseme: "open", open: 0.75 },
-    { char: "m", viseme: "closed", open: 0.04 }
+    { char: "a", viseme: "open", open: 0.9 },
+    { char: "e", viseme: "wide", open: 0.45 },
+    { char: "o", viseme: "round", open: 0.72 },
+    { char: "a", viseme: "open", open: 0.8 },
+    { char: "m", viseme: "closed", open: 0.02 }
   ];
+
+  function syncWordClock() {
+    const words = state.scriptWords || [];
+    if (!words.length) return;
+    const now = performance.now();
+    if (state._lastBoundary && now - state._lastBoundary < 380) return;
+    const t0 = state._speakT0 || now;
+    const elapsed = Math.max(0, (now - t0) / 1000);
+    const wps = 2.5 * (state.speechRate || 1);
+    const est = Math.min(words.length - 1, Math.floor(elapsed * wps));
+    if (est !== state.currentWordIndex) {
+      state.currentWordIndex = est;
+      state.letterPhase = 0;
+      state._visemeWord = est;
+    }
+  }
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-5.8 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-7.2 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.A !== "number") state.faceW = { A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -165,9 +180,6 @@
       state.visemeMouthWidth = easeToward(state.visemeMouthWidth || 1, 1, k);
       state.visemeShape = "closed";
       state.currentLetter = "";
-      state.browLift = easeToward(state.browLift || 0, 0, k);
-      state.cheekRaise = easeToward(state.cheekRaise || 0, 0, k);
-      state.jawOpen = easeToward(state.jawOpen || 0, 0, k);
       w.A = easeToward(w.A, 0, k);
       w.E = easeToward(w.E, 0, k);
       w.O = easeToward(w.O, 0, k);
@@ -175,15 +187,15 @@
       return;
     }
 
+    syncWordClock();
     const words = state.scriptWords || [];
     const idx = Math.max(0, state.currentWordIndex || 0);
     if (state._visemeWord !== idx) {
       state._visemeWord = idx;
       state.letterPhase = 0;
-      state.currentWordVec = window.wordToVec(words[idx] || "");
     }
     const seq = window.wordToVisemes(words[idx] || "");
-    const rate = 2.7 * (state.speechRate || 1);
+    const rate = 3.4 * (state.speechRate || 1);
     state.letterPhase = (state.letterPhase || 0) + delta * rate;
     let item;
     if (seq.length) {
@@ -197,13 +209,6 @@
     state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);
     state.visemeMouthWidth = easeToward(state.visemeMouthWidth || 1, v.width, k);
     state.visemeShape = item.viseme;
-
-    const tBrow = (item.viseme === "open" || item.viseme === "wide") ? 0.34 : (item.viseme === "round" ? 0.2 : 0.05);
-    const tCheek = item.viseme === "wide" ? 0.45 : (item.viseme === "open" ? 0.16 : 0);
-    state.browLift = easeToward(state.browLift || 0, tBrow, k);
-    state.cheekRaise = easeToward(state.cheekRaise || 0, tCheek, k);
-    state.jawOpen = easeToward(state.jawOpen || 0, item.open, k);
-
     const tw = targetWeights(id, item.viseme, item.open);
     w.A = easeToward(w.A, tw.A, k);
     w.E = easeToward(w.E, tw.E, k);
@@ -214,8 +219,8 @@
   function talkingAvatarTick(delta) {
     if (typeof delta !== "number" || !isFinite(delta) || delta < 0) delta = 0.016;
     if (delta > 0.08) delta = 0.08;
-    state.breathPhase = (state.breathPhase || 0) + delta * 0.55;
-    if (Math.random() < 0.0032 && (state.eyeBlink || 0) === 0) state.eyeBlink = 1;
+    state.breathPhase = (state.breathPhase || 0) + delta * 0.4;
+    if (Math.random() < 0.003 && (state.eyeBlink || 0) === 0) state.eyeBlink = 1;
     if (state.eyeBlink > 0) {
       state.eyeBlink -= delta * 6.5;
       if (state.eyeBlink < 0) state.eyeBlink = 0;
@@ -228,19 +233,23 @@
   function cropRect(img, f, w, h) {
     const nw = img.naturalWidth;
     const nh = img.naturalHeight;
-    const headTop = Math.max(0, (f.eyeY || 0.26) - 0.20);
-    const chest = Math.min(1, (f.chinY || 0.4) + 0.16);
-    let srcH = (chest - headTop) * nh;
-    let srcW = srcH * (w / Math.max(1, h));
-    if (srcW > nw) {
+    const ar = w / Math.max(1, h);
+    let srcW, srcH, sx, sy;
+    if (nw / nh >= ar) {
+      srcH = nh;
+      srcW = srcH * ar;
+      sx = (f.cx || 0.5) * nw - srcW / 2;
+      sy = 0;
+    } else {
       srcW = nw;
-      srcH = srcW * (h / Math.max(1, w));
+      srcH = srcW / ar;
+      const eye = (f.eyeY || 0.26) * nh;
+      sy = eye - srcH * 0.34;
+      sx = 0;
     }
-    let sx = (f.cx || 0.5) * nw - srcW / 2;
-    let sy = headTop * nh;
     if (sx < 0) sx = 0;
-    if (sx + srcW > nw) sx = Math.max(0, nw - srcW);
     if (sy < 0) sy = 0;
+    if (sx + srcW > nw) sx = Math.max(0, nw - srcW);
     if (sy + srcH > nh) sy = Math.max(0, nh - srcH);
     return { nw, nh, sx, sy, srcW, srcH };
   }
@@ -260,7 +269,7 @@
   }
 
   function blendVisemeLayer(srcImg, f, w, h, alpha) {
-    if (!ready(srcImg) || alpha < 0.02) return;
+    if (!ready(srcImg) || alpha < 0.03) return;
     const crop = cropRect(srcImg, f, w, h);
     const b = ensureBuf(w, h);
     b.clearRect(0, 0, w, h);
@@ -270,18 +279,15 @@
 
     const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
     const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
-    const eyeY = ((f.eyeY * crop.nh - crop.sy) / crop.srcH) * h;
-    const jawY = ((f.chinY * crop.nh - crop.sy) / crop.srcH) * h;
     const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-    const rx = Math.max(faceW * 1.15, w * 0.16);
-    const ry = Math.max((jawY - eyeY) * 0.85, faceW * 0.7, h * 0.16);
-    const cy = (eyeY + jawY) * 0.52;
+    const rx = Math.max(70, faceW * 0.62);
+    const ry = Math.max(42, faceW * 0.38);
 
     b.globalCompositeOperation = "destination-in";
-    const g = b.createRadialGradient(mx, cy, Math.min(rx, ry) * 0.22, mx, cy, Math.max(rx, ry));
+    const g = b.createRadialGradient(mx, my, Math.min(rx, ry) * 0.15, mx, my, Math.max(rx, ry));
     g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(0.62, "rgba(0,0,0,0.96)");
-    g.addColorStop(0.86, "rgba(0,0,0,0.4)");
+    g.addColorStop(0.55, "rgba(0,0,0,0.95)");
+    g.addColorStop(0.82, "rgba(0,0,0,0.35)");
     g.addColorStop(1, "rgba(0,0,0,0)");
     b.fillStyle = g;
     b.fillRect(0, 0, w, h);
@@ -308,10 +314,10 @@
     const bank = visemeBank[profile.id] || {};
     const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
     const layers = [];
-    if (allow.A && fw.A > 0.03) layers.push([fw.A, bank.A]);
-    if (allow.E && fw.E > 0.03) layers.push([fw.E, bank.E]);
-    if (allow.O && fw.O > 0.03) layers.push([fw.O, bank.O]);
-    if (allow.F && fw.F > 0.03) layers.push([fw.F, bank.F]);
+    if (allow.A && fw.A > 0.04) layers.push([fw.A, bank.A]);
+    if (allow.E && fw.E > 0.04) layers.push([fw.E, bank.E]);
+    if (allow.O && fw.O > 0.04) layers.push([fw.O, bank.O]);
+    if (allow.F && fw.F > 0.04) layers.push([fw.F, bank.F]);
     layers.sort(function (a, b) { return b[0] - a[0]; });
     const n = Math.min(2, layers.length);
     for (let i = 0; i < n; i++) blendVisemeLayer(layers[i][1], f, w, h, layers[i][0]);
