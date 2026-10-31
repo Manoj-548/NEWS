@@ -39,18 +39,20 @@
 
   window.visemeForChar = function visemeForChar(ch) {
     if (!ch || /\s/.test(ch)) return { open: 0.05, width: 1, shape: "rest" };
-    const c = String(ch).toUpperCase();
+    const t = String(ch).toLowerCase();
     const raw = String(ch);
-    if (/[MBP]/.test(c) || /[मपबभ]/.test(raw) || /[ಮಪಬ]/.test(raw) || /[மப]/.test(raw) || /[మపబ]/.test(raw))
+    if (["m", "b", "p", "mb", "mp"].indexOf(t) >= 0 || /[मपबभ]/.test(raw) || /[ಮಪಬ]/.test(raw) || /[மப]/.test(raw) || /[మపబ]/.test(raw))
       return { open: 0, width: 0.8, shape: "closed" };
-    if (/[FV]/.test(c) || /[फव]/.test(raw))
+    if (["f", "v", "ph"].indexOf(t) >= 0 || /[फव]/.test(raw))
       return { open: 0.25, width: 1.05, shape: "teeth" };
-    if (/[AÁÀÂÄĀ]/.test(c) || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw))
-      return { open: 0.85, width: 1.08, shape: "open" };
-    if (/[EÉÈÊËIÍÌÎÏY]/.test(c) || /[इईएऐिीेै]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீ]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
+    if (["th", "sh", "ch", "s", "z", "j"].indexOf(t) >= 0)
+      return { open: 0.28, width: 1.16, shape: "wide" };
+    if (["ee", "ea", "ie", "ei", "i", "y", "e"].indexOf(t) >= 0 || /[इईएऐिीेै]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீ]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
       return { open: 0.4, width: 1.22, shape: "wide" };
-    if (/[OÓÒÔÖUÚÙÛÜW]/.test(c) || /[उऊओऔुूोौ]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw) || /[ఉఊఒఓుూొో]/.test(raw))
+    if (["oo", "ou", "ow", "ue", "ew", "u", "o", "w", "oy", "oi"].indexOf(t) >= 0 || /[उऊओऔुूोौ]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw) || /[ఉఊఒఓుూొో]/.test(raw))
       return { open: 0.65, width: 0.7, shape: "round" };
+    if (["a", "ay", "ai", "ah"].indexOf(t) >= 0 || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw))
+      return { open: 0.85, width: 1.08, shape: "open" };
     return { open: 0.22, width: 1, shape: "rest" };
   };
 
@@ -65,10 +67,26 @@
     return out;
   }
 
+  function latinTokens(word) {
+    const s = String(word).toLowerCase();
+    const out = [];
+    const digraphs = ["th", "sh", "ch", "ph", "wh", "ee", "ea", "ie", "ei", "oo", "ou", "ow", "ue", "ew", "ai", "ay", "ey", "oi", "oy", "ng"];
+    for (let i = 0; i < s.length; ) {
+      if (/[^a-z']/.test(s[i])) { i += 1; continue; }
+      const two = s.slice(i, i + 2);
+      if (digraphs.indexOf(two) >= 0) { out.push(two); i += 2; continue; }
+      out.push(s[i]);
+      i += 1;
+    }
+    return out;
+  }
+
   window.wordToVisemes = function wordToVisemes(word) {
-    return lettersOf(word).map(function (ch) {
-      const v = window.visemeForChar(ch);
-      return { char: ch, viseme: v.shape, id: VISEME_ID[v.shape] ?? 1, open: v.open };
+    const raw = String(word || "");
+    const tokens = /^[A-Za-z']+$/.test(raw) ? latinTokens(raw) : lettersOf(raw);
+    return tokens.map(function (tok) {
+      const v = window.visemeForChar(tok);
+      return { char: tok, viseme: v.shape, id: VISEME_ID[v.shape] ?? 1, open: v.open };
     });
   };
 
@@ -103,14 +121,14 @@
       const w = words[idx] || "";
       state.currentWordVec = window.wordToVec(w);
     }
-    const letters = lettersOf(words[idx] || "");
+    const seq = window.wordToVisemes(words[idx] || "");
     state.letterPhase = (state.letterPhase || 0) + delta * 8 * (state.speechRate || 1);
-    const ch = letters.length ? letters[Math.floor(state.letterPhase) % letters.length] : "A";
-    const v = window.visemeForChar(ch);
-    state.currentLetter = ch;
-    state.visemeMouthOpen += (v.open - (state.visemeMouthOpen || 0)) * 0.55;
+    const item = seq.length ? seq[Math.floor(state.letterPhase) % seq.length] : { char: "A", viseme: "open", open: 0.8 };
+    const v = window.visemeForChar(item.char);
+    state.currentLetter = item.char;
+    state.visemeMouthOpen += (item.open - (state.visemeMouthOpen || 0)) * 0.55;
     state.visemeMouthWidth += (v.width - (state.visemeMouthWidth || 1)) * 0.55;
-    state.visemeShape = v.shape;
+    state.visemeShape = item.viseme;
   }
 
   window.updateFacialAnimations = function (delta) {
