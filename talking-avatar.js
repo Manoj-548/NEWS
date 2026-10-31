@@ -159,11 +159,10 @@
       else if (allow.E) z.E += amt * 0.55;
     }
     if (shape === "closed" || open < 0.04) return z;
-    if (shape === "wide") put("E", 0.9);
-    else if (shape === "round") put("O", 0.9);
-    else if (shape === "teeth") put("F", 0.88);
-    else if (shape === "open") { put("A", 0.42); put("T", 0.48); }
-    else put("T", 0.88);
+    if (shape === "wide") put("E", 0.92);
+    else if (shape === "round") put("O", 0.92);
+    else if (shape === "teeth") put("F", 0.9);
+    else put("T", 0.9);
     return z;
   }
 
@@ -294,74 +293,40 @@
     };
   }
 
-  let faceBuf = null;
-  let faceCtx = null;
-  function blendTalkingMouth(srcImg, base, f, w, h, alpha, kind) {
-    if (!ready(srcImg) || alpha < 0.05) return;
-    const crop = mappedCrop(base, srcImg, f, w, h);
-    const bc = cropRect(base, f, w, h);
-    if (!faceBuf) {
-      faceBuf = document.createElement("canvas");
-      faceCtx = faceBuf.getContext("2d");
+  function pickMouthPhoto(id) {
+    const speaking = !!(state.isSpeaking && !state.isPaused);
+    if (!speaking) return null;
+    const allow = MATCHED[id] || {};
+    const bank = visemeBank[id] || {};
+    const fw = (state.faceW && typeof state.faceW.T === "number") ? state.faceW : { T: 0, A: 0, E: 0, O: 0, F: 0 };
+    const order = ["E", "O", "F", "T"];
+    let best = null;
+    let bestW = 0.12;
+    for (let i = 0; i < order.length; i++) {
+      const k = order[i];
+      if (allow[k] && fw[k] > bestW && ready(bank[k])) {
+        best = bank[k];
+        bestW = fw[k];
+      }
     }
-    if (faceBuf.width !== w || faceBuf.height !== h) {
-      faceBuf.width = w;
-      faceBuf.height = h;
-    }
-    const b = faceCtx;
-    b.clearRect(0, 0, w, h);
-    b.imageSmoothingEnabled = true;
-    if (b.imageSmoothingQuality) b.imageSmoothingQuality = "high";
-    b.drawImage(srcImg, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-
-    const mx = ((f.cx * bc.nw - bc.sx) / bc.srcW) * w;
-    const my = ((f.mouthY * bc.nh - bc.sy) / bc.srcH) * h;
-    const faceW = (f.faceW * bc.nw / bc.srcW) * w;
-    const rx = Math.max(42, faceW * (kind === "A" ? 0.48 : 0.58));
-    const ry = Math.max(24, faceW * (kind === "A" ? 0.20 : 0.28));
-
-    b.globalCompositeOperation = "destination-in";
-    const g = b.createRadialGradient(mx, my, Math.min(rx, ry) * 0.16, mx, my, Math.max(rx, ry));
-    g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(0.5, "rgba(0,0,0,0.95)");
-    g.addColorStop(0.78, "rgba(0,0,0,0.4)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    b.fillStyle = g;
-    b.fillRect(0, 0, w, h);
-    b.globalCompositeOperation = "source-over";
-
-    ctx.save();
-    ctx.globalAlpha = Math.min(kind === "A" ? 0.52 : 0.9, alpha);
-    ctx.drawImage(faceBuf, 0, 0);
-    ctx.restore();
+    if (!best && ready(bank.T)) best = bank.T;
+    if (!best && ready(bank.E)) best = bank.E;
+    return best;
   }
 
   function drawPhotorealReader(profile, w, h) {
     const base = profile.asset ? assetImages[profile.asset] : null;
     if (!base || !base.complete || !base.naturalWidth) return false;
     const f = marks(profile);
-    const crop = cropRect(base, f, w, h);
+    const talk = pickMouthPhoto(profile.id);
+    const img = talk || base;
+    const crop = mappedCrop(base, img, f, w, h);
 
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-
-    const speaking = !!(state.isSpeaking && !state.isPaused);
-    const allow = MATCHED[profile.id] || {};
-    const bank = visemeBank[profile.id] || {};
-    const fw = (state.faceW && typeof state.faceW.T === "number") ? state.faceW : { T: 0, A: 0, E: 0, O: 0, F: 0 };
-    const layers = [];
-    if (allow.T && fw.T > 0.06 && ready(bank.T)) layers.push([fw.T, bank.T, "T"]);
-    if (allow.A && fw.A > 0.08 && ready(bank.A)) layers.push([fw.A, bank.A, "A"]);
-    if (allow.E && fw.E > 0.08 && ready(bank.E)) layers.push([fw.E, bank.E, "E"]);
-    if (allow.O && fw.O > 0.08 && ready(bank.O)) layers.push([fw.O, bank.O, "O"]);
-    if (allow.F && fw.F > 0.08 && ready(bank.F)) layers.push([fw.F, bank.F, "F"]);
-    layers.sort(function (a, b) { return b[0] - a[0]; });
-    if (speaking && !layers.length && ready(bank.T)) layers.push([0.8, bank.T, "T"]);
-    if (speaking && !layers.length && ready(bank.E)) layers.push([0.8, bank.E, "E"]);
-    if (layers.length) blendTalkingMouth(layers[0][1], base, f, w, h, layers[0][0], layers[0][2]);
-
+    ctx.globalAlpha = 1;
+    ctx.drawImage(img, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
     ctx.restore();
     return true;
   }
