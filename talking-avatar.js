@@ -13,15 +13,15 @@
   };
 
   const MATCHED = {
-    nova_kade:       { T: 1, E: 1, O: 1, F: 1 },
-    lyra_nova:       { T: 1, E: 1, O: 1 },
-    arjun_mehra:     { T: 1, E: 1, O: 1, F: 1 },
-    priya_nair:      { T: 1, E: 1, O: 1, F: 1 },
-    rajesh_sharma:   { T: 1, E: 1, O: 1 },
-    meera_kapoor:    { T: 1, E: 1, O: 1, F: 1 },
-    alexander_hayes: { T: 1, E: 1, O: 1 },
-    sofia_reyes:     { T: 1, E: 1, O: 1 },
-    marcus_cole:     { T: 1, E: 1, O: 1 }
+    nova_kade:       { T: 1, A: 1, E: 1, O: 1, F: 1 },
+    lyra_nova:       { T: 1, A: 1, E: 1, O: 1 },
+    arjun_mehra:     { T: 1, A: 1, E: 1, O: 1, F: 1 },
+    priya_nair:      { T: 1, A: 1, E: 1, O: 1, F: 1 },
+    rajesh_sharma:   { T: 1, A: 1, E: 1, O: 1 },
+    meera_kapoor:    { T: 1, A: 1, E: 1, O: 1, F: 1 },
+    alexander_hayes: { T: 1, A: 1, E: 1, O: 1 },
+    sofia_reyes:     { T: 1, A: 1, E: 1, O: 1 },
+    marcus_cole:     { T: 1, A: 1, E: 1, O: 1 }
   };
 
   const LATIN_LETTER = {
@@ -155,14 +155,15 @@
     function put(key, amt) {
       if (amt <= 0) return;
       if (allow[key]) z[key] += amt;
-      else if (allow.T) z.T += amt * 0.85;
-      else if (allow.E) z.E += amt * 0.5;
+      else if (allow.T) z.T += amt * 0.8;
+      else if (allow.E) z.E += amt * 0.55;
     }
     if (shape === "closed" || open < 0.04) return z;
-    if (shape === "wide") { put("T", 0.55); put("E", 0.28); }
-    else if (shape === "round") { put("T", 0.4); put("O", 0.38); }
-    else if (shape === "teeth") { put("T", 0.4); put("F", 0.3); }
-    else put("T", 0.7);
+    if (shape === "wide") put("E", 0.9);
+    else if (shape === "round") put("O", 0.9);
+    else if (shape === "teeth") put("F", 0.88);
+    else if (shape === "open") { put("A", 0.42); put("T", 0.48); }
+    else put("T", 0.88);
     return z;
   }
 
@@ -172,42 +173,43 @@
 
   const DIGRAPHS = ["th", "sh", "ch", "ph", "wh", "ee", "ea", "ie", "ei", "oo", "ou", "ow", "ue", "ew", "ai", "ay", "ey", "oi", "oy", "ng"];
 
-  function wordTalkShape(word) {
+  function visemeRun(word) {
     const raw = window.wordToVisemes(word);
-    let round = false, wide = false, teeth = false, closedOnly = raw.length > 0;
+    const out = [];
     for (let i = 0; i < raw.length; i++) {
-      const s = raw[i].viseme;
-      if (s !== "closed") closedOnly = false;
-      if (s === "round") round = true;
-      else if (s === "wide") wide = true;
-      else if (s === "teeth") teeth = true;
+      const it = raw[i];
+      const shape = it.viseme === "rest" ? "talk" : it.viseme;
+      if (out.length && out[out.length - 1].viseme === shape) continue;
+      out.push({ char: it.char, viseme: shape, open: shape === "closed" ? 0 : (it.open || 0.4) });
     }
-    if (closedOnly) return { viseme: "closed", open: 0, char: word };
-    if (round) return { viseme: "round", open: 0.45, char: word };
-    if (wide) return { viseme: "wide", open: 0.4, char: word };
-    if (teeth) return { viseme: "teeth", open: 0.28, char: word };
-    return { viseme: "open", open: 0.4, char: word };
+    if (!out.length) out.push({ char: word || "a", viseme: "talk", open: 0.4 });
+    return out;
+  }
+
+  function wordDurationSec(word, rate) {
+    const n = Math.max(1, visemeRun(word).length);
+    return Math.min(0.95, Math.max(0.42, 0.2 + n * 0.18)) / Math.max(0.6, rate || 1);
   }
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-2.15 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-3.1 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.T !== "number") state.faceW = { T: 0, A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
-    function zeroW() {
-      w.T = easeToward(w.T || 0, 0, k);
-      w.A = easeToward(w.A || 0, 0, k);
-      w.E = easeToward(w.E || 0, 0, k);
-      w.O = easeToward(w.O || 0, 0, k);
-      w.F = easeToward(w.F || 0, 0, k);
+    function applyW(tw) {
+      w.T = easeToward(w.T || 0, tw.T || 0, k);
+      w.A = easeToward(w.A || 0, tw.A || 0, k);
+      w.E = easeToward(w.E || 0, tw.E || 0, k);
+      w.O = easeToward(w.O || 0, tw.O || 0, k);
+      w.F = easeToward(w.F || 0, tw.F || 0, k);
     }
 
     if (!speaking) {
       state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, 0, k);
       state.visemeShape = "closed";
       state.currentLetter = "";
-      zeroW();
+      applyW({ T: 0, A: 0, E: 0, O: 0, F: 0 });
       return;
     }
 
@@ -228,22 +230,24 @@
 
     const idx = Math.max(0, Math.min(Math.max(0, words.length - 1), state.currentWordIndex || 0));
     const word = words[idx] || "";
-    const item = word ? wordTalkShape(word) : { viseme: "open", open: 0.4, char: "" };
-    state.currentLetter = word;
+    const seq = visemeRun(word);
+    const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
+    const dur = wordDurationSec(word, rate);
+    const u = Math.min(0.999, Math.max(0, (now - t0) / 1000) / dur);
+    const i = Math.min(seq.length - 1, Math.floor(u * seq.length));
+    const item = seq[i] || { viseme: "talk", open: 0.4, char: word };
+    state.currentLetter = item.char;
     state.visemeShape = item.viseme;
     state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);
-    const tw = targetWeights(id, item.viseme, item.open);
-    w.T = easeToward(w.T || 0, tw.T || 0, k);
-    w.A = easeToward(w.A || 0, 0, k);
-    w.E = easeToward(w.E || 0, tw.E || 0, k);
-    w.O = easeToward(w.O || 0, tw.O || 0, k);
-    w.F = easeToward(w.F || 0, tw.F || 0, k);
+    applyW(targetWeights(id, item.viseme, item.open));
   }
 
   function talkingAvatarTick(delta) {
     if (typeof delta !== "number" || !isFinite(delta) || delta < 0) delta = 0.016;
     if (delta > 0.08) delta = 0.08;
-    state.breathPhase = (state.breathPhase || 0) + delta * 0.4;
+    state.headTilt = 0;
+    state.gazeX = 0;
+    state.shoulderSway = 0;
     if (Math.random() < 0.003 && (state.eyeBlink || 0) === 0) state.eyeBlink = 1;
     if (state.eyeBlink > 0) {
       state.eyeBlink -= delta * 6.5;
@@ -262,14 +266,13 @@
     if (nw / nh >= ar) {
       srcH = nh;
       srcW = srcH * ar;
-      sx = (f.cx || 0.5) * nw - srcW / 2;
+      sx = (nw - srcW) / 2;
       sy = 0;
     } else {
       srcW = nw;
       srcH = srcW / ar;
-      const eye = (f.eyeY || 0.26) * nh;
-      sy = eye - srcH * 0.34;
       sx = 0;
+      sy = (nh - srcH) / 2;
     }
     if (sx < 0) sx = 0;
     if (sy < 0) sy = 0;
@@ -278,11 +281,25 @@
     return { nw, nh, sx, sy, srcW, srcH };
   }
 
+  function mappedCrop(base, img, f, w, h) {
+    const bc = cropRect(base, f, w, h);
+    if (!img || img === base || !img.naturalWidth) return bc;
+    return {
+      nw: img.naturalWidth,
+      nh: img.naturalHeight,
+      sx: (bc.sx / bc.nw) * img.naturalWidth,
+      sy: (bc.sy / bc.nh) * img.naturalHeight,
+      srcW: (bc.srcW / bc.nw) * img.naturalWidth,
+      srcH: (bc.srcH / bc.nh) * img.naturalHeight
+    };
+  }
+
   let faceBuf = null;
   let faceCtx = null;
-  function blendTalkingMouth(srcImg, f, w, h, alpha) {
+  function blendTalkingMouth(srcImg, base, f, w, h, alpha, kind) {
     if (!ready(srcImg) || alpha < 0.05) return;
-    const crop = cropRect(srcImg, f, w, h);
+    const crop = mappedCrop(base, srcImg, f, w, h);
+    const bc = cropRect(base, f, w, h);
     if (!faceBuf) {
       faceBuf = document.createElement("canvas");
       faceCtx = faceBuf.getContext("2d");
@@ -297,26 +314,24 @@
     if (b.imageSmoothingQuality) b.imageSmoothingQuality = "high";
     b.drawImage(srcImg, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
 
-    const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
-    const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
-    const eyeY = ((f.eyeY * crop.nh - crop.sy) / crop.srcH) * h;
-    const jawY = ((f.chinY * crop.nh - crop.sy) / crop.srcH) * h;
-    const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-    const rx = Math.max(48, faceW * 0.52);
-    const ry = Math.max(28, faceW * 0.22);
+    const mx = ((f.cx * bc.nw - bc.sx) / bc.srcW) * w;
+    const my = ((f.mouthY * bc.nh - bc.sy) / bc.srcH) * h;
+    const faceW = (f.faceW * bc.nw / bc.srcW) * w;
+    const rx = Math.max(42, faceW * (kind === "A" ? 0.48 : 0.58));
+    const ry = Math.max(24, faceW * (kind === "A" ? 0.20 : 0.28));
 
     b.globalCompositeOperation = "destination-in";
-    const g = b.createRadialGradient(mx, my, Math.min(rx, ry) * 0.18, mx, my, Math.max(rx, ry));
+    const g = b.createRadialGradient(mx, my, Math.min(rx, ry) * 0.16, mx, my, Math.max(rx, ry));
     g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(0.52, "rgba(0,0,0,0.96)");
-    g.addColorStop(0.8, "rgba(0,0,0,0.35)");
+    g.addColorStop(0.5, "rgba(0,0,0,0.95)");
+    g.addColorStop(0.78, "rgba(0,0,0,0.4)");
     g.addColorStop(1, "rgba(0,0,0,0)");
     b.fillStyle = g;
     b.fillRect(0, 0, w, h);
     b.globalCompositeOperation = "source-over";
 
     ctx.save();
-    ctx.globalAlpha = Math.min(0.78, alpha);
+    ctx.globalAlpha = Math.min(kind === "A" ? 0.52 : 0.9, alpha);
     ctx.drawImage(faceBuf, 0, 0);
     ctx.restore();
   }
@@ -337,13 +352,15 @@
     const bank = visemeBank[profile.id] || {};
     const fw = (state.faceW && typeof state.faceW.T === "number") ? state.faceW : { T: 0, A: 0, E: 0, O: 0, F: 0 };
     const layers = [];
-    if (allow.T && fw.T > 0.05 && ready(bank.T)) layers.push([fw.T, bank.T]);
-    if (allow.E && fw.E > 0.08 && ready(bank.E)) layers.push([fw.E, bank.E]);
-    if (allow.O && fw.O > 0.08 && ready(bank.O)) layers.push([fw.O, bank.O]);
-    if (allow.F && fw.F > 0.08 && ready(bank.F)) layers.push([fw.F, bank.F]);
+    if (allow.T && fw.T > 0.06 && ready(bank.T)) layers.push([fw.T, bank.T, "T"]);
+    if (allow.A && fw.A > 0.08 && ready(bank.A)) layers.push([fw.A, bank.A, "A"]);
+    if (allow.E && fw.E > 0.08 && ready(bank.E)) layers.push([fw.E, bank.E, "E"]);
+    if (allow.O && fw.O > 0.08 && ready(bank.O)) layers.push([fw.O, bank.O, "O"]);
+    if (allow.F && fw.F > 0.08 && ready(bank.F)) layers.push([fw.F, bank.F, "F"]);
     layers.sort(function (a, b) { return b[0] - a[0]; });
-    if (speaking && !layers.length && ready(bank.T)) layers.push([0.65, bank.T]);
-    if (layers.length) blendTalkingMouth(layers[0][1], f, w, h, layers[0][0]);
+    if (speaking && !layers.length && ready(bank.T)) layers.push([0.8, bank.T, "T"]);
+    if (speaking && !layers.length && ready(bank.E)) layers.push([0.8, bank.E, "E"]);
+    if (layers.length) blendTalkingMouth(layers[0][1], base, f, w, h, layers[0][0], layers[0][2]);
 
     ctx.restore();
     return true;
