@@ -175,45 +175,43 @@
 
   function visemeRun(word) {
     const raw = window.wordToVisemes(word);
-    const out = [];
-    function push(char, shape, open, hold) {
-      hold = hold || 1;
-      for (let h = 0; h < hold; h++) {
-        if (out.length && out[out.length - 1].viseme === shape && (shape === "talk" || shape === "closed") && h === 0) {
-          continue;
-        }
-        out.push({ char: char, viseme: shape, open: shape === "closed" ? 0 : open });
-      }
+    const full = [];
+    function push(char, shape, open) {
+      if (full.length && full[full.length - 1].viseme === shape) return;
+      full.push({ char: char, viseme: shape, open: shape === "closed" ? 0 : open });
     }
     for (let i = 0; i < raw.length; i++) {
       const it = raw[i];
       const tok = String(it.char || "").toLowerCase();
       if (tok === "ai" || tok === "ay") {
-        push(tok, "open", 0.5, 1);
-        push(tok, "wide", 0.42, 1);
+        push(tok, "open", 0.5);
+        push(tok, "wide", 0.42);
         continue;
       }
       if (tok === "oi" || tok === "oy") {
-        push(tok, "round", 0.5, 1);
-        push(tok, "wide", 0.42, 1);
+        push(tok, "round", 0.5);
+        push(tok, "wide", 0.42);
         continue;
       }
       if (tok === "ou" || tok === "ow") {
-        push(tok, "open", 0.48, 1);
-        push(tok, "round", 0.52, 1);
+        push(tok, "open", 0.48);
+        push(tok, "round", 0.52);
         continue;
       }
-      const shape = it.viseme === "rest" ? "talk" : it.viseme;
-      const vowel = shape === "open" || shape === "wide" || shape === "round";
-      push(it.char, shape, it.open || 0.4, vowel ? 2 : 1);
+      push(it.char, it.viseme === "rest" ? "talk" : it.viseme, it.open || 0.4);
     }
-    if (!out.length) push(word || "a", "talk", 0.4, 2);
+    if (!full.length) full.push({ char: word || "a", viseme: "talk", open: 0.4 });
+    if (full.length <= 3) return full;
+    let v = 0;
+    for (let i = 0; i < full.length; i++) {
+      const s = full[i].viseme;
+      if (s === "open" || s === "wide" || s === "round") v = i;
+    }
+    const out = [full[0]];
+    if (v > 0 && full[v].viseme !== out[0].viseme) out.push(full[v]);
+    const last = full[full.length - 1];
+    if (last.viseme !== out[out.length - 1].viseme) out.push(last);
     return out;
-  }
-
-  function wordDurationSec(word, rate) {
-    const n = Math.max(1, visemeRun(word).length);
-    return Math.min(0.72, Math.max(0.28, n * 0.10)) / Math.max(0.65, rate || 1);
   }
 
   function driveLetterVisemes(delta) {
@@ -257,9 +255,8 @@
     const word = words[idx] || "";
     const seq = visemeRun(word);
     const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
-    const dur = wordDurationSec(word, rate);
-    const u = Math.min(0.999, Math.max(0, (now - t0) / 1000) / dur);
-    const i = Math.min(seq.length - 1, Math.floor(u * seq.length));
+    const hold = 0.30 / Math.max(0.65, rate);
+    const i = Math.min(seq.length - 1, Math.floor(Math.max(0, (now - t0) / 1000) / hold));
     const item = seq[i] || { viseme: "talk", open: 0.4, char: word };
     state.currentLetter = item.char;
     state.visemeShape = item.viseme;
