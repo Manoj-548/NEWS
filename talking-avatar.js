@@ -178,47 +178,30 @@
 
   const DIGRAPHS = ["th", "sh", "ch", "ph", "wh", "ee", "ea", "ie", "ei", "oo", "ou", "ow", "ue", "ew", "ai", "ay", "ey", "oi", "oy", "ng"];
 
-  function bakeVisemeTrack(text) {
-    const s = String(text || "");
-    const track = new Array(s.length);
-    for (let i = 0; i < s.length; ) {
-      const raw = s[i];
-      if (/\s/.test(raw) || /[.,!?;:।'"()[\]{}…—–-]/.test(raw)) {
-        track[i] = { char: raw, viseme: "closed", open: 0, id: 0 };
-        i += 1;
-        continue;
-      }
-      const two = s.slice(i, i + 2).toLowerCase();
-      if (/^[a-z]{2}$/.test(two) && DIGRAPHS.indexOf(two) >= 0) {
-        const v = window.visemeForChar(two);
-        const cell = { char: two, viseme: v.shape, open: v.open, id: VISEME_ID[v.shape] ?? 1 };
-        track[i] = cell;
-        if (i + 1 < s.length) track[i + 1] = cell;
-        i += 2;
-        continue;
-      }
-      const v = window.visemeForChar(raw);
-      track[i] = { char: raw, viseme: v.shape, open: v.open, id: VISEME_ID[v.shape] ?? 1 };
-      i += 1;
+  function speakVisemes(word) {
+    const raw = window.wordToVisemes(word);
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      const it = raw[i];
+      if (it.viseme === "rest") continue;
+      if (out.length && out[out.length - 1].viseme === it.viseme) continue;
+      out.push(it);
     }
-    return track;
+    if (!out.length) {
+      const v = window.visemeForChar((word && word[0]) || "a");
+      out.push({ char: word || "a", viseme: v.shape === "closed" ? "closed" : "open", open: v.shape === "closed" ? 0 : 0.55, id: v.shape === "closed" ? 0 : 3 });
+    }
+    return out;
   }
-  window.bakeVisemeTrack = bakeVisemeTrack;
 
-  function speechCharIndex(text) {
-    const now = performance.now();
-    const elapsed = Math.max(0, (now - (state._speakT0 || now)) / 1000);
-    const cps = 12.8 * (state.speechRate || 1);
-    let ci = elapsed * cps;
-    if (typeof state._boundCharIndex === "number" && state._boundCharIndex >= 0 && state._lastBoundary && now - state._lastBoundary < 480) {
-      ci = state._boundCharIndex + ((now - state._lastBoundary) / 1000) * cps;
-    }
-    return Math.max(0, Math.min(Math.max(0, text.length - 1), Math.floor(ci)));
+  function wordDurationSec(word, rate) {
+    const n = Math.max(1, speakVisemes(word).length);
+    return Math.min(1.05, Math.max(0.42, 0.2 + n * 0.28)) / Math.max(0.6, rate || 1);
   }
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-14 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-3.3 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.A !== "number") state.faceW = { A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -235,24 +218,38 @@
       return;
     }
 
-    const text = state.scriptText || (state.scriptWords || []).join(" ");
-    if (!state._visemeTrack || state._visemeTrackText !== text) {
-      state._visemeTrack = bakeVisemeTrack(text);
-      state._visemeTrackText = text;
+    const words = state.scriptWords || [];
+    const rate = state.speechRate || 1;
+    const now = performance.now();
+    const boundAge = state._lastBoundary ? now - state._lastBoundary : 1e9;
+
+    if (!words.length) {
+      const tw = targetWeights(id, "open", 0.55);
+      w.A = easeToward(w.A, tw.A, k);
+      w.E = easeToward(w.E, tw.E, k);
+      w.O = easeToward(w.O, tw.O, k);
+      w.F = easeToward(w.F, tw.F, k);
+      return;
     }
-    const ci = speechCharIndex(text);
-    state._speechCharIndex = ci;
-    const before = text.slice(0, ci);
-    const wIdx = Math.max(0, before.split(/\s+/).filter(Boolean).length - (/\s$/.test(before) ? 0 : 1));
-    if (wIdx !== state.currentWordIndex) {
-      state.currentWordIndex = wIdx;
-      const liveSub = document.getElementById("subtitleTicker");
-      if (liveSub && state.scriptWords && state.scriptWords.length) {
-        liveSub.textContent = state.scriptWords.slice(Math.max(0, wIdx - 2), wIdx + 6).join(" ");
+
+    if (boundAge > 750) {
+      const elapsed = Math.max(0, (now - (state._speakT0 || now)) / 1000);
+      const wps = 2.05 * rate;
+      const est = Math.min(words.length - 1, Math.max(0, Math.floor(elapsed * wps)));
+      if (est !== state.currentWordIndex) {
+        state.currentWordIndex = est;
+        state._wordT0 = now;
       }
     }
 
-    const item = (state._visemeTrack && state._visemeTrack[ci]) || { char: "a", viseme: "open", open: 0.7 };
+    const idx = Math.max(0, Math.min(words.length - 1, state.currentWordIndex || 0));
+    const word = words[idx] || "";
+    const seq = speakVisemes(word);
+    const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
+    const dur = wordDurationSec(word, rate);
+    const u = Math.min(0.999, Math.max(0, (now - t0) / 1000) / dur);
+    const i = Math.min(seq.length - 1, Math.floor(u * seq.length));
+    const item = seq[i] || { char: "a", viseme: "open", open: 0.55 };
     const v = window.visemeForChar(item.char || "a");
     state.currentLetter = item.char;
     state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);

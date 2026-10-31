@@ -1352,6 +1352,7 @@ function startNewsBroadcast() {
     }
     currentUtterance.pitch = gender === "female" ? 1.22 : 0.86;
     state._speakT0 = performance.now();
+    state._wordT0 = performance.now();
     state._lastBoundary = 0;
     state.currentWordIndex = 0;
     state.letterPhase = 0;
@@ -1366,6 +1367,7 @@ function startNewsBroadcast() {
             state._visemeWord = state.currentWordIndex;
             state._boundCharIndex = charIdx;
             state._lastBoundary = performance.now();
+            state._wordT0 = performance.now();
             renderTeleprompterText();
             const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
             if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1379,6 +1381,7 @@ function startNewsBroadcast() {
         state.isSpeaking = true;
         state.isPaused = false;
         state._speakT0 = performance.now();
+        state._wordT0 = performance.now();
         document.querySelector(".teleprompter-card")?.classList.add("speaking-active");
         updateBroadcastButtons();
     };
