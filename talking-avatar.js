@@ -13,16 +13,46 @@
   };
 
   const MATCHED = {
-    nova_kade:       { A: 1, E: 1, O: 1 },
-    lyra_nova:       { A: 1, O: 1 },
-    arjun_mehra:     { A: 1, O: 1 },
+    nova_kade:       { A: 1, E: 1, O: 1, F: 1 },
+    lyra_nova:       { A: 1, E: 1, O: 1 },
+    arjun_mehra:     { A: 1, E: 1, O: 1, F: 1 },
     priya_nair:      { A: 1, E: 1, O: 1, F: 1 },
-    rajesh_sharma:   { A: 1 },
+    rajesh_sharma:   { A: 1, E: 1, O: 1 },
     meera_kapoor:    { A: 1, E: 1, O: 1, F: 1 },
-    alexander_hayes: { A: 1 },
-    sofia_reyes:     { A: 1, E: 1 },
-    marcus_cole:     { A: 1 }
+    alexander_hayes: { A: 1, E: 1, O: 1 },
+    sofia_reyes:     { A: 1, E: 1, O: 1 },
+    marcus_cole:     { A: 1, E: 1, O: 1 }
   };
+
+  const LATIN_LETTER = {
+    a: { open: 0.88, width: 1.08, shape: "open" },
+    b: { open: 0, width: 0.82, shape: "closed" },
+    c: { open: 0.18, width: 1.0, shape: "rest" },
+    d: { open: 0.2, width: 1.0, shape: "rest" },
+    e: { open: 0.42, width: 1.22, shape: "wide" },
+    f: { open: 0.26, width: 1.06, shape: "teeth" },
+    g: { open: 0.2, width: 1.0, shape: "rest" },
+    h: { open: 0.22, width: 1.0, shape: "rest" },
+    i: { open: 0.38, width: 1.2, shape: "wide" },
+    j: { open: 0.3, width: 1.14, shape: "wide" },
+    k: { open: 0.18, width: 1.0, shape: "rest" },
+    l: { open: 0.3, width: 1.12, shape: "wide" },
+    m: { open: 0, width: 0.8, shape: "closed" },
+    n: { open: 0.16, width: 1.0, shape: "rest" },
+    o: { open: 0.7, width: 0.7, shape: "round" },
+    p: { open: 0, width: 0.82, shape: "closed" },
+    q: { open: 0.18, width: 1.0, shape: "rest" },
+    r: { open: 0.42, width: 0.84, shape: "round" },
+    s: { open: 0.28, width: 1.16, shape: "wide" },
+    t: { open: 0.18, width: 1.0, shape: "rest" },
+    u: { open: 0.62, width: 0.7, shape: "round" },
+    v: { open: 0.26, width: 1.06, shape: "teeth" },
+    w: { open: 0.58, width: 0.7, shape: "round" },
+    x: { open: 0.28, width: 1.12, shape: "wide" },
+    y: { open: 0.38, width: 1.18, shape: "wide" },
+    z: { open: 0.28, width: 1.16, shape: "wide" }
+  };
+  window.letterToViseme = LATIN_LETTER;
 
   const VISEME_ID = { closed: 0, rest: 1, wide: 2, open: 3, round: 4, teeth: 5 };
 
@@ -50,22 +80,24 @@
   }
 
   window.visemeForChar = function visemeForChar(ch) {
-    if (!ch || /\s/.test(ch)) return { open: 0.05, width: 1, shape: "rest" };
+    if (!ch || /\s/.test(ch)) return { open: 0, width: 1, shape: "closed" };
     const t = String(ch).toLowerCase();
     const raw = String(ch);
-    if (["m", "b", "p", "mb", "mp"].indexOf(t) >= 0 || /[मपबभ]/.test(raw) || /[ಮಪಬ]/.test(raw) || /[மப]/.test(raw) || /[మపబ]/.test(raw))
+    if (LATIN_LETTER[t]) return LATIN_LETTER[t];
+    if (["mb", "mp"].indexOf(t) >= 0 || /[मपबभ]/.test(raw) || /[ಮಪಬ]/.test(raw) || /[மப]/.test(raw) || /[మపబ]/.test(raw))
       return { open: 0, width: 0.8, shape: "closed" };
-    if (["f", "v", "ph"].indexOf(t) >= 0 || /[फव]/.test(raw))
-      return { open: 0.25, width: 1.05, shape: "teeth" };
-    if (["th", "sh", "ch", "s", "z", "j"].indexOf(t) >= 0)
-      return { open: 0.28, width: 1.16, shape: "wide" };
-    if (["ee", "ea", "ie", "ei", "i", "y", "e"].indexOf(t) >= 0 || /[इईएऐिीेै]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீ]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
+    if (t === "ph" || /[फव]/.test(raw))
+      return { open: 0.26, width: 1.05, shape: "teeth" };
+    if (["th", "sh", "ch"].indexOf(t) >= 0)
+      return { open: 0.3, width: 1.16, shape: "wide" };
+    if (["ee", "ea", "ie", "ei", "ey"].indexOf(t) >= 0 || /[इईएऐिीेै]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீ]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
       return { open: 0.4, width: 1.22, shape: "wide" };
-    if (["oo", "ou", "ow", "ue", "ew", "u", "o", "w", "oy", "oi"].indexOf(t) >= 0 || /[उऊओऔुूोौ]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw) || /[ఉఊఒఓుూొో]/.test(raw))
-      return { open: 0.65, width: 0.7, shape: "round" };
-    if (["a", "ay", "ai", "ah"].indexOf(t) >= 0 || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw))
+    if (["oo", "ou", "ow", "ue", "ew", "oy", "oi"].indexOf(t) >= 0 || /[उऊओऔुूोौ]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw) || /[ఉఊఒఓుూొో]/.test(raw))
+      return { open: 0.66, width: 0.7, shape: "round" };
+    if (["ay", "ai", "ah"].indexOf(t) >= 0 || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw))
       return { open: 0.85, width: 1.08, shape: "open" };
-    return { open: 0.45, width: 1, shape: "open" };
+    if (/[0-9]/.test(t)) return { open: 0.5, width: 1.05, shape: "open" };
+    return { open: 0.22, width: 1, shape: "rest" };
   };
 
   function lettersOf(word) {
@@ -127,16 +159,16 @@
       else if (allow.E) z.E += amt * 0.75;
     }
     if (shape === "closed" || open < 0.04) return z;
-    if (shape === "wide") put("E", 0.95);
-    else if (shape === "round") put("O", 0.95);
-    else if (shape === "teeth") put("F", 0.9);
+    if (shape === "wide") put("E", 0.96);
+    else if (shape === "round") put("O", 0.96);
+    else if (shape === "teeth") put("F", 0.92);
     else if (shape === "open") put("A", 0.98);
-    else put("A", 0.7);
+    else if (shape === "rest") put("A", 0.32);
+    else put("A", 0.55);
     const sum = z.A + z.E + z.O + z.F;
     if (sum > 1) {
       z.A /= sum; z.E /= sum; z.O /= sum; z.F /= sum;
     }
-    if (sum < 0.5) put("A", 0.9);
     return z;
   }
 
@@ -144,33 +176,49 @@
     return cur + (goal - cur) * k;
   }
 
-  const IDLE_CYCLE = [
-    { char: "a", viseme: "open", open: 0.9 },
-    { char: "e", viseme: "wide", open: 0.45 },
-    { char: "o", viseme: "round", open: 0.72 },
-    { char: "a", viseme: "open", open: 0.8 },
-    { char: "m", viseme: "closed", open: 0.02 }
-  ];
+  const DIGRAPHS = ["th", "sh", "ch", "ph", "wh", "ee", "ea", "ie", "ei", "oo", "ou", "ow", "ue", "ew", "ai", "ay", "ey", "oi", "oy", "ng"];
 
-  function syncWordClock() {
-    const words = state.scriptWords || [];
-    if (!words.length) return;
-    const now = performance.now();
-    if (state._lastBoundary && now - state._lastBoundary < 380) return;
-    const t0 = state._speakT0 || now;
-    const elapsed = Math.max(0, (now - t0) / 1000);
-    const wps = 2.5 * (state.speechRate || 1);
-    const est = Math.min(words.length - 1, Math.floor(elapsed * wps));
-    if (est !== state.currentWordIndex) {
-      state.currentWordIndex = est;
-      state.letterPhase = 0;
-      state._visemeWord = est;
+  function bakeVisemeTrack(text) {
+    const s = String(text || "");
+    const track = new Array(s.length);
+    for (let i = 0; i < s.length; ) {
+      const raw = s[i];
+      if (/\s/.test(raw) || /[.,!?;:।'"()[\]{}…—–-]/.test(raw)) {
+        track[i] = { char: raw, viseme: "closed", open: 0, id: 0 };
+        i += 1;
+        continue;
+      }
+      const two = s.slice(i, i + 2).toLowerCase();
+      if (/^[a-z]{2}$/.test(two) && DIGRAPHS.indexOf(two) >= 0) {
+        const v = window.visemeForChar(two);
+        const cell = { char: two, viseme: v.shape, open: v.open, id: VISEME_ID[v.shape] ?? 1 };
+        track[i] = cell;
+        if (i + 1 < s.length) track[i + 1] = cell;
+        i += 2;
+        continue;
+      }
+      const v = window.visemeForChar(raw);
+      track[i] = { char: raw, viseme: v.shape, open: v.open, id: VISEME_ID[v.shape] ?? 1 };
+      i += 1;
     }
+    return track;
+  }
+  window.bakeVisemeTrack = bakeVisemeTrack;
+
+  function speechCharIndex(text) {
+    const now = performance.now();
+    const elapsed = Math.max(0, (now - (state._speakT0 || now)) / 1000);
+    const cps = 12.8 * (state.speechRate || 1);
+    let ci = elapsed * cps;
+    if (typeof state._boundCharIndex === "number" && state._boundCharIndex >= 0 && state._lastBoundary && now - state._lastBoundary < 480) {
+      ci = state._boundCharIndex + ((now - state._lastBoundary) / 1000) * cps;
+    }
+    return Math.max(0, Math.min(Math.max(0, text.length - 1), Math.floor(ci)));
   }
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-12 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-14 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.A !== "number") state.faceW = { A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -187,23 +235,24 @@
       return;
     }
 
-    syncWordClock();
-    const words = state.scriptWords || [];
-    const idx = Math.max(0, state.currentWordIndex || 0);
-    if (state._visemeWord !== idx) {
-      state._visemeWord = idx;
-      state.letterPhase = 0;
+    const text = state.scriptText || (state.scriptWords || []).join(" ");
+    if (!state._visemeTrack || state._visemeTrackText !== text) {
+      state._visemeTrack = bakeVisemeTrack(text);
+      state._visemeTrackText = text;
     }
-    const seq = window.wordToVisemes(words[idx] || "");
-    const rate = 4.2 * (state.speechRate || 1);
-    state.letterPhase = (state.letterPhase || 0) + delta * rate;
-    let item;
-    if (seq.length) {
-      const i = Math.min(seq.length - 1, Math.floor(state.letterPhase));
-      item = seq[i];
-    } else {
-      item = IDLE_CYCLE[Math.floor(state.letterPhase) % IDLE_CYCLE.length];
+    const ci = speechCharIndex(text);
+    state._speechCharIndex = ci;
+    const before = text.slice(0, ci);
+    const wIdx = Math.max(0, before.split(/\s+/).filter(Boolean).length - (/\s$/.test(before) ? 0 : 1));
+    if (wIdx !== state.currentWordIndex) {
+      state.currentWordIndex = wIdx;
+      const liveSub = document.getElementById("subtitleTicker");
+      if (liveSub && state.scriptWords && state.scriptWords.length) {
+        liveSub.textContent = state.scriptWords.slice(Math.max(0, wIdx - 2), wIdx + 6).join(" ");
+      }
     }
+
+    const item = (state._visemeTrack && state._visemeTrack[ci]) || { char: "a", viseme: "open", open: 0.7 };
     const v = window.visemeForChar(item.char || "a");
     state.currentLetter = item.char;
     state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);

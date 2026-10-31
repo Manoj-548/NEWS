@@ -1364,6 +1364,7 @@ function startNewsBroadcast() {
             if (state.currentWordIndex < 0) state.currentWordIndex = 0;
             state.letterPhase = 0;
             state._visemeWord = state.currentWordIndex;
+            state._boundCharIndex = charIdx;
             state._lastBoundary = performance.now();
             renderTeleprompterText();
             const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
