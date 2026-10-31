@@ -1,15 +1,15 @@
 /* HD portrait, no extra zoom. Mouth visemes follow the spoken words. */
 (function () {
   const LANDMARKS = {
-    nova_kade:       { cx: 0.50, eyeY: 0.220, mouthY: 0.292, chinY: 0.355, faceW: 0.16 },
-    lyra_nova:       { cx: 0.50, eyeY: 0.260, mouthY: 0.322, chinY: 0.378, faceW: 0.10 },
-    arjun_mehra:     { cx: 0.50, eyeY: 0.240, mouthY: 0.322, chinY: 0.378, faceW: 0.15 },
-    priya_nair:      { cx: 0.50, eyeY: 0.265, mouthY: 0.338, chinY: 0.395, faceW: 0.15 },
-    rajesh_sharma:   { cx: 0.50, eyeY: 0.255, mouthY: 0.325, chinY: 0.378, faceW: 0.13 },
-    meera_kapoor:    { cx: 0.50, eyeY: 0.225, mouthY: 0.292, chinY: 0.345, faceW: 0.12 },
-    alexander_hayes: { cx: 0.50, eyeY: 0.240, mouthY: 0.320, chinY: 0.378, faceW: 0.14 },
-    sofia_reyes:     { cx: 0.50, eyeY: 0.280, mouthY: 0.338, chinY: 0.395, faceW: 0.11 },
-    marcus_cole:     { cx: 0.50, eyeY: 0.235, mouthY: 0.328, chinY: 0.385, faceW: 0.14 }
+    nova_kade:       { cx: 0.50, eyeY: 0.220, mouthY: 0.295, chinY: 0.358, faceW: 0.18 },
+    lyra_nova:       { cx: 0.50, eyeY: 0.255, mouthY: 0.325, chinY: 0.385, faceW: 0.15 },
+    arjun_mehra:     { cx: 0.50, eyeY: 0.240, mouthY: 0.325, chinY: 0.382, faceW: 0.17 },
+    priya_nair:      { cx: 0.50, eyeY: 0.265, mouthY: 0.342, chinY: 0.400, faceW: 0.17 },
+    rajesh_sharma:   { cx: 0.50, eyeY: 0.255, mouthY: 0.328, chinY: 0.382, faceW: 0.16 },
+    meera_kapoor:    { cx: 0.50, eyeY: 0.225, mouthY: 0.298, chinY: 0.350, faceW: 0.16 },
+    alexander_hayes: { cx: 0.50, eyeY: 0.240, mouthY: 0.322, chinY: 0.380, faceW: 0.16 },
+    sofia_reyes:     { cx: 0.50, eyeY: 0.275, mouthY: 0.340, chinY: 0.398, faceW: 0.15 },
+    marcus_cole:     { cx: 0.50, eyeY: 0.235, mouthY: 0.330, chinY: 0.388, faceW: 0.16 }
   };
 
   const MATCHED = {
@@ -159,12 +159,12 @@
       else if (allow.A) z.A += amt * 0.45;
     }
     if (shape === "closed" || open < 0.04) return z;
-    if (shape === "wide") put("E", 0.88);
-    else if (shape === "round") put("O", 0.82);
-    else if (shape === "teeth") put("F", 0.7);
-    else if (shape === "open") { put("A", 0.5); put("E", 0.35); }
-    else if (shape === "rest") put("E", 0.4);
-    else put("E", 0.5);
+    if (shape === "wide") put("E", 0.9);
+    else if (shape === "round") put("O", 0.9);
+    else if (shape === "teeth") put("F", 0.85);
+    else if (shape === "open") put("A", 0.72);
+    else if (shape === "rest") put("E", 0.45);
+    else put("O", 0.65);
     return z;
   }
 
@@ -197,7 +197,7 @@
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-2.8 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-5.5 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.A !== "number") state.faceW = { A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -256,6 +256,12 @@
     w.E = easeToward(w.E, tw.E, k);
     w.O = easeToward(w.O, tw.O, k);
     w.F = easeToward(w.F, tw.F, k);
+    const tot = w.A + w.E + w.O + w.F;
+    if (item.viseme !== "closed" && tot < 0.45) {
+      if (MATCHED[id] && MATCHED[id].O) w.O = 0.75;
+      else if (MATCHED[id] && MATCHED[id].A) w.A = 0.7;
+      else if (MATCHED[id] && MATCHED[id].E) w.E = 0.75;
+    }
   }
 
   function talkingAvatarTick(delta) {
@@ -296,44 +302,46 @@
     return { nw, nh, sx, sy, srcW, srcH };
   }
 
-  let mouthBuf = null;
-  let mouthCtx = null;
-  function stampSmileMouth(srcImg, f, w, h, alpha) {
-    if (!ready(srcImg) || alpha < 0.06) return;
+  let faceBuf = null;
+  let faceCtx = null;
+  function blendTalkingMouth(srcImg, f, w, h, alpha) {
+    if (!ready(srcImg) || alpha < 0.05) return;
     const crop = cropRect(srcImg, f, w, h);
-    const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
-    const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
-    const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-    const dW = Math.max(36, Math.round(faceW * 0.50));
-    const dH = Math.max(18, Math.round(faceW * 0.20));
-    if (!mouthBuf) {
-      mouthBuf = document.createElement("canvas");
-      mouthCtx = mouthBuf.getContext("2d");
+    if (!faceBuf) {
+      faceBuf = document.createElement("canvas");
+      faceCtx = faceBuf.getContext("2d");
     }
-    if (mouthBuf.width !== dW || mouthBuf.height !== dH) {
-      mouthBuf.width = dW;
-      mouthBuf.height = dH;
+    if (faceBuf.width !== w || faceBuf.height !== h) {
+      faceBuf.width = w;
+      faceBuf.height = h;
     }
-    const b = mouthCtx;
-    b.clearRect(0, 0, dW, dH);
+    const b = faceCtx;
+    b.clearRect(0, 0, w, h);
     b.imageSmoothingEnabled = true;
     if (b.imageSmoothingQuality) b.imageSmoothingQuality = "high";
-    const srcMW = (dW / w) * crop.srcW;
-    const srcMH = (dH / h) * crop.srcH;
-    const srcMX = (f.cx * crop.nw) - srcMW / 2;
-    const srcMY = (f.mouthY * crop.nh) - srcMH * 0.45;
-    b.drawImage(srcImg, srcMX, srcMY, srcMW, srcMH, 0, 0, dW, dH);
+    b.drawImage(srcImg, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
+
+    const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
+    const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
+    const eyeY = ((f.eyeY * crop.nh - crop.sy) / crop.srcH) * h;
+    const jawY = ((f.chinY * crop.nh - crop.sy) / crop.srcH) * h;
+    const faceW = (f.faceW * crop.nw / crop.srcW) * w;
+    const rx = Math.max(90, faceW * 0.95);
+    const ry = Math.max(55, (jawY - eyeY) * 0.62, h * 0.12);
+
     b.globalCompositeOperation = "destination-in";
-    const g = b.createRadialGradient(dW / 2, dH / 2, Math.min(dW, dH) * 0.12, dW / 2, dH / 2, Math.max(dW, dH) * 0.52);
+    const g = b.createRadialGradient(mx, my, Math.min(rx, ry) * 0.18, mx, my, Math.max(rx, ry));
     g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(0.55, "rgba(0,0,0,0.75)");
+    g.addColorStop(0.52, "rgba(0,0,0,0.96)");
+    g.addColorStop(0.8, "rgba(0,0,0,0.35)");
     g.addColorStop(1, "rgba(0,0,0,0)");
     b.fillStyle = g;
-    b.fillRect(0, 0, dW, dH);
+    b.fillRect(0, 0, w, h);
     b.globalCompositeOperation = "source-over";
+
     ctx.save();
-    ctx.globalAlpha = Math.min(0.92, alpha);
-    ctx.drawImage(mouthBuf, mx - dW / 2, my - dH / 2);
+    ctx.globalAlpha = Math.min(0.95, alpha);
+    ctx.drawImage(faceBuf, 0, 0);
     ctx.restore();
   }
 
@@ -348,16 +356,19 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
     ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
 
+    const speaking = !!(state.isSpeaking && !state.isPaused);
     const allow = MATCHED[profile.id] || {};
     const bank = visemeBank[profile.id] || {};
     const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
     const layers = [];
-    if (allow.A && fw.A > 0.05 && ready(bank.A)) layers.push([fw.A, bank.A]);
-    if (allow.E && fw.E > 0.05 && ready(bank.E)) layers.push([fw.E, bank.E]);
-    if (allow.O && fw.O > 0.05 && ready(bank.O)) layers.push([fw.O, bank.O]);
-    if (allow.F && fw.F > 0.05 && ready(bank.F)) layers.push([fw.F, bank.F]);
+    if (allow.A && fw.A > 0.04 && ready(bank.A)) layers.push([fw.A, bank.A]);
+    if (allow.E && fw.E > 0.04 && ready(bank.E)) layers.push([fw.E, bank.E]);
+    if (allow.O && fw.O > 0.04 && ready(bank.O)) layers.push([fw.O, bank.O]);
+    if (allow.F && fw.F > 0.04 && ready(bank.F)) layers.push([fw.F, bank.F]);
     layers.sort(function (a, b) { return b[0] - a[0]; });
-    if (layers.length) stampSmileMouth(layers[0][1], f, w, h, layers[0][0]);
+    if (speaking && !layers.length && ready(bank.A)) layers.push([0.7, bank.A]);
+    if (speaking && !layers.length && ready(bank.O)) layers.push([0.7, bank.O]);
+    if (layers.length) blendTalkingMouth(layers[0][1], f, w, h, Math.max(0.55, layers[0][0]));
 
     ctx.restore();
     return true;

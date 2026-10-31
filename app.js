@@ -425,11 +425,11 @@ function initCanvas() {
     const wrap = document.getElementById("canvasWrapper");
     const rect = wrap ? wrap.getBoundingClientRect() : null;
     if (state.aspectRatio === "9:16") {
-        canvas.width = 1080;
-        canvas.height = 1920;
+        canvas.width = 720;
+        canvas.height = 1280;
     } else {
-        canvas.width = 1920;
-        canvas.height = 1080;
+        canvas.width = 1280;
+        canvas.height = 720;
     }
     if (rect && rect.width > 50 && rect.height > 50) {
         canvas.style.width = "100%";
