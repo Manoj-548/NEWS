@@ -1,4 +1,4 @@
-/* Head locked. Only the mouth changes. Voice/gender follow the presenter. */
+/* Head locked. Same-pose viseme photos ease in slowly. Face actions follow the voice. */
 (function () {
   const LANDMARKS = {
     nova_kade:       { cx: 0.50, eyeY: 0.250, mouthY: 0.329, chinY: 0.385, faceW: 0.14 },
@@ -12,16 +12,11 @@
     marcus_cole:     { cx: 0.50, eyeY: 0.265, mouthY: 0.375, chinY: 0.400, faceW: 0.14 }
   };
 
-  const OPEN_MOUTH = {
-    nova_kade:       { cx: 0.50, mouthY: 0.50, faceW: 0.28 },
-    lyra_nova:       { cx: 0.50, mouthY: 0.50, faceW: 0.16 },
-    arjun_mehra:     { cx: 0.50, mouthY: 0.47, faceW: 0.28 },
-    priya_nair:      { cx: 0.50, mouthY: 0.46, faceW: 0.32 },
-    rajesh_sharma:   { cx: 0.50, mouthY: 0.47, faceW: 0.22 },
-    meera_kapoor:    { cx: 0.50, mouthY: 0.47, faceW: 0.16 },
-    alexander_hayes: { cx: 0.50, mouthY: 0.50, faceW: 0.28 },
-    sofia_reyes:     { cx: 0.50, mouthY: 0.50, faceW: 0.16 },
-    marcus_cole:     { cx: 0.50, mouthY: 0.48, faceW: 0.28 }
+  // Only blend viseme photos that match the base portrait pose/framing.
+  const MATCHED = {
+    meera_kapoor: { A: 1, E: 1, O: 1, F: 1 },
+    priya_nair:   { A: 1, E: 1, O: 1, F: 1 },
+    arjun_mehra:  { A: 1, O: 1 }
   };
 
   const VISEME_ID = { closed: 0, rest: 1, wide: 2, open: 3, round: 4, teeth: 5 };
@@ -116,15 +111,54 @@
     });
   };
 
+  function targetWeights(id, shape, open) {
+    const z = { A: 0, E: 0, O: 0, F: 0 };
+    const allow = MATCHED[id] || {};
+    if (!(open > 0.06)) return z;
+    const s = Math.min(1, Math.max(0, open));
+    function put(key, amt) {
+      if (allow[key]) z[key] += amt;
+      else if (allow.A) z.A += amt * 0.55;
+    }
+    if (shape === "wide") put("E", s);
+    else if (shape === "round") put("O", s);
+    else if (shape === "teeth") put("F", s);
+    else if (shape === "open") put("A", s);
+    else if (shape === "rest") { put("A", s * 0.28); put("E", s * 0.12); }
+    else if (shape !== "closed") put("A", s * 0.45);
+    const sum = z.A + z.E + z.O + z.F;
+    if (sum > 1.05) {
+      z.A /= sum; z.E /= sum; z.O /= sum; z.F /= sum;
+    }
+    return z;
+  }
+
+  function easeToward(cur, goal, k) {
+    return cur + (goal - cur) * k;
+  }
+
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused && state.userHasStarted);
+    const k = 1 - Math.exp(-3.1 * Math.max(0.001, delta));
+    if (!state.faceW) state.faceW = { A: 0, E: 0, O: 0, F: 0 };
+    const id = state.anchorModel || "";
+    const w = state.faceW;
+
     if (!speaking) {
-      state.visemeMouthOpen *= 0.65;
-      if (state.visemeMouthOpen < 0.05) state.visemeMouthOpen = 0;
+      state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, 0, k);
+      state.visemeMouthWidth = easeToward(state.visemeMouthWidth || 1, 1, k);
       state.visemeShape = "closed";
       state.currentLetter = "";
+      state.browLift = easeToward(state.browLift || 0, 0, k);
+      state.cheekRaise = easeToward(state.cheekRaise || 0, 0, k);
+      state.jawOpen = easeToward(state.jawOpen || 0, 0, k);
+      w.A = easeToward(w.A, 0, k);
+      w.E = easeToward(w.E, 0, k);
+      w.O = easeToward(w.O, 0, k);
+      w.F = easeToward(w.F, 0, k);
       return;
     }
+
     const words = state.scriptWords || [];
     const idx = Math.max(0, state.currentWordIndex || 0);
     if (state._visemeWord !== idx) {
@@ -133,82 +167,45 @@
       state.currentWordVec = window.wordToVec(words[idx] || "");
     }
     const seq = window.wordToVisemes(words[idx] || "");
-    state.letterPhase = (state.letterPhase || 0) + delta * 3.2 * (state.speechRate || 1);
-    const i = seq.length ? Math.min(seq.length - 1, Math.floor(state.letterPhase)) : 0;
-    const item = seq[i] || { char: "A", viseme: "open", open: 0.7 };
-    const v = window.visemeForChar(item.char);
+    const rate = 2.05 * (state.speechRate || 1);
+    state.letterPhase = (state.letterPhase || 0) + delta * rate;
+    let i = 0;
+    if (seq.length) i = Math.min(seq.length - 1, Math.floor(state.letterPhase));
+    const item = seq[i] || { char: "", viseme: "rest", open: 0.18 };
+    const v = window.visemeForChar(item.char || "e");
     state.currentLetter = item.char;
-    state.visemeMouthOpen += (item.open - (state.visemeMouthOpen || 0)) * 0.4;
-    state.visemeMouthWidth += (v.width - (state.visemeMouthWidth || 1)) * 0.4;
+    state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);
+    state.visemeMouthWidth = easeToward(state.visemeMouthWidth || 1, v.width, k);
     state.visemeShape = item.viseme;
+
+    const tBrow = (item.viseme === "open" || item.viseme === "wide") ? 0.32 : (item.viseme === "round" ? 0.18 : 0.06);
+    const tCheek = item.viseme === "wide" ? 0.42 : (item.viseme === "open" ? 0.14 : 0);
+    state.browLift = easeToward(state.browLift || 0, tBrow, k);
+    state.cheekRaise = easeToward(state.cheekRaise || 0, tCheek, k);
+    state.jawOpen = easeToward(state.jawOpen || 0, item.open, k);
+
+    const tw = targetWeights(id, item.viseme, item.open);
+    w.A = easeToward(w.A, tw.A, k);
+    w.E = easeToward(w.E, tw.E, k);
+    w.O = easeToward(w.O, tw.O, k);
+    w.F = easeToward(w.F, tw.F, k);
   }
 
   window.updateFacialAnimations = function (delta) {
-    state.breathPhase += delta * 1.2;
-    if (Math.random() < 0.004 && state.eyeBlink === 0) state.eyeBlink = 1;
+    state.breathPhase += delta * 0.55;
+    if (Math.random() < 0.0032 && state.eyeBlink === 0) state.eyeBlink = 1;
     if (state.eyeBlink > 0) {
-      state.eyeBlink -= delta * 9;
+      state.eyeBlink -= delta * 6.5;
       if (state.eyeBlink < 0) state.eyeBlink = 0;
     }
     driveLetterVisemes(delta);
   };
 
-  function pickMouthPhoto(profile, shape) {
-    const bank = visemeBank[profile.id] || {};
-    if (shape === "wide" && ready(bank.E)) return bank.E;
-    if (shape === "round" && ready(bank.O)) return bank.O;
-    if (shape === "teeth" && ready(bank.F)) return bank.F;
-    if (shape === "open" && ready(bank.A)) return bank.A;
-    if (ready(bank.A)) return bank.A;
-    if (ready(bank.O)) return bank.O;
-    if (ready(bank.E)) return bank.E;
-    return null;
-  }
-
-  let mouthBuf = null;
-  let mouthBufCtx = null;
-  function stampSoftMouth(srcImg, om, mx, my, faceW, vis) {
-    const onw = srcImg.naturalWidth;
-    const onh = srcImg.naturalHeight;
-    const pW = Math.max(8, om.faceW * onw * 0.32);
-    const pH = Math.max(6, om.faceW * onw * 0.20);
-    const pX = om.cx * onw - pW / 2;
-    const pY = om.mouthY * onh - pH * 0.42;
-    if (pX < 0 || pY < 0 || pX + pW > onw || pY + pH > onh) return;
-
-    let dW = Math.max(10, Math.round(faceW * 0.20 * (vis.width || 1)));
-    let dH = Math.max(7, Math.round(faceW * 0.085));
-    if (vis.shape === "open") dH = Math.round(faceW * 0.10);
-    else if (vis.shape === "round") { dW = Math.round(faceW * 0.15); dH = Math.round(faceW * 0.10); }
-    else if (vis.shape === "wide") { dW = Math.round(faceW * 0.24); dH = Math.round(faceW * 0.07); }
-
-    if (!mouthBuf) {
-      mouthBuf = document.createElement("canvas");
-      mouthBufCtx = mouthBuf.getContext("2d");
-    }
-    if (mouthBuf.width !== dW || mouthBuf.height !== dH) {
-      mouthBuf.width = dW;
-      mouthBuf.height = dH;
-    }
-    const m = mouthBufCtx;
-    m.clearRect(0, 0, dW, dH);
-    m.drawImage(srcImg, pX, pY, pW, pH, 0, 0, dW, dH);
-    m.globalCompositeOperation = "destination-in";
-    const g = m.createRadialGradient(dW / 2, dH / 2, Math.min(dW, dH) * 0.12, dW / 2, dH / 2, Math.max(dW, dH) * 0.52);
-    g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(0.65, "rgba(0,0,0,0.9)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    m.fillStyle = g;
-    m.fillRect(0, 0, dW, dH);
-    m.globalCompositeOperation = "source-over";
-    ctx.drawImage(mouthBuf, mx - dW / 2, my - dH / 2);
-  }
-
-  function cropAndDraw(img, f, w, h) {
+  function cropRect(img, f, w, h) {
     const nw = img.naturalWidth;
     const nh = img.naturalHeight;
-    const headTop = Math.max(0, (f.eyeY || 0.26) - 0.16);
-    const chest = Math.min(1, (f.chinY || 0.4) + 0.32);
+    const headTop = Math.max(0, (f.eyeY || 0.26) - 0.18);
+    const chest = Math.min(1, (f.chinY || 0.4) + 0.20);
     let srcH = (chest - headTop) * nh;
     let srcW = srcH * (w / Math.max(1, h));
     if (srcW > nw) {
@@ -221,37 +218,79 @@
     if (sx + srcW > nw) sx = Math.max(0, nw - srcW);
     if (sy < 0) sy = 0;
     if (sy + srcH > nh) sy = Math.max(0, nh - srcH);
-    ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
     return { nw, nh, sx, sy, srcW, srcH };
+  }
+
+  let faceBuf = null;
+  let faceCtx = null;
+  function ensureBuf(w, h) {
+    if (!faceBuf) {
+      faceBuf = document.createElement("canvas");
+      faceCtx = faceBuf.getContext("2d");
+    }
+    if (faceBuf.width !== w || faceBuf.height !== h) {
+      faceBuf.width = w;
+      faceBuf.height = h;
+    }
+    return faceCtx;
+  }
+
+  function blendVisemeLayer(srcImg, f, w, h, alpha) {
+    if (!ready(srcImg) || alpha < 0.03) return;
+    const crop = cropRect(srcImg, f, w, h);
+    const b = ensureBuf(w, h);
+    b.clearRect(0, 0, w, h);
+    b.imageSmoothingEnabled = true;
+    if (b.imageSmoothingQuality) b.imageSmoothingQuality = "high";
+    b.drawImage(srcImg, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
+
+    const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
+    const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
+    const eyeY = ((f.eyeY * crop.nh - crop.sy) / crop.srcH) * h;
+    const jawY = ((f.chinY * crop.nh - crop.sy) / crop.srcH) * h;
+    const faceW = (f.faceW * crop.nw / crop.srcW) * w;
+    const rx = faceW * 0.95;
+    const ry = Math.max(faceW * 0.42, (jawY - eyeY) * 0.62);
+    const cy = my + (jawY - my) * 0.08;
+
+    b.globalCompositeOperation = "destination-in";
+    const g = b.createRadialGradient(mx, cy, Math.min(rx, ry) * 0.16, mx, cy, Math.max(rx, ry) * 0.98);
+    g.addColorStop(0, "rgba(0,0,0,1)");
+    g.addColorStop(0.48, "rgba(0,0,0,0.94)");
+    g.addColorStop(0.78, "rgba(0,0,0,0.45)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    b.fillStyle = g;
+    b.fillRect(0, 0, w, h);
+    b.globalCompositeOperation = "source-over";
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.9, alpha);
+    ctx.drawImage(faceBuf, 0, 0);
+    ctx.restore();
   }
 
   function drawPhotorealReader(profile, w, h) {
     const base = profile.asset ? assetImages[profile.asset] : null;
     if (!base || !base.complete || !base.naturalWidth) return false;
-
     const f = marks(profile);
-    const speaking = !!(typeof state !== "undefined" && state.isSpeaking && !state.isPaused && state.userHasStarted);
-    const vis = {
-      open: state.visemeMouthOpen || 0,
-      width: state.visemeMouthWidth || 1,
-      shape: state.visemeShape || "closed"
-    };
 
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
-    const crop = cropAndDraw(base, f, w, h);
+    const crop = cropRect(base, f, w, h);
+    ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
 
-    if (speaking && vis.shape !== "closed" && vis.open > 0.12) {
-      const mouthSrc = pickMouthPhoto(profile, vis.shape);
-      if (mouthSrc) {
-        const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
-        const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
-        const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-        const om = OPEN_MOUTH[profile.id] || { cx: 0.5, mouthY: 0.48, faceW: 0.22 };
-        stampSoftMouth(mouthSrc, om, mx, my, faceW, vis);
-      }
-    }
+    const allow = MATCHED[profile.id] || {};
+    const bank = visemeBank[profile.id] || {};
+    const fw = state.faceW || { A: 0, E: 0, O: 0, F: 0 };
+    const layers = [];
+    if (allow.A && fw.A > 0.04) layers.push([fw.A, bank.A]);
+    if (allow.E && fw.E > 0.04) layers.push([fw.E, bank.E]);
+    if (allow.O && fw.O > 0.04) layers.push([fw.O, bank.O]);
+    if (allow.F && fw.F > 0.04) layers.push([fw.F, bank.F]);
+    layers.sort(function (a, b) { return b[0] - a[0]; });
+    const n = Math.min(2, layers.length);
+    for (let i = 0; i < n; i++) blendVisemeLayer(layers[i][1], f, w, h, layers[i][0]);
 
     ctx.restore();
     return true;

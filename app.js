@@ -1356,14 +1356,6 @@ function startNewsBroadcast() {
             if (state.currentWordIndex < 0) state.currentWordIndex = 0;
             state.letterPhase = 0;
             state._visemeWord = state.currentWordIndex;
-            const w = (state.scriptWords || [])[state.currentWordIndex] || "";
-            if (typeof wordToVisemes === "function") {
-                const seq = wordToVisemes(w);
-                if (seq[0]) {
-                    state.visemeShape = seq[0].viseme;
-                    state.visemeMouthOpen = seq[0].open;
-                }
-            }
             renderTeleprompterText();
             const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
             if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
