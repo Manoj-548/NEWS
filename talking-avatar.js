@@ -13,15 +13,15 @@
   };
 
   const MATCHED = {
-    nova_kade:       { A: 1, E: 1, O: 1, F: 1 },
-    lyra_nova:       { A: 1, E: 1, O: 1 },
-    arjun_mehra:     { A: 1, E: 1, O: 1, F: 1 },
-    priya_nair:      { A: 1, E: 1, O: 1, F: 1 },
-    rajesh_sharma:   { A: 1, E: 1, O: 1 },
-    meera_kapoor:    { A: 1, E: 1, O: 1, F: 1 },
-    alexander_hayes: { A: 1, E: 1, O: 1 },
-    sofia_reyes:     { A: 1, E: 1, O: 1 },
-    marcus_cole:     { A: 1, E: 1, O: 1 }
+    nova_kade:       { T: 1, E: 1, O: 1, F: 1 },
+    lyra_nova:       { T: 1, E: 1, O: 1 },
+    arjun_mehra:     { T: 1, E: 1, O: 1, F: 1 },
+    priya_nair:      { T: 1, E: 1, O: 1, F: 1 },
+    rajesh_sharma:   { T: 1, E: 1, O: 1 },
+    meera_kapoor:    { T: 1, E: 1, O: 1, F: 1 },
+    alexander_hayes: { T: 1, E: 1, O: 1 },
+    sofia_reyes:     { T: 1, E: 1, O: 1 },
+    marcus_cole:     { T: 1, E: 1, O: 1 }
   };
 
   const LATIN_LETTER = {
@@ -64,6 +64,7 @@
   }
   Object.keys(LANDMARKS).forEach(function (id) {
     visemeBank[id] = {
+      T: loadImg("assets/viseme_talk_" + id + ".jpg"),
       A: loadImg("assets/viseme_open_" + id + ".jpg"),
       E: loadImg("assets/viseme_E_" + id + ".jpg"),
       O: loadImg("assets/viseme_O_" + id + ".jpg"),
@@ -149,22 +150,19 @@
   };
 
   function targetWeights(id, shape, open) {
-    const z = { A: 0, E: 0, O: 0, F: 0 };
+    const z = { T: 0, A: 0, E: 0, O: 0, F: 0 };
     const allow = MATCHED[id] || {};
     function put(key, amt) {
       if (amt <= 0) return;
       if (allow[key]) z[key] += amt;
-      else if (allow.E) z.E += amt * 0.7;
-      else if (allow.O) z.O += amt * 0.55;
-      else if (allow.A) z.A += amt * 0.45;
+      else if (allow.T) z.T += amt * 0.85;
+      else if (allow.E) z.E += amt * 0.5;
     }
     if (shape === "closed" || open < 0.04) return z;
-    if (shape === "wide") put("E", 0.9);
-    else if (shape === "round") put("O", 0.9);
-    else if (shape === "teeth") put("F", 0.85);
-    else if (shape === "open") put("A", 0.72);
-    else if (shape === "rest") put("E", 0.45);
-    else put("O", 0.65);
+    if (shape === "wide") { put("T", 0.55); put("E", 0.28); }
+    else if (shape === "round") { put("T", 0.4); put("O", 0.38); }
+    else if (shape === "teeth") { put("T", 0.4); put("F", 0.3); }
+    else put("T", 0.7);
     return z;
   }
 
@@ -174,43 +172,42 @@
 
   const DIGRAPHS = ["th", "sh", "ch", "ph", "wh", "ee", "ea", "ie", "ei", "oo", "ou", "ow", "ue", "ew", "ai", "ay", "ey", "oi", "oy", "ng"];
 
-  function speakVisemes(word) {
+  function wordTalkShape(word) {
     const raw = window.wordToVisemes(word);
-    const out = [];
+    let round = false, wide = false, teeth = false, closedOnly = raw.length > 0;
     for (let i = 0; i < raw.length; i++) {
-      let it = raw[i];
-      if (it.viseme === "rest") continue;
-      if (out.length && out[out.length - 1].viseme === it.viseme) continue;
-      out.push(it);
+      const s = raw[i].viseme;
+      if (s !== "closed") closedOnly = false;
+      if (s === "round") round = true;
+      else if (s === "wide") wide = true;
+      else if (s === "teeth") teeth = true;
     }
-    if (!out.length) {
-      const v = window.visemeForChar((word && word[0]) || "a");
-      out.push({ char: word || "a", viseme: v.shape === "closed" ? "closed" : "open", open: v.shape === "closed" ? 0 : 0.55, id: v.shape === "closed" ? 0 : 3 });
-    }
-    return out;
-  }
-
-  function wordDurationSec(word, rate) {
-    const n = Math.max(1, speakVisemes(word).length);
-    return Math.min(1.05, Math.max(0.42, 0.2 + n * 0.28)) / Math.max(0.6, rate || 1);
+    if (closedOnly) return { viseme: "closed", open: 0, char: word };
+    if (round) return { viseme: "round", open: 0.45, char: word };
+    if (wide) return { viseme: "wide", open: 0.4, char: word };
+    if (teeth) return { viseme: "teeth", open: 0.28, char: word };
+    return { viseme: "open", open: 0.4, char: word };
   }
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-5.5 * Math.max(0.001, delta));
-    if (!state.faceW || typeof state.faceW.A !== "number") state.faceW = { A: 0, E: 0, O: 0, F: 0 };
+    const k = 1 - Math.exp(-2.15 * Math.max(0.001, delta));
+    if (!state.faceW || typeof state.faceW.T !== "number") state.faceW = { T: 0, A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
+    function zeroW() {
+      w.T = easeToward(w.T || 0, 0, k);
+      w.A = easeToward(w.A || 0, 0, k);
+      w.E = easeToward(w.E || 0, 0, k);
+      w.O = easeToward(w.O || 0, 0, k);
+      w.F = easeToward(w.F || 0, 0, k);
+    }
 
     if (!speaking) {
       state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, 0, k);
-      state.visemeMouthWidth = easeToward(state.visemeMouthWidth || 1, 1, k);
       state.visemeShape = "closed";
       state.currentLetter = "";
-      w.A = easeToward(w.A, 0, k);
-      w.E = easeToward(w.E, 0, k);
-      w.O = easeToward(w.O, 0, k);
-      w.F = easeToward(w.F, 0, k);
+      zeroW();
       return;
     }
 
@@ -219,18 +216,9 @@
     const now = performance.now();
     const boundAge = state._lastBoundary ? now - state._lastBoundary : 1e9;
 
-    if (!words.length) {
-      const tw = targetWeights(id, "open", 0.55);
-      w.A = easeToward(w.A, tw.A, k);
-      w.E = easeToward(w.E, tw.E, k);
-      w.O = easeToward(w.O, tw.O, k);
-      w.F = easeToward(w.F, tw.F, k);
-      return;
-    }
-
-    if (boundAge > 750) {
+    if (boundAge > 800 && words.length) {
       const elapsed = Math.max(0, (now - (state._speakT0 || now)) / 1000);
-      const wps = 2.05 * rate;
+      const wps = 1.85 * rate;
       const est = Math.min(words.length - 1, Math.max(0, Math.floor(elapsed * wps)));
       if (est !== state.currentWordIndex) {
         state.currentWordIndex = est;
@@ -238,30 +226,18 @@
       }
     }
 
-    const idx = Math.max(0, Math.min(words.length - 1, state.currentWordIndex || 0));
+    const idx = Math.max(0, Math.min(Math.max(0, words.length - 1), state.currentWordIndex || 0));
     const word = words[idx] || "";
-    const seq = speakVisemes(word);
-    const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
-    const dur = wordDurationSec(word, rate);
-    const u = Math.min(0.999, Math.max(0, (now - t0) / 1000) / dur);
-    const i = Math.min(seq.length - 1, Math.floor(u * seq.length));
-    const item = seq[i] || { char: "a", viseme: "open", open: 0.55 };
-    const v = window.visemeForChar(item.char || "a");
-    state.currentLetter = item.char;
-    state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);
-    state.visemeMouthWidth = easeToward(state.visemeMouthWidth || 1, v.width, k);
+    const item = word ? wordTalkShape(word) : { viseme: "open", open: 0.4, char: "" };
+    state.currentLetter = word;
     state.visemeShape = item.viseme;
+    state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);
     const tw = targetWeights(id, item.viseme, item.open);
-    w.A = easeToward(w.A, tw.A, k);
-    w.E = easeToward(w.E, tw.E, k);
-    w.O = easeToward(w.O, tw.O, k);
-    w.F = easeToward(w.F, tw.F, k);
-    const tot = w.A + w.E + w.O + w.F;
-    if (item.viseme !== "closed" && tot < 0.45) {
-      if (MATCHED[id] && MATCHED[id].O) w.O = 0.75;
-      else if (MATCHED[id] && MATCHED[id].A) w.A = 0.7;
-      else if (MATCHED[id] && MATCHED[id].E) w.E = 0.75;
-    }
+    w.T = easeToward(w.T || 0, tw.T || 0, k);
+    w.A = easeToward(w.A || 0, 0, k);
+    w.E = easeToward(w.E || 0, tw.E || 0, k);
+    w.O = easeToward(w.O || 0, tw.O || 0, k);
+    w.F = easeToward(w.F || 0, tw.F || 0, k);
   }
 
   function talkingAvatarTick(delta) {
@@ -326,8 +302,8 @@
     const eyeY = ((f.eyeY * crop.nh - crop.sy) / crop.srcH) * h;
     const jawY = ((f.chinY * crop.nh - crop.sy) / crop.srcH) * h;
     const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-    const rx = Math.max(90, faceW * 0.95);
-    const ry = Math.max(55, (jawY - eyeY) * 0.62, h * 0.12);
+    const rx = Math.max(48, faceW * 0.52);
+    const ry = Math.max(28, faceW * 0.22);
 
     b.globalCompositeOperation = "destination-in";
     const g = b.createRadialGradient(mx, my, Math.min(rx, ry) * 0.18, mx, my, Math.max(rx, ry));
@@ -340,7 +316,7 @@
     b.globalCompositeOperation = "source-over";
 
     ctx.save();
-    ctx.globalAlpha = Math.min(0.95, alpha);
+    ctx.globalAlpha = Math.min(0.78, alpha);
     ctx.drawImage(faceBuf, 0, 0);
     ctx.restore();
   }
@@ -359,16 +335,15 @@
     const speaking = !!(state.isSpeaking && !state.isPaused);
     const allow = MATCHED[profile.id] || {};
     const bank = visemeBank[profile.id] || {};
-    const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
+    const fw = (state.faceW && typeof state.faceW.T === "number") ? state.faceW : { T: 0, A: 0, E: 0, O: 0, F: 0 };
     const layers = [];
-    if (allow.A && fw.A > 0.04 && ready(bank.A)) layers.push([fw.A, bank.A]);
-    if (allow.E && fw.E > 0.04 && ready(bank.E)) layers.push([fw.E, bank.E]);
-    if (allow.O && fw.O > 0.04 && ready(bank.O)) layers.push([fw.O, bank.O]);
-    if (allow.F && fw.F > 0.04 && ready(bank.F)) layers.push([fw.F, bank.F]);
+    if (allow.T && fw.T > 0.05 && ready(bank.T)) layers.push([fw.T, bank.T]);
+    if (allow.E && fw.E > 0.08 && ready(bank.E)) layers.push([fw.E, bank.E]);
+    if (allow.O && fw.O > 0.08 && ready(bank.O)) layers.push([fw.O, bank.O]);
+    if (allow.F && fw.F > 0.08 && ready(bank.F)) layers.push([fw.F, bank.F]);
     layers.sort(function (a, b) { return b[0] - a[0]; });
-    if (speaking && !layers.length && ready(bank.A)) layers.push([0.7, bank.A]);
-    if (speaking && !layers.length && ready(bank.O)) layers.push([0.7, bank.O]);
-    if (layers.length) blendTalkingMouth(layers[0][1], f, w, h, Math.max(0.55, layers[0][0]));
+    if (speaking && !layers.length && ready(bank.T)) layers.push([0.65, bank.T]);
+    if (layers.length) blendTalkingMouth(layers[0][1], f, w, h, layers[0][0]);
 
     ctx.restore();
     return true;
