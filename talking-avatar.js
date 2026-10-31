@@ -153,22 +153,23 @@
     const allow = MATCHED[id] || {};
     function put(key, amt) {
       if (amt <= 0) return;
-      if (allow[key]) z[key] += amt;
-      else if (allow.A) z.A += amt * 0.9;
-      else if (allow.O) z.O += amt * 0.75;
+      if (allow[key] && key !== "A") z[key] += amt;
       else if (allow.E) z.E += amt * 0.75;
+      else if (allow.O) z.O += amt * 0.35;
     }
     if (shape === "closed" || open < 0.04) return z;
-    if (shape === "wide") put("E", 0.96);
-    else if (shape === "round") put("O", 0.96);
-    else if (shape === "teeth") put("F", 0.92);
-    else if (shape === "open") put("A", 0.98);
-    else if (shape === "rest") put("A", 0.32);
-    else put("A", 0.55);
+    if (shape === "wide") put("E", 0.72);
+    else if (shape === "round") { put("O", 0.4); put("E", 0.22); }
+    else if (shape === "teeth") put("F", 0.45);
+    else if (shape === "open") put("E", 0.58);
+    else if (shape === "rest") put("E", 0.28);
+    else put("E", 0.4);
     const sum = z.A + z.E + z.O + z.F;
-    if (sum > 1) {
-      z.A /= sum; z.E /= sum; z.O /= sum; z.F /= sum;
+    if (sum > 0.75) {
+      const s = 0.75 / sum;
+      z.A *= s; z.E *= s; z.O *= s; z.F *= s;
     }
+    z.A = 0;
     return z;
   }
 
@@ -182,8 +183,9 @@
     const raw = window.wordToVisemes(word);
     const out = [];
     for (let i = 0; i < raw.length; i++) {
-      const it = raw[i];
+      let it = raw[i];
       if (it.viseme === "rest") continue;
+      if (it.viseme === "open") it = { char: it.char, viseme: "wide", open: 0.4, id: 2 };
       if (out.length && out[out.length - 1].viseme === it.viseme) continue;
       out.push(it);
     }
@@ -201,7 +203,7 @@
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-3.3 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-2.8 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.A !== "number") state.faceW = { A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -300,18 +302,45 @@
     return { nw, nh, sx, sy, srcW, srcH };
   }
 
-  function pickTalkFrame(profile, base) {
-    const allow = MATCHED[profile.id] || {};
-    const bank = visemeBank[profile.id] || {};
-    const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
-    const layers = [];
-    if (allow.A && fw.A > 0.05 && ready(bank.A)) layers.push([fw.A, bank.A]);
-    if (allow.E && fw.E > 0.05 && ready(bank.E)) layers.push([fw.E, bank.E]);
-    if (allow.O && fw.O > 0.05 && ready(bank.O)) layers.push([fw.O, bank.O]);
-    if (allow.F && fw.F > 0.05 && ready(bank.F)) layers.push([fw.F, bank.F]);
-    layers.sort(function (a, b) { return b[0] - a[0]; });
-    if (!layers.length) return { img: base, alpha: 0 };
-    return { img: layers[0][1], alpha: Math.min(1, layers[0][0]) };
+  let mouthBuf = null;
+  let mouthCtx = null;
+  function stampSmileMouth(srcImg, f, w, h, alpha) {
+    if (!ready(srcImg) || alpha < 0.06) return;
+    const crop = cropRect(srcImg, f, w, h);
+    const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
+    const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
+    const faceW = (f.faceW * crop.nw / crop.srcW) * w;
+    const dW = Math.max(28, Math.round(faceW * 0.34));
+    const dH = Math.max(14, Math.round(faceW * 0.13));
+    if (!mouthBuf) {
+      mouthBuf = document.createElement("canvas");
+      mouthCtx = mouthBuf.getContext("2d");
+    }
+    if (mouthBuf.width !== dW || mouthBuf.height !== dH) {
+      mouthBuf.width = dW;
+      mouthBuf.height = dH;
+    }
+    const b = mouthCtx;
+    b.clearRect(0, 0, dW, dH);
+    b.imageSmoothingEnabled = true;
+    if (b.imageSmoothingQuality) b.imageSmoothingQuality = "high";
+    const srcMW = (dW / w) * crop.srcW;
+    const srcMH = (dH / h) * crop.srcH;
+    const srcMX = (f.cx * crop.nw) - srcMW / 2;
+    const srcMY = (f.mouthY * crop.nh) - srcMH * 0.45;
+    b.drawImage(srcImg, srcMX, srcMY, srcMW, srcMH, 0, 0, dW, dH);
+    b.globalCompositeOperation = "destination-in";
+    const g = b.createRadialGradient(dW / 2, dH / 2, Math.min(dW, dH) * 0.12, dW / 2, dH / 2, Math.max(dW, dH) * 0.52);
+    g.addColorStop(0, "rgba(0,0,0,1)");
+    g.addColorStop(0.55, "rgba(0,0,0,0.75)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    b.fillStyle = g;
+    b.fillRect(0, 0, dW, dH);
+    b.globalCompositeOperation = "source-over";
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.7, alpha);
+    ctx.drawImage(mouthBuf, mx - dW / 2, my - dH / 2);
+    ctx.restore();
   }
 
   function drawPhotorealReader(profile, w, h) {
@@ -319,24 +348,22 @@
     if (!base || !base.complete || !base.naturalWidth) return false;
     const f = marks(profile);
     const crop = cropRect(base, f, w, h);
-    const talk = pickTalkFrame(profile, base);
 
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
-    // One whole photograph only — mouth belongs to that face. No lip stamp, no blur ring.
-    if (talk.img && talk.img !== base && talk.alpha > 0.55 && ready(talk.img)) {
-      const vc = cropRect(talk.img, f, w, h);
-      ctx.drawImage(talk.img, vc.sx, vc.sy, vc.srcW, vc.srcH, 0, 0, w, h);
-    } else if (talk.img && talk.img !== base && talk.alpha > 0.08 && ready(talk.img)) {
-      ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-      const vc = cropRect(talk.img, f, w, h);
-      ctx.globalAlpha = talk.alpha;
-      ctx.drawImage(talk.img, vc.sx, vc.sy, vc.srcW, vc.srcH, 0, 0, w, h);
-      ctx.globalAlpha = 1;
-    } else {
-      ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-    }
+    ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
+
+    const allow = MATCHED[profile.id] || {};
+    const bank = visemeBank[profile.id] || {};
+    const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
+    const layers = [];
+    if (allow.E && fw.E > 0.06 && ready(bank.E)) layers.push([fw.E, bank.E]);
+    if (allow.O && fw.O > 0.06 && ready(bank.O)) layers.push([fw.O, bank.O]);
+    if (allow.F && fw.F > 0.06 && ready(bank.F)) layers.push([fw.F, bank.F]);
+    layers.sort(function (a, b) { return b[0] - a[0]; });
+    if (layers.length) stampSmileMouth(layers[0][1], f, w, h, layers[0][0]);
+
     ctx.restore();
     return true;
   }
