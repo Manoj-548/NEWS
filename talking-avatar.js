@@ -175,27 +175,26 @@
 
   function visemeRun(word) {
     const raw = window.wordToVisemes(word);
-    function isVowelTok(tok) {
-      const t = String(tok || "").toLowerCase();
-      if (/^[aeiouy]/.test(t)) return true;
-      return ["ee", "ea", "ie", "ei", "ey", "oo", "ou", "ow", "ue", "ew", "ai", "ay", "oy", "oi", "ah"].indexOf(t) >= 0;
-    }
-    function mild(shape) {
-      if (shape === "rest" || shape === "open") return "talk";
-      return shape;
-    }
-    let onset = null;
-    let nucleus = { char: word || "a", viseme: "talk", open: 0.32 };
-    for (let i = 0; i < raw.length; i++) {
-      const it = raw[i];
-      const s = mild(it.viseme);
-      const item = { char: it.char, viseme: s, open: s === "closed" ? 0 : 0.34 };
-      if (!onset && (s === "closed" || s === "teeth" || s === "talk")) onset = item;
-      if (isVowelTok(it.char)) nucleus = item;
-    }
     const out = [];
-    if (onset && onset.viseme !== nucleus.viseme) out.push(onset);
-    out.push(nucleus);
+    function mild(it) {
+      let s = it.viseme;
+      if (s === "rest") s = "talk";
+      if (s === "open") s = "talk";
+      const tok = String(it.char || "").toLowerCase();
+      if (tok === "ai" || tok === "ay") return [{ char: tok, viseme: "talk", open: 0.32 }, { char: tok, viseme: "wide", open: 0.34 }];
+      if (tok === "oi" || tok === "oy") return [{ char: tok, viseme: "round", open: 0.34 }, { char: tok, viseme: "wide", open: 0.34 }];
+      if (tok === "ou" || tok === "ow") return [{ char: tok, viseme: "talk", open: 0.32 }, { char: tok, viseme: "round", open: 0.34 }];
+      return [{ char: it.char, viseme: s, open: s === "closed" ? 0 : 0.34 }];
+    }
+    for (let i = 0; i < raw.length; i++) {
+      const bits = mild(raw[i]);
+      for (let b = 0; b < bits.length; b++) {
+        const it = bits[b];
+        if (out.length && out[out.length - 1].viseme === it.viseme) continue;
+        out.push(it);
+      }
+    }
+    if (!out.length) out.push({ char: word || "a", viseme: "talk", open: 0.32 });
     return out;
   }
 
@@ -240,7 +239,7 @@
     const word = words[idx] || "";
     const seq = visemeRun(word);
     const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
-    const hold = 0.34 / Math.max(0.7, rate);
+    const hold = 0.20 / Math.max(0.7, rate);
     const i = Math.min(seq.length - 1, Math.floor(Math.max(0, (now - t0) / 1000) / hold));
     const item = seq[i] || { viseme: "talk", open: 0.32, char: word };
     state.currentLetter = item.char;
@@ -256,11 +255,7 @@
     state.gazeX = 0;
     state.shoulderSway = 0;
     state.bgPhase = (state.bgPhase || 0) + delta;
-    if (Math.random() < 0.011 && (state.eyeBlink || 0) === 0) state.eyeBlink = 1;
-    if (state.eyeBlink > 0) {
-      state.eyeBlink -= delta * 5.2;
-      if (state.eyeBlink < 0) state.eyeBlink = 0;
-    }
+    state.eyeBlink = 0;
     driveLetterVisemes(delta);
   }
   window.talkingAvatarTick = talkingAvatarTick;
@@ -331,21 +326,6 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
     ctx.globalAlpha = 1;
     ctx.drawImage(img, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-
-    const blink = state.eyeBlink || 0;
-    if (blink > 0.04) {
-      const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
-      const ey = ((f.eyeY * crop.nh - crop.sy) / crop.srcH) * h;
-      const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-      const lid = Math.sin(Math.min(1, blink) * Math.PI) * 0.45;
-      ctx.fillStyle = `rgba(28, 18, 14, ${lid})`;
-      const ew = faceW * 0.22;
-      const eh = Math.max(3, faceW * 0.045);
-      ctx.beginPath();
-      ctx.ellipse(mx - faceW * 0.16, ey, ew, eh, 0, 0, Math.PI * 2);
-      ctx.ellipse(mx + faceW * 0.16, ey, ew, eh, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
     ctx.restore();
     return true;
   }
@@ -354,9 +334,9 @@
     const f = LANDMARKS[state.anchorModel] || { cx: 0.5, eyeY: 0.26, faceW: 0.16 };
     return {
       x: w * f.cx,
-      y: h * (f.eyeY + 0.08),
-      rx: Math.max(w * 0.18, w * f.faceW * 1.35),
-      ry: h * 0.32
+      y: h * (f.eyeY + 0.04),
+      rx: Math.max(w * 0.28, w * f.faceW * 2.2),
+      ry: h * 0.42
     };
   };
 
