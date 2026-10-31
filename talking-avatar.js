@@ -175,14 +175,28 @@
 
   function visemeRun(word) {
     const raw = window.wordToVisemes(word);
-    let pick = { char: word || "a", viseme: "talk", open: 0.32 };
+    function isVowelTok(tok) {
+      const t = String(tok || "").toLowerCase();
+      if (/^[aeiouy]/.test(t)) return true;
+      return ["ee", "ea", "ie", "ei", "ey", "oo", "ou", "ow", "ue", "ew", "ai", "ay", "oy", "oi", "ah"].indexOf(t) >= 0;
+    }
+    function mild(shape) {
+      if (shape === "rest" || shape === "open") return "talk";
+      return shape;
+    }
+    let onset = null;
+    let nucleus = { char: word || "a", viseme: "talk", open: 0.32 };
     for (let i = 0; i < raw.length; i++) {
       const it = raw[i];
-      let s = it.viseme === "rest" ? "talk" : it.viseme;
-      if (s === "open" || s === "teeth" || s === "closed") s = "talk";
-      if (s === "wide" || s === "round") pick = { char: it.char, viseme: s, open: 0.36 };
+      const s = mild(it.viseme);
+      const item = { char: it.char, viseme: s, open: s === "closed" ? 0 : 0.34 };
+      if (!onset && (s === "closed" || s === "teeth" || s === "talk")) onset = item;
+      if (isVowelTok(it.char)) nucleus = item;
     }
-    return [pick];
+    const out = [];
+    if (onset && onset.viseme !== nucleus.viseme) out.push(onset);
+    out.push(nucleus);
+    return out;
   }
 
   function driveLetterVisemes(delta) {
@@ -225,8 +239,10 @@
     const idx = Math.max(0, Math.min(Math.max(0, words.length - 1), state.currentWordIndex || 0));
     const word = words[idx] || "";
     const seq = visemeRun(word);
-    const i = 0;
-    const item = seq[i] || { viseme: "talk", open: 0.4, char: word };
+    const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
+    const hold = 0.34 / Math.max(0.7, rate);
+    const i = Math.min(seq.length - 1, Math.floor(Math.max(0, (now - t0) / 1000) / hold));
+    const item = seq[i] || { viseme: "talk", open: 0.32, char: word };
     state.currentLetter = item.char;
     state.visemeShape = item.viseme;
     state.visemeMouthOpen = item.open;
@@ -295,6 +311,8 @@
       return (allow[k] && ready(bank[k])) ? bank[k] : null;
     }
     const shape = state.visemeShape || "talk";
+    if (shape === "closed") return take("M") || take("T");
+    if (shape === "teeth") return take("F") || take("T");
     if (shape === "wide") return take("E") || take("T");
     if (shape === "round") return take("O") || take("T");
     return take("T") || take("E");
