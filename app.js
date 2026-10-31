@@ -1485,7 +1485,8 @@ function startAnimationLoop() {
             }
 
             // Update Animation States
-            updateFacialAnimations(delta);
+            if (typeof window.talkingAvatarTick === "function") window.talkingAvatarTick(delta);
+            else updateFacialAnimations(delta);
 
             // Draw Canvas Layers
             if (!canvas || !ctx) {
@@ -1495,7 +1496,13 @@ function startAnimationLoop() {
             }
             drawStudioBackground();
             drawMediaPIP();
-            drawMaleAnchorModel();
+            if (typeof window.drawTalkingNewsReader === "function") {
+                const profile = getAnchorProfile(state.anchorModel);
+                window.drawTalkingNewsReader(profile, canvas.width, canvas.height);
+                drawPresenterLowerThird(profile, canvas.width, canvas.height);
+            } else {
+                drawMaleAnchorModel();
+            }
             drawLowerThirdsAndTicker();
         } catch (err) {
             console.error("Error in animation render loop:", err);
@@ -1520,6 +1527,10 @@ function startAnimationLoop() {
 
 // Procedural Blink & Micro Motions
 function updateFacialAnimations(delta) {
+    if (typeof window.talkingAvatarTick === "function") {
+        window.talkingAvatarTick(delta);
+        return;
+    }
     state.breathPhase += delta * 1.6;
     state.gesturePhase = (state.gesturePhase || 0) + delta * (state.isSpeaking ? 3.2 : 1.1);
 
@@ -1663,6 +1674,11 @@ function drawMaleAnchorModel() {
     const w = canvas.width;
     const h = canvas.height;
     const profile = getAnchorProfile(state.anchorModel);
+    if (typeof window.drawTalkingNewsReader === "function" && profile.kind !== "robot") {
+        window.drawTalkingNewsReader(profile, w, h);
+        drawPresenterLowerThird(profile, w, h);
+        return;
+    }
     if (profile.kind === "robot") {
         ctx.save();
         const breathY = Math.sin(state.breathPhase) * 2;
