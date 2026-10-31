@@ -1,4 +1,4 @@
-/* Photoreal lip-sync: swap real mouth-shape photos. Never paint an oval. */
+/* Head locked. Only the mouth changes. Voice/gender follow the presenter. */
 (function () {
   const LANDMARKS = {
     nova_kade:       { cx: 0.50, eyeY: 0.250, mouthY: 0.329, chinY: 0.385, faceW: 0.14 },
@@ -10,6 +10,18 @@
     alexander_hayes: { cx: 0.50, eyeY: 0.265, mouthY: 0.345, chinY: 0.395, faceW: 0.15 },
     sofia_reyes:     { cx: 0.50, eyeY: 0.310, mouthY: 0.346, chinY: 0.420, faceW: 0.11 },
     marcus_cole:     { cx: 0.50, eyeY: 0.265, mouthY: 0.375, chinY: 0.400, faceW: 0.14 }
+  };
+
+  const OPEN_MOUTH = {
+    nova_kade:       { cx: 0.50, mouthY: 0.50, faceW: 0.28 },
+    lyra_nova:       { cx: 0.50, mouthY: 0.50, faceW: 0.16 },
+    arjun_mehra:     { cx: 0.50, mouthY: 0.47, faceW: 0.28 },
+    priya_nair:      { cx: 0.50, mouthY: 0.46, faceW: 0.32 },
+    rajesh_sharma:   { cx: 0.50, mouthY: 0.47, faceW: 0.22 },
+    meera_kapoor:    { cx: 0.50, mouthY: 0.47, faceW: 0.16 },
+    alexander_hayes: { cx: 0.50, mouthY: 0.50, faceW: 0.28 },
+    sofia_reyes:     { cx: 0.50, mouthY: 0.50, faceW: 0.16 },
+    marcus_cole:     { cx: 0.50, mouthY: 0.48, faceW: 0.28 }
   };
 
   const VISEME_ID = { closed: 0, rest: 1, wide: 2, open: 3, round: 4, teeth: 5 };
@@ -105,10 +117,10 @@
   };
 
   function driveLetterVisemes(delta) {
-    const speaking = !!(state.isSpeaking && !state.isPaused);
+    const speaking = !!(state.isSpeaking && !state.isPaused && state.userHasStarted);
     if (!speaking) {
-      state.visemeMouthOpen *= 0.7;
-      if (state.visemeMouthOpen < 0.04) state.visemeMouthOpen = 0;
+      state.visemeMouthOpen *= 0.65;
+      if (state.visemeMouthOpen < 0.05) state.visemeMouthOpen = 0;
       state.visemeShape = "closed";
       state.currentLetter = "";
       return;
@@ -118,22 +130,22 @@
     if (state._visemeWord !== idx) {
       state._visemeWord = idx;
       state.letterPhase = 0;
-      const w = words[idx] || "";
-      state.currentWordVec = window.wordToVec(w);
+      state.currentWordVec = window.wordToVec(words[idx] || "");
     }
     const seq = window.wordToVisemes(words[idx] || "");
-    state.letterPhase = (state.letterPhase || 0) + delta * 8 * (state.speechRate || 1);
-    const item = seq.length ? seq[Math.floor(state.letterPhase) % seq.length] : { char: "A", viseme: "open", open: 0.8 };
+    state.letterPhase = (state.letterPhase || 0) + delta * 3.2 * (state.speechRate || 1);
+    const i = seq.length ? Math.min(seq.length - 1, Math.floor(state.letterPhase)) : 0;
+    const item = seq[i] || { char: "A", viseme: "open", open: 0.7 };
     const v = window.visemeForChar(item.char);
     state.currentLetter = item.char;
-    state.visemeMouthOpen += (item.open - (state.visemeMouthOpen || 0)) * 0.55;
-    state.visemeMouthWidth += (v.width - (state.visemeMouthWidth || 1)) * 0.55;
+    state.visemeMouthOpen += (item.open - (state.visemeMouthOpen || 0)) * 0.4;
+    state.visemeMouthWidth += (v.width - (state.visemeMouthWidth || 1)) * 0.4;
     state.visemeShape = item.viseme;
   }
 
   window.updateFacialAnimations = function (delta) {
-    state.breathPhase += delta * 1.6;
-    if (Math.random() < 0.006 && state.eyeBlink === 0) state.eyeBlink = 1;
+    state.breathPhase += delta * 1.2;
+    if (Math.random() < 0.004 && state.eyeBlink === 0) state.eyeBlink = 1;
     if (state.eyeBlink > 0) {
       state.eyeBlink -= delta * 9;
       if (state.eyeBlink < 0) state.eyeBlink = 0;
@@ -141,17 +153,55 @@
     driveLetterVisemes(delta);
   };
 
-  function pickVisemePhoto(profile, shape) {
-    const base = profile.asset ? assetImages[profile.asset] : null;
+  function pickMouthPhoto(profile, shape) {
     const bank = visemeBank[profile.id] || {};
-    if (shape === "closed" || !shape) return base;
     if (shape === "wide" && ready(bank.E)) return bank.E;
     if (shape === "round" && ready(bank.O)) return bank.O;
     if (shape === "teeth" && ready(bank.F)) return bank.F;
+    if (shape === "open" && ready(bank.A)) return bank.A;
     if (ready(bank.A)) return bank.A;
     if (ready(bank.O)) return bank.O;
     if (ready(bank.E)) return bank.E;
-    return base;
+    return null;
+  }
+
+  let mouthBuf = null;
+  let mouthBufCtx = null;
+  function stampSoftMouth(srcImg, om, mx, my, faceW, vis) {
+    const onw = srcImg.naturalWidth;
+    const onh = srcImg.naturalHeight;
+    const pW = Math.max(8, om.faceW * onw * 0.32);
+    const pH = Math.max(6, om.faceW * onw * 0.20);
+    const pX = om.cx * onw - pW / 2;
+    const pY = om.mouthY * onh - pH * 0.42;
+    if (pX < 0 || pY < 0 || pX + pW > onw || pY + pH > onh) return;
+
+    let dW = Math.max(10, Math.round(faceW * 0.20 * (vis.width || 1)));
+    let dH = Math.max(7, Math.round(faceW * 0.085));
+    if (vis.shape === "open") dH = Math.round(faceW * 0.10);
+    else if (vis.shape === "round") { dW = Math.round(faceW * 0.15); dH = Math.round(faceW * 0.10); }
+    else if (vis.shape === "wide") { dW = Math.round(faceW * 0.24); dH = Math.round(faceW * 0.07); }
+
+    if (!mouthBuf) {
+      mouthBuf = document.createElement("canvas");
+      mouthBufCtx = mouthBuf.getContext("2d");
+    }
+    if (mouthBuf.width !== dW || mouthBuf.height !== dH) {
+      mouthBuf.width = dW;
+      mouthBuf.height = dH;
+    }
+    const m = mouthBufCtx;
+    m.clearRect(0, 0, dW, dH);
+    m.drawImage(srcImg, pX, pY, pW, pH, 0, 0, dW, dH);
+    m.globalCompositeOperation = "destination-in";
+    const g = m.createRadialGradient(dW / 2, dH / 2, Math.min(dW, dH) * 0.12, dW / 2, dH / 2, Math.max(dW, dH) * 0.52);
+    g.addColorStop(0, "rgba(0,0,0,1)");
+    g.addColorStop(0.65, "rgba(0,0,0,0.9)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    m.fillStyle = g;
+    m.fillRect(0, 0, dW, dH);
+    m.globalCompositeOperation = "source-over";
+    ctx.drawImage(mouthBuf, mx - dW / 2, my - dH / 2);
   }
 
   function cropAndDraw(img, f, w, h) {
@@ -172,6 +222,7 @@
     if (sy < 0) sy = 0;
     if (sy + srcH > nh) sy = Math.max(0, nh - srcH);
     ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
+    return { nw, nh, sx, sy, srcW, srcH };
   }
 
   function drawPhotorealReader(profile, w, h) {
@@ -179,16 +230,29 @@
     if (!base || !base.complete || !base.naturalWidth) return false;
 
     const f = marks(profile);
-    const speaking = !!(typeof state !== "undefined" && state.isSpeaking && !state.isPaused);
-    const shape = speaking ? (state.visemeShape || "open") : "closed";
-    const img = pickVisemePhoto(profile, shape) || base;
-    const breath = Math.sin(state.breathPhase || 0) * (speaking ? 1.1 : 0.4);
+    const speaking = !!(typeof state !== "undefined" && state.isSpeaking && !state.isPaused && state.userHasStarted);
+    const vis = {
+      open: state.visemeMouthOpen || 0,
+      width: state.visemeMouthWidth || 1,
+      shape: state.visemeShape || "closed"
+    };
 
     ctx.save();
-    ctx.translate(0, breath);
     ctx.imageSmoothingEnabled = true;
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
-    cropAndDraw(img, f, w, h);
+    const crop = cropAndDraw(base, f, w, h);
+
+    if (speaking && vis.shape !== "closed" && vis.open > 0.12) {
+      const mouthSrc = pickMouthPhoto(profile, vis.shape);
+      if (mouthSrc) {
+        const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
+        const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
+        const faceW = (f.faceW * crop.nw / crop.srcW) * w;
+        const om = OPEN_MOUTH[profile.id] || { cx: 0.5, mouthY: 0.48, faceW: 0.22 };
+        stampSoftMouth(mouthSrc, om, mx, my, faceW, vis);
+      }
+    }
+
     ctx.restore();
     return true;
   }
@@ -216,6 +280,18 @@
       : { id: state.anchorModel, name: "Anchor", title: "News Reader", color: "#00d2ff", kind: "human" };
     window.renderAdvancedAnchor(profile, w, h);
     if (typeof drawPresenterLowerThird === "function") drawPresenterLowerThird(profile, w, h);
+  };
+
+  window.syncVoiceToPresenter = function syncVoiceToPresenter() {
+    const profile = typeof getAnchorProfile === "function" ? getAnchorProfile(state.anchorModel) : null;
+    const gender = profile && profile.gender === "female" ? "female" : "male";
+    const sel = document.getElementById("voiceGenderSelect");
+    if (sel) sel.value = gender;
+    const lang = state.currentLanguage || document.getElementById("languageSelect")?.value || "en-IN";
+    if (typeof pickVoiceForLanguage === "function") {
+      state.currentVoice = pickVoiceForLanguage(lang, gender);
+    }
+    return gender;
   };
 
   if (typeof ANCHOR_PROFILES !== "undefined") {

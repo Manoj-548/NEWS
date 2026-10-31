@@ -3,10 +3,10 @@
   function toast(m) { if (typeof studioToast === "function") studioToast(m); else console.log(m); }
 
   function isFemaleName(name) {
-    return /female|zira|samantha|victoria|susan|hazel|heera|swara|kalpana|priya|kendra|linda|veena|moira|fiona|karen|tessa|nicky|zira|google uk english female|google हिन्दी|heera|aria|sonia|raveena/i.test(name);
+    return /female|zira|samantha|victoria|susan|hazel|heera|swara|kalpana|priya|kendra|linda|veena|moira|fiona|karen|tessa|nicky|aria|sonia|raveena|eva|catherine|hazel|google uk english female|microsoft heera|heera|zira|woman/i.test(name);
   }
   function isMaleName(name) {
-    return /male|david|mark|ravi|daniel|fred|alex|george|james|hemant|google uk english male|ravi|hemant|sean|thomas/i.test(name);
+    return /male|david|mark|ravi|daniel|fred|alex|george|james|hemant|sean|thomas|richard|microsoft ravi|google uk english male|man\b/i.test(name);
   }
 
   window.pickVoiceForLanguage = function (lang, gender) {
@@ -18,7 +18,11 @@
     const prefix = voices.filter((v) => v.lang.toLowerCase().startsWith(short));
     const pool = exact.length ? exact : (prefix.length ? prefix : voices);
     const wantF = gender === "female";
-    const gendered = pool.filter((v) => (wantF ? isFemaleName(v.name) : isMaleName(v.name)));
+    const gendered = pool.filter((v) => {
+      if (v.gender === "female") return wantF;
+      if (v.gender === "male") return !wantF;
+      return wantF ? isFemaleName(v.name) : isMaleName(v.name);
+    });
     const rest = pool.filter((v) => (wantF ? !isMaleName(v.name) : !isFemaleName(v.name)));
     return gendered[0] || rest[0] || pool[0] || voices[0];
   };

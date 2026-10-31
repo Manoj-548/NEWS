@@ -311,30 +311,14 @@ function runScreenLoadingSequence() {
 
 // Auto-Start Visual Broadcast Model on Load
 function autoStartLiveBroadcastModel() {
-    state.isSpeaking = true;
-    document.querySelector(".teleprompter-card")?.classList.add("speaking-active");
-    
-    // Simulate active teleprompter speech visemes immediately on load
+    // Idle desk only — do not fake speech or jump the head.
     if (!state.scriptText && state.currentStory) {
         state.scriptText = state.currentStory.script;
         state.scriptWords = state.scriptText.split(/\s+/);
+        renderTeleprompterText();
+        const subElem = document.getElementById("subtitleTicker");
+        if (subElem) subElem.textContent = state.scriptWords.slice(0, 8).join(" ");
     }
-    
-    // Word loop simulation for subtitle teleprompter on load
-    let wordIdx = 0;
-    setInterval(() => {
-        if (state.isSpeaking && state.scriptWords.length > 0) {
-            wordIdx = (wordIdx + 1) % state.scriptWords.length;
-            state.currentWordIndex = wordIdx;
-            state.visemeMouthOpen = 0.5 + Math.random() * 0.4;
-            state.visemeMouthWidth = 0.8 + Math.random() * 0.4;
-
-            renderTeleprompterText();
-            const snippet = state.scriptWords.slice(Math.max(0, wordIdx - 2), wordIdx + 6).join(" ");
-            const subElem = document.getElementById("subtitleTicker");
-            if (subElem) subElem.textContent = snippet || state.scriptText;
-        }
-    }, 280);
 }
 
 // Cache DOM elements
@@ -773,8 +757,9 @@ function switchPresenterModel(model) {
     const genderSelect = document.getElementById("voiceGenderSelect");
     if (genderSelect) {
         genderSelect.value = profile.gender === "female" ? "female" : "male";
-        initSpeechSynthesis();
     }
+    if (typeof syncVoiceToPresenter === "function") syncVoiceToPresenter();
+    else initSpeechSynthesis();
 
     const nameLabel = document.getElementById("currentAnchorLabel");
     if (nameLabel) nameLabel.textContent = profile.name;
@@ -1351,19 +1336,34 @@ function startNewsBroadcast() {
     currentUtterance.rate = state.speechRate;
     currentUtterance.pitch = state.speechPitch;
     currentUtterance.volume = state.volume;
-    const gender = document.getElementById("voiceGenderSelect")?.value || getAnchorProfile?.(state.anchorModel)?.gender || "male";
+    const profileNow = getAnchorProfile?.(state.anchorModel);
+    const gender = (typeof syncVoiceToPresenter === "function"
+        ? syncVoiceToPresenter()
+        : (profileNow?.gender || document.getElementById("voiceGenderSelect")?.value || "male"));
     if (typeof pickVoiceForLanguage === "function") {
         state.currentVoice = pickVoiceForLanguage(state.currentLanguage, gender) || state.currentVoice;
     }
     if (state.currentVoice) currentUtterance.voice = state.currentVoice;
+    currentUtterance.pitch = gender === "female"
+        ? Math.min(1.2, (state.speechPitch || 1) * 1.08)
+        : Math.max(0.85, (state.speechPitch || 1) * 0.95);
 
     currentUtterance.onboundary = (event) => {
-        if (event.name === "word") {
-            const charIdx = event.charIndex;
+        if (event.name === "word" || event.name === "sentence" || !event.name) {
+            const charIdx = event.charIndex || 0;
             const subText = speakText.substring(0, charIdx);
-            state.currentWordIndex = subText.split(/\s+/).length - 1;
-            state.visemeMouthOpen = 0.55 + Math.random() * 0.45;
-            state.visemeMouthWidth = 0.8 + Math.random() * 0.4;
+            state.currentWordIndex = Math.max(0, subText.split(/\s+/).filter(Boolean).length - (subText.endsWith(" ") ? 0 : 1));
+            if (state.currentWordIndex < 0) state.currentWordIndex = 0;
+            state.letterPhase = 0;
+            state._visemeWord = state.currentWordIndex;
+            const w = (state.scriptWords || [])[state.currentWordIndex] || "";
+            if (typeof wordToVisemes === "function") {
+                const seq = wordToVisemes(w);
+                if (seq[0]) {
+                    state.visemeShape = seq[0].viseme;
+                    state.visemeMouthOpen = seq[0].open;
+                }
+            }
             renderTeleprompterText();
             const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
             if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
