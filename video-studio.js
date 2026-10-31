@@ -58,32 +58,94 @@
     return null;
   }
 
+  const PEOPLE = [
+    ["nova_kade", "Kade Nova"],
+    ["lyra_nova", "Lyra Nova"],
+    ["arjun_mehra", "Arjun Mehra"],
+    ["priya_nair", "Priya Nair"],
+    ["rajesh_sharma", "Rajesh Sharma"],
+    ["meera_kapoor", "Meera Kapoor"],
+    ["alexander_hayes", "Alexander Hayes"],
+    ["sofia_reyes", "Sofia Reyes"],
+    ["marcus_cole", "Marcus Cole"]
+  ];
+
+  function setModeTabs(which) {
+    ["viewModeBroadcastBtn", "viewModeAiChatBtn", "viewModeStudioBtn"].forEach(function (id) {
+      const el = $(id);
+      if (el) el.classList.toggle("active", id === which);
+    });
+  }
+
+  function fitCanvas() {
+    const stage = document.querySelector("#videoStudioScreen .vs-stage");
+    const canvas = $("vsCanvas");
+    if (!stage || !canvas) return;
+    const w = Math.max(960, Math.floor(stage.clientWidth) || 1280);
+    const h = Math.max(540, Math.floor(stage.clientHeight) || 720);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+
+  function renderPills() {
+    const box = $("vsPresenterPills");
+    if (!box) return;
+    const cur = (typeof state !== "undefined" && state.anchorModel) || "nova_kade";
+    box.innerHTML = "";
+    PEOPLE.forEach(function (p) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "vs-pill" + (p[0] === cur ? " active" : "");
+      b.textContent = p[1];
+      b.onclick = function () {
+        if (typeof switchPresenterModel === "function") switchPresenterModel(p[0]);
+        renderPills();
+        toast(p[1] + " — press Play presenter");
+      };
+      box.appendChild(b);
+    });
+  }
+
   function openStudio() {
     const screen = $("videoStudioScreen");
     if (!screen) return;
+    setModeTabs("viewModeStudioBtn");
+    $("canvasWrapper")?.classList.add("hidden");
+    $("aiChatHubViewport")?.classList.add("hidden");
     screen.classList.remove("hidden");
     screen.setAttribute("aria-hidden", "false");
     vs.open = true;
     vs.lastTs = 0;
     if (!vs.clips.length) seedAiClip(false);
+    renderPills();
     renderBin();
     renderTimeline();
-    toast("Video Studio — " + (profile().name || "presenter") + " bottom-left");
-    loop(0);
+    fitCanvas();
+    toast("Video Studio — pick a presenter, then Play");
+    if (!vs.raf) loop(0);
   }
-  function closeStudio() {
+  function hideStudio() {
     vs.open = false;
     vs.playing = false;
+    if (vs.raf) cancelAnimationFrame(vs.raf);
+    vs.raf = 0;
     const screen = $("videoStudioScreen");
     if (screen) {
       screen.classList.add("hidden");
       screen.setAttribute("aria-hidden", "true");
     }
-    if (vs.raf) cancelAnimationFrame(vs.raf);
-    vs.raf = 0;
+  }
+  function closeStudio() {
+    hideStudio();
+    setModeTabs("viewModeBroadcastBtn");
+    $("canvasWrapper")?.classList.remove("hidden");
+    $("aiChatHubViewport")?.classList.add("hidden");
   }
   window.openVideoStudio = openStudio;
   window.closeVideoStudio = closeStudio;
+  window.hideVideoStudio = hideStudio;
 
   function seedAiClip(markNew) {
     const s = story();
@@ -358,18 +420,21 @@
   }
 
   function drawPresenterPip(ctx, w, h) {
-    const pipW = Math.round(w * 0.24);
-    const pipH = Math.round(h * 0.32);
-    const x = 18;
-    const y = h - pipH - 58;
+    const pipW = Math.round(w * 0.30);
+    const pipH = Math.round(h * 0.42);
+    const x = 16;
+    const y = h - pipH - 56;
     ctx.save();
     ctx.fillStyle = "rgba(0,0,0,0.55)";
     ctx.fillRect(x - 6, y - 6, pipW + 12, pipH + 12);
     ctx.strokeStyle = profile().color || "#00d2ff";
     ctx.lineWidth = 3;
     ctx.strokeRect(x - 3, y - 3, pipW + 6, pipH + 6);
+    const live = document.getElementById("broadcastCanvas");
     const img = presenterImg();
-    if (img) {
+    if (live && live.width) {
+      ctx.drawImage(live, x, y, pipW, pipH);
+    } else if (img) {
       const iw = img.naturalWidth;
       const ih = img.naturalHeight;
       const ar = pipW / pipH;
@@ -463,8 +528,22 @@
       }
       renderTimeline();
     }
+    fitCanvas();
     drawFrame(ts);
     vs.raf = requestAnimationFrame(loop);
+  }
+
+  function togglePlay() {
+    vs.playing = !vs.playing;
+    const pb = $("vsPlayBtn");
+    if (pb) pb.textContent = vs.playing ? "Pause presenter" : "Play presenter";
+    if (vs.playing) {
+      if (typeof startNewsBroadcast === "function") {
+        try { startNewsBroadcast(); } catch (e) {}
+      }
+    } else if (typeof pauseNewsBroadcast === "function") {
+      try { pauseNewsBroadcast(); } catch (e) {}
+    }
   }
 
   function renderBin() {
@@ -590,9 +669,14 @@
     $("vsCutBtn")?.addEventListener("click", cutAtPlayhead);
     $("vsCopyBtn")?.addEventListener("click", copyClip);
     $("vsPasteBtn")?.addEventListener("click", pasteClip);
-    $("vsPlayBtn")?.addEventListener("click", function () {
-      vs.playing = !vs.playing;
-      this.textContent = vs.playing ? "Pause" : "Play";
+    $("vsPlayBtn")?.addEventListener("click", togglePlay);
+    $("viewModeStudioBtn")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      openStudio();
+    });
+    $("openVideoStudioBtn")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      openStudio();
     });
     $("vsDownloadBtn")?.addEventListener("click", function () { recordStudio(false); });
     $("vsYoutubeBtn")?.addEventListener("click", function () { recordStudio(true); });

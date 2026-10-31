@@ -1839,13 +1839,15 @@ body.dark-theme {
 .btn-studio-top:hover { filter: brightness(1.12); }
 
 .video-studio-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 5000;
+    position: relative;
+    flex: 1;
+    min-height: 0;
     background: #070b12;
     display: flex;
     flex-direction: column;
     color: #f0f4f8;
+    border-radius: 8px;
+    overflow: hidden;
 }
 .video-studio-screen.hidden { display: none !important; }
 
@@ -1889,30 +1891,36 @@ body.dark-theme {
     flex: 1;
     min-height: 0;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: #000;
 }
 #vsCanvas {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
+    width: 100%;
+    height: 100%;
+    display: block;
     background: #000;
     cursor: crosshair;
 }
-.vs-hint {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.55);
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    color: #c5d0dc;
-    pointer-events: none;
+.vs-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+    min-width: 200px;
+}
+.vs-pill {
+    background: #1c2438;
+    color: #d5e2ef;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 99px;
+    padding: 4px 9px;
+    font-size: 0.68rem;
+    cursor: pointer;
+    font-weight: 700;
+}
+.vs-pill.active {
+    background: #00d2ff;
+    color: #041018;
+    border-color: #00d2ff;
 }
 
 .vs-dock {

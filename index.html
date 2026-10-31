@@ -412,7 +412,10 @@
                     <i class="fa-solid fa-microphone-lines text-neon"></i> AI News
                 </button>
                 <button id="viewModeAiChatBtn" class="mode-tab-btn">
-                    <i class="fa-solid fa-comments text-neon"></i> 💬 AI CHAT & NEWS ENGINE HUB
+                    <i class="fa-solid fa-comments text-neon"></i> AI Chat
+                </button>
+                <button id="viewModeStudioBtn" class="mode-tab-btn">
+                    VIDEO STUDIO
                 </button>
             </div>
 
@@ -489,6 +492,39 @@
                     <button id="hubSendBtn" class="btn-action primary hub-send-btn" type="button">Ask AI &amp; Broadcast</button>
                     <span class="hub-hint">Ctrl+Enter to send · script goes to the anchor</span>
                 </div>
+            </div>
+        </div>
+
+        <div id="videoStudioScreen" class="video-studio-screen hidden" aria-hidden="true">
+            <header class="vs-bar">
+                <div class="vs-brand">VIDEO STUDIO <small>full screen editor</small></div>
+                <div id="vsPresenterPills" class="vs-pills"></div>
+                <div class="vs-tools">
+                    <button id="vsGenerateBtn" class="vs-btn vs-btn-ai" type="button">Generate news video</button>
+                    <button id="vsUploadBtn" class="vs-btn" type="button">Upload video</button>
+                    <button id="vsCropBtn" class="vs-btn" type="button">Crop</button>
+                    <button id="vsCutBtn" class="vs-btn" type="button">Cut</button>
+                    <button id="vsCopyBtn" class="vs-btn" type="button">Copy</button>
+                    <button id="vsPasteBtn" class="vs-btn" type="button">Paste</button>
+                    <button id="vsPlayBtn" class="vs-btn vs-btn-play" type="button">Play presenter</button>
+                    <button id="vsDownloadBtn" class="vs-btn vs-btn-dl" type="button">Download</button>
+                    <button id="vsYoutubeBtn" class="vs-btn vs-btn-yt" type="button">Live publish YouTube</button>
+                </div>
+            </header>
+            <div class="vs-stage">
+                <canvas id="vsCanvas" width="1280" height="720"></canvas>
+                <input id="vsFileInput" type="file" accept="video/*" multiple hidden>
+            </div>
+            <div class="vs-dock">
+                <div class="vs-bin-wrap">
+                    <div class="vs-dock-label">CLIPS</div>
+                    <div id="vsBin" class="vs-bin"></div>
+                </div>
+                <div class="vs-tl-wrap">
+                    <div class="vs-dock-label">TIMELINE · click to seek · crop / cut / paste</div>
+                    <div id="vsTimeline" class="vs-timeline"></div>
+                </div>
+                <div id="vsStatus" class="vs-status">Idle</div>
             </div>
         </div>
 
@@ -576,46 +612,12 @@
 
     <div id="studioToast" class="studio-toast hidden"></div>
 
-    <div id="videoStudioScreen" class="video-studio-screen hidden" aria-hidden="true">
-        <header class="vs-bar">
-            <div class="vs-brand">VIDEO STUDIO <small>News channel editor</small></div>
-            <div class="vs-tools">
-                <button id="vsGenerateBtn" class="vs-btn vs-btn-ai" type="button">Generate news video</button>
-                <button id="vsUploadBtn" class="vs-btn" type="button">Upload video</button>
-                <button id="vsCropBtn" class="vs-btn" type="button">Crop</button>
-                <button id="vsCutBtn" class="vs-btn" type="button">Cut</button>
-                <button id="vsCopyBtn" class="vs-btn" type="button">Copy</button>
-                <button id="vsPasteBtn" class="vs-btn" type="button">Paste</button>
-                <button id="vsPlayBtn" class="vs-btn vs-btn-play" type="button">Play</button>
-                <button id="vsDownloadBtn" class="vs-btn vs-btn-dl" type="button">Download</button>
-                <button id="vsYoutubeBtn" class="vs-btn vs-btn-yt" type="button">Live publish YouTube</button>
-                <button id="vsCloseBtn" class="vs-btn vs-btn-close" type="button">Close</button>
-            </div>
-        </header>
-        <div class="vs-stage">
-            <canvas id="vsCanvas" width="1280" height="720"></canvas>
-            <input id="vsFileInput" type="file" accept="video/*" multiple hidden>
-            <div id="vsHint" class="vs-hint">Generate an AI news video or upload clips. Presenter stays bottom-left.</div>
-        </div>
-        <div class="vs-dock">
-            <div class="vs-bin-wrap">
-                <div class="vs-dock-label">CLIPS</div>
-                <div id="vsBin" class="vs-bin"></div>
-            </div>
-            <div class="vs-tl-wrap">
-                <div class="vs-dock-label">TIMELINE · click to seek · crop / cut / paste the selected clip</div>
-                <div id="vsTimeline" class="vs-timeline"></div>
-            </div>
-            <div id="vsStatus" class="vs-status">Idle</div>
-        </div>
-    </div>
-
-    <script src="app.js?v=studio1"></script>
-    <script src="talking-avatar.js?v=studio1"></script>
-    <script src="news-desk.js?v=studio1"></script>
-    <script src="boot-controls.js?v=studio1"></script>
-    <script src="fix-news-ui.js?v=studio1"></script>
-    <script src="video-studio.js?v=studio1"></script>
+    <script src="app.js?v=studio2"></script>
+    <script src="talking-avatar.js?v=studio2"></script>
+    <script src="news-desk.js?v=studio2"></script>
+    <script src="boot-controls.js?v=studio2"></script>
+    <script src="fix-news-ui.js?v=studio2"></script>
+    <script src="video-studio.js?v=studio2"></script>
     <script>
         (function () {
             function dismissLoader() {

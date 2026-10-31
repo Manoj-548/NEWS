@@ -85,17 +85,24 @@
         else document.exitFullscreen();
       },
       viewModeBroadcastBtn: () => {
+        if (typeof hideVideoStudio === "function") hideVideoStudio();
         document.getElementById("viewModeBroadcastBtn")?.classList.add("active");
         document.getElementById("viewModeAiChatBtn")?.classList.remove("active");
+        document.getElementById("viewModeStudioBtn")?.classList.remove("active");
         document.getElementById("canvasWrapper")?.classList.remove("hidden");
         document.getElementById("aiChatHubViewport")?.classList.add("hidden");
+        document.getElementById("videoStudioScreen")?.classList.add("hidden");
       },
       viewModeAiChatBtn: () => {
+        if (typeof hideVideoStudio === "function") hideVideoStudio();
         document.getElementById("viewModeAiChatBtn")?.classList.add("active");
         document.getElementById("viewModeBroadcastBtn")?.classList.remove("active");
+        document.getElementById("viewModeStudioBtn")?.classList.remove("active");
         document.getElementById("aiChatHubViewport")?.classList.remove("hidden");
         document.getElementById("canvasWrapper")?.classList.add("hidden");
+        document.getElementById("videoStudioScreen")?.classList.add("hidden");
       },
+      viewModeStudioBtn: () => { if (typeof openVideoStudio === "function") openVideoStudio(); },
       sidebarToggleBtn: () => {
         document.getElementById("mainControlPanel")?.classList.toggle("collapsed");
         document.getElementById("studioContainer")?.classList.toggle("sidebar-collapsed");
