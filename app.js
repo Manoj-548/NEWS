@@ -2094,7 +2094,7 @@ function drawLowerThirdsAndTicker() {
         ctx.fillText(`🔒 ${state.secretPlaceholder}`, brandX, brandY);
     } else {
         ctx.fillStyle = "#00d2ff";
-        ctx.fillText(`📺 ${state.channelName}`, brandX, brandY);
+        ctx.fillText(`${state.channelName || "AI News"}`, brandX, brandY);
     }
 }
 

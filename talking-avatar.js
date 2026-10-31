@@ -170,7 +170,7 @@
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-7.2 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-12 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.A !== "number") state.faceW = { A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -195,7 +195,7 @@
       state.letterPhase = 0;
     }
     const seq = window.wordToVisemes(words[idx] || "");
-    const rate = 3.4 * (state.speechRate || 1);
+    const rate = 4.2 * (state.speechRate || 1);
     state.letterPhase = (state.letterPhase || 0) + delta * rate;
     let item;
     if (seq.length) {
@@ -254,74 +254,43 @@
     return { nw, nh, sx, sy, srcW, srcH };
   }
 
-  let faceBuf = null;
-  let faceCtx = null;
-  function ensureBuf(w, h) {
-    if (!faceBuf) {
-      faceBuf = document.createElement("canvas");
-      faceCtx = faceBuf.getContext("2d");
-    }
-    if (faceBuf.width !== w || faceBuf.height !== h) {
-      faceBuf.width = w;
-      faceBuf.height = h;
-    }
-    return faceCtx;
-  }
-
-  function blendVisemeLayer(srcImg, f, w, h, alpha) {
-    if (!ready(srcImg) || alpha < 0.03) return;
-    const crop = cropRect(srcImg, f, w, h);
-    const b = ensureBuf(w, h);
-    b.clearRect(0, 0, w, h);
-    b.imageSmoothingEnabled = true;
-    if (b.imageSmoothingQuality) b.imageSmoothingQuality = "high";
-    b.drawImage(srcImg, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-
-    const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
-    const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
-    const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-    const rx = Math.max(70, faceW * 0.62);
-    const ry = Math.max(42, faceW * 0.38);
-
-    b.globalCompositeOperation = "destination-in";
-    const g = b.createRadialGradient(mx, my, Math.min(rx, ry) * 0.15, mx, my, Math.max(rx, ry));
-    g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(0.55, "rgba(0,0,0,0.95)");
-    g.addColorStop(0.82, "rgba(0,0,0,0.35)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    b.fillStyle = g;
-    b.fillRect(0, 0, w, h);
-    b.globalCompositeOperation = "source-over";
-
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, alpha);
-    ctx.drawImage(faceBuf, 0, 0);
-    ctx.restore();
+  function pickTalkFrame(profile, base) {
+    const allow = MATCHED[profile.id] || {};
+    const bank = visemeBank[profile.id] || {};
+    const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
+    const layers = [];
+    if (allow.A && fw.A > 0.05 && ready(bank.A)) layers.push([fw.A, bank.A]);
+    if (allow.E && fw.E > 0.05 && ready(bank.E)) layers.push([fw.E, bank.E]);
+    if (allow.O && fw.O > 0.05 && ready(bank.O)) layers.push([fw.O, bank.O]);
+    if (allow.F && fw.F > 0.05 && ready(bank.F)) layers.push([fw.F, bank.F]);
+    layers.sort(function (a, b) { return b[0] - a[0]; });
+    if (!layers.length) return { img: base, alpha: 0 };
+    return { img: layers[0][1], alpha: Math.min(1, layers[0][0]) };
   }
 
   function drawPhotorealReader(profile, w, h) {
     const base = profile.asset ? assetImages[profile.asset] : null;
     if (!base || !base.complete || !base.naturalWidth) return false;
     const f = marks(profile);
+    const crop = cropRect(base, f, w, h);
+    const talk = pickTalkFrame(profile, base);
 
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
-    const crop = cropRect(base, f, w, h);
-    ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
-
-    const allow = MATCHED[profile.id] || {};
-    const bank = visemeBank[profile.id] || {};
-    const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
-    const layers = [];
-    if (allow.A && fw.A > 0.04) layers.push([fw.A, bank.A]);
-    if (allow.E && fw.E > 0.04) layers.push([fw.E, bank.E]);
-    if (allow.O && fw.O > 0.04) layers.push([fw.O, bank.O]);
-    if (allow.F && fw.F > 0.04) layers.push([fw.F, bank.F]);
-    layers.sort(function (a, b) { return b[0] - a[0]; });
-    const n = Math.min(2, layers.length);
-    for (let i = 0; i < n; i++) blendVisemeLayer(layers[i][1], f, w, h, layers[i][0]);
-
+    // One whole photograph only — mouth belongs to that face. No lip stamp, no blur ring.
+    if (talk.img && talk.img !== base && talk.alpha > 0.55 && ready(talk.img)) {
+      const vc = cropRect(talk.img, f, w, h);
+      ctx.drawImage(talk.img, vc.sx, vc.sy, vc.srcW, vc.srcH, 0, 0, w, h);
+    } else if (talk.img && talk.img !== base && talk.alpha > 0.08 && ready(talk.img)) {
+      ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
+      const vc = cropRect(talk.img, f, w, h);
+      ctx.globalAlpha = talk.alpha;
+      ctx.drawImage(talk.img, vc.sx, vc.sy, vc.srcW, vc.srcH, 0, 0, w, h);
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.drawImage(base, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
+    }
     ctx.restore();
     return true;
   }
