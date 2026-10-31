@@ -13,15 +13,15 @@
   };
 
   const MATCHED = {
-    nova_kade:       { T: 1, A: 1, E: 1, O: 1, F: 1 },
-    lyra_nova:       { T: 1, A: 1, E: 1, O: 1 },
-    arjun_mehra:     { T: 1, A: 1, E: 1, O: 1, F: 1 },
-    priya_nair:      { T: 1, A: 1, E: 1, O: 1, F: 1 },
-    rajesh_sharma:   { T: 1, A: 1, E: 1, O: 1 },
-    meera_kapoor:    { T: 1, A: 1, E: 1, O: 1, F: 1 },
-    alexander_hayes: { T: 1, A: 1, E: 1, O: 1 },
-    sofia_reyes:     { T: 1, A: 1, E: 1, O: 1 },
-    marcus_cole:     { T: 1, A: 1, E: 1, O: 1 }
+    nova_kade:       { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
+    lyra_nova:       { M: 1, T: 1, A: 1, E: 1, O: 1 },
+    arjun_mehra:     { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
+    priya_nair:      { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
+    rajesh_sharma:   { M: 1, T: 1, A: 1, E: 1, O: 1 },
+    meera_kapoor:    { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
+    alexander_hayes: { M: 1, T: 1, A: 1, E: 1, O: 1 },
+    sofia_reyes:     { M: 1, T: 1, A: 1, E: 1, O: 1 },
+    marcus_cole:     { M: 1, T: 1, A: 1, E: 1, O: 1 }
   };
 
   const LATIN_LETTER = {
@@ -36,7 +36,7 @@
     i: { open: 0.38, width: 1.2, shape: "wide" },
     j: { open: 0.3, width: 1.14, shape: "wide" },
     k: { open: 0.18, width: 1.0, shape: "rest" },
-    l: { open: 0.3, width: 1.12, shape: "wide" },
+    l: { open: 0.22, width: 1.0, shape: "rest" },
     m: { open: 0, width: 0.8, shape: "closed" },
     n: { open: 0.16, width: 1.0, shape: "rest" },
     o: { open: 0.7, width: 0.7, shape: "round" },
@@ -64,6 +64,7 @@
   }
   Object.keys(LANDMARKS).forEach(function (id) {
     visemeBank[id] = {
+      M: loadImg("assets/viseme_M_" + id + ".jpg"),
       T: loadImg("assets/viseme_talk_" + id + ".jpg"),
       A: loadImg("assets/viseme_open_" + id + ".jpg"),
       E: loadImg("assets/viseme_E_" + id + ".jpg"),
@@ -175,19 +176,44 @@
   function visemeRun(word) {
     const raw = window.wordToVisemes(word);
     const out = [];
+    function push(char, shape, open, hold) {
+      hold = hold || 1;
+      for (let h = 0; h < hold; h++) {
+        if (out.length && out[out.length - 1].viseme === shape && (shape === "talk" || shape === "closed") && h === 0) {
+          continue;
+        }
+        out.push({ char: char, viseme: shape, open: shape === "closed" ? 0 : open });
+      }
+    }
     for (let i = 0; i < raw.length; i++) {
       const it = raw[i];
+      const tok = String(it.char || "").toLowerCase();
+      if (tok === "ai" || tok === "ay") {
+        push(tok, "open", 0.5, 1);
+        push(tok, "wide", 0.42, 1);
+        continue;
+      }
+      if (tok === "oi" || tok === "oy") {
+        push(tok, "round", 0.5, 1);
+        push(tok, "wide", 0.42, 1);
+        continue;
+      }
+      if (tok === "ou" || tok === "ow") {
+        push(tok, "open", 0.48, 1);
+        push(tok, "round", 0.52, 1);
+        continue;
+      }
       const shape = it.viseme === "rest" ? "talk" : it.viseme;
-      if (out.length && out[out.length - 1].viseme === shape) continue;
-      out.push({ char: it.char, viseme: shape, open: shape === "closed" ? 0 : (it.open || 0.4) });
+      const vowel = shape === "open" || shape === "wide" || shape === "round";
+      push(it.char, shape, it.open || 0.4, vowel ? 2 : 1);
     }
-    if (!out.length) out.push({ char: word || "a", viseme: "talk", open: 0.4 });
+    if (!out.length) push(word || "a", "talk", 0.4, 2);
     return out;
   }
 
   function wordDurationSec(word, rate) {
     const n = Math.max(1, visemeRun(word).length);
-    return Math.min(0.95, Math.max(0.42, 0.2 + n * 0.18)) / Math.max(0.6, rate || 1);
+    return Math.min(0.72, Math.max(0.28, n * 0.10)) / Math.max(0.65, rate || 1);
   }
 
   function driveLetterVisemes(delta) {
@@ -237,7 +263,7 @@
     const item = seq[i] || { viseme: "talk", open: 0.4, char: word };
     state.currentLetter = item.char;
     state.visemeShape = item.viseme;
-    state.visemeMouthOpen = easeToward(state.visemeMouthOpen || 0, item.open, k);
+    state.visemeMouthOpen = item.open;
     applyW(targetWeights(id, item.viseme, item.open));
   }
 
@@ -298,20 +324,16 @@
     if (!speaking) return null;
     const allow = MATCHED[id] || {};
     const bank = visemeBank[id] || {};
-    const fw = (state.faceW && typeof state.faceW.T === "number") ? state.faceW : { T: 0, A: 0, E: 0, O: 0, F: 0 };
-    const order = ["E", "O", "F", "T"];
-    let best = null;
-    let bestW = 0.12;
-    for (let i = 0; i < order.length; i++) {
-      const k = order[i];
-      if (allow[k] && fw[k] > bestW && ready(bank[k])) {
-        best = bank[k];
-        bestW = fw[k];
-      }
+    function take(k) {
+      return (allow[k] && ready(bank[k])) ? bank[k] : null;
     }
-    if (!best && ready(bank.T)) best = bank.T;
-    if (!best && ready(bank.E)) best = bank.E;
-    return best;
+    const shape = state.visemeShape || "talk";
+    if (shape === "closed") return take("M");
+    if (shape === "wide") return take("E") || take("T");
+    if (shape === "round") return take("O") || take("T");
+    if (shape === "teeth") return take("F") || take("T");
+    if (shape === "open") return take("A") || take("T");
+    return take("T") || take("E");
   }
 
   function drawPhotorealReader(profile, w, h) {
