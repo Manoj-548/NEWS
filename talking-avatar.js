@@ -175,43 +175,14 @@
 
   function visemeRun(word) {
     const raw = window.wordToVisemes(word);
-    const full = [];
-    function push(char, shape, open) {
-      if (full.length && full[full.length - 1].viseme === shape) return;
-      full.push({ char: char, viseme: shape, open: shape === "closed" ? 0 : open });
-    }
+    let pick = { char: word || "a", viseme: "talk", open: 0.32 };
     for (let i = 0; i < raw.length; i++) {
       const it = raw[i];
-      const tok = String(it.char || "").toLowerCase();
-      if (tok === "ai" || tok === "ay") {
-        push(tok, "open", 0.5);
-        push(tok, "wide", 0.42);
-        continue;
-      }
-      if (tok === "oi" || tok === "oy") {
-        push(tok, "round", 0.5);
-        push(tok, "wide", 0.42);
-        continue;
-      }
-      if (tok === "ou" || tok === "ow") {
-        push(tok, "open", 0.48);
-        push(tok, "round", 0.52);
-        continue;
-      }
-      push(it.char, it.viseme === "rest" ? "talk" : it.viseme, it.open || 0.4);
+      let s = it.viseme === "rest" ? "talk" : it.viseme;
+      if (s === "open" || s === "teeth" || s === "closed") s = "talk";
+      if (s === "wide" || s === "round") pick = { char: it.char, viseme: s, open: 0.36 };
     }
-    if (!full.length) full.push({ char: word || "a", viseme: "talk", open: 0.4 });
-    if (full.length <= 3) return full;
-    let v = 0;
-    for (let i = 0; i < full.length; i++) {
-      const s = full[i].viseme;
-      if (s === "open" || s === "wide" || s === "round") v = i;
-    }
-    const out = [full[0]];
-    if (v > 0 && full[v].viseme !== out[0].viseme) out.push(full[v]);
-    const last = full[full.length - 1];
-    if (last.viseme !== out[out.length - 1].viseme) out.push(last);
-    return out;
+    return [pick];
   }
 
   function driveLetterVisemes(delta) {
@@ -254,9 +225,7 @@
     const idx = Math.max(0, Math.min(Math.max(0, words.length - 1), state.currentWordIndex || 0));
     const word = words[idx] || "";
     const seq = visemeRun(word);
-    const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
-    const hold = 0.30 / Math.max(0.65, rate);
-    const i = Math.min(seq.length - 1, Math.floor(Math.max(0, (now - t0) / 1000) / hold));
+    const i = 0;
     const item = seq[i] || { viseme: "talk", open: 0.4, char: word };
     state.currentLetter = item.char;
     state.visemeShape = item.viseme;
@@ -270,9 +239,10 @@
     state.headTilt = 0;
     state.gazeX = 0;
     state.shoulderSway = 0;
-    if (Math.random() < 0.003 && (state.eyeBlink || 0) === 0) state.eyeBlink = 1;
+    state.bgPhase = (state.bgPhase || 0) + delta;
+    if (Math.random() < 0.011 && (state.eyeBlink || 0) === 0) state.eyeBlink = 1;
     if (state.eyeBlink > 0) {
-      state.eyeBlink -= delta * 6.5;
+      state.eyeBlink -= delta * 5.2;
       if (state.eyeBlink < 0) state.eyeBlink = 0;
     }
     driveLetterVisemes(delta);
@@ -325,11 +295,8 @@
       return (allow[k] && ready(bank[k])) ? bank[k] : null;
     }
     const shape = state.visemeShape || "talk";
-    if (shape === "closed") return take("M");
     if (shape === "wide") return take("E") || take("T");
     if (shape === "round") return take("O") || take("T");
-    if (shape === "teeth") return take("F") || take("T");
-    if (shape === "open") return take("A") || take("T");
     return take("T") || take("E");
   }
 
@@ -346,9 +313,34 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
     ctx.globalAlpha = 1;
     ctx.drawImage(img, crop.sx, crop.sy, crop.srcW, crop.srcH, 0, 0, w, h);
+
+    const blink = state.eyeBlink || 0;
+    if (blink > 0.04) {
+      const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
+      const ey = ((f.eyeY * crop.nh - crop.sy) / crop.srcH) * h;
+      const faceW = (f.faceW * crop.nw / crop.srcW) * w;
+      const lid = Math.sin(Math.min(1, blink) * Math.PI) * 0.45;
+      ctx.fillStyle = `rgba(28, 18, 14, ${lid})`;
+      const ew = faceW * 0.22;
+      const eh = Math.max(3, faceW * 0.045);
+      ctx.beginPath();
+      ctx.ellipse(mx - faceW * 0.16, ey, ew, eh, 0, 0, Math.PI * 2);
+      ctx.ellipse(mx + faceW * 0.16, ey, ew, eh, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
     return true;
   }
+
+  window.getPresenterFaceOval = function (w, h) {
+    const f = LANDMARKS[state.anchorModel] || { cx: 0.5, eyeY: 0.26, faceW: 0.16 };
+    return {
+      x: w * f.cx,
+      y: h * (f.eyeY + 0.08),
+      rx: Math.max(w * 0.18, w * f.faceW * 1.35),
+      ry: h * 0.32
+    };
+  };
 
   window.drawTalkingNewsReader = function (profile, w, h) {
     drawPhotorealReader(profile, w, h);

@@ -1513,9 +1513,11 @@ function startAnimationLoop() {
             if (typeof window.drawTalkingNewsReader === "function") {
                 const profile = getAnchorProfile(state.anchorModel);
                 window.drawTalkingNewsReader(profile, canvas.width, canvas.height);
+                drawLiveSetMotion();
                 drawPresenterLowerThird(profile, canvas.width, canvas.height);
             } else {
                 drawMaleAnchorModel();
+                drawLiveSetMotion();
             }
             drawLowerThirdsAndTicker();
         } catch (err) {
@@ -1579,11 +1581,20 @@ function updateFacialAnimations(delta) {
 function drawStudioBackground() {
     const w = canvas.width;
     const h = canvas.height;
+    const t = performance.now() / 1000;
 
     ctx.clearRect(0, 0, w, h);
 
-    if (assetImages.studio_bg && assetImages.studio_bg.complete && assetImages.studio_bg.naturalWidth > 0 && state.studioBg === "bg_modern") {
-        ctx.drawImage(assetImages.studio_bg, 0, 0, w, h);
+    const img = assetImages.studio_bg;
+    if (img && img.complete && img.naturalWidth > 0) {
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        const zoom = 1.16;
+        const srcW = nw / zoom;
+        const srcH = nh / zoom;
+        const sx = (0.5 + 0.5 * Math.sin(t * 0.09)) * Math.max(0, nw - srcW);
+        const sy = (0.5 + 0.5 * Math.cos(t * 0.07)) * Math.max(0, nh - srcH);
+        ctx.drawImage(img, sx, sy, srcW, srcH, 0, 0, w, h);
     } else {
         // Procedural High-Tech Studio Background & Desk
         const grad = ctx.createRadialGradient(w/2, h/2, 50, w/2, h/2, w*0.85);
@@ -1604,7 +1615,8 @@ function drawStudioBackground() {
         // Cyber Grid Lines
         ctx.strokeStyle = "rgba(0, 210, 255, 0.12)";
         ctx.lineWidth = 1;
-        for (let x = 0; x < w; x += 45) {
+        const drift = (t * 22) % 45;
+        for (let x = -45 + drift; x < w + 45; x += 45) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, h);
@@ -1681,6 +1693,62 @@ function drawMediaPIP() {
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 10px sans-serif";
     ctx.fillText("LIVE MEDIA", pipX + 8, pipY + 14);
+}
+
+function drawLiveSetMotion() {
+    if (!ctx || !canvas) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    const t = performance.now() / 1000;
+    ctx.save();
+    const oval = typeof window.getPresenterFaceOval === "function"
+        ? window.getPresenterFaceOval(w, h)
+        : { x: w * 0.5, y: h * 0.32, rx: w * 0.2, ry: h * 0.3 };
+    ctx.beginPath();
+    ctx.rect(0, 0, w, h);
+    ctx.ellipse(oval.x, oval.y, oval.rx, oval.ry, 0, 0, Math.PI * 2);
+    if (typeof ctx.clip === "function") {
+        try { ctx.clip("evenodd"); } catch (e) { ctx.clip(); }
+    }
+
+    const pulse = 0.05 + 0.03 * Math.sin(t * 0.85);
+    const wash = ctx.createLinearGradient(0, 0, 0, h * 0.4);
+    wash.addColorStop(0, `rgba(90, 175, 255, ${pulse})`);
+    wash.addColorStop(1, "rgba(90, 175, 255, 0)");
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, 0, w, h * 0.4);
+
+    const sx = ((t * 48) % (w + 260)) - 130;
+    const sweep = ctx.createLinearGradient(sx, 0, sx + 200, h);
+    sweep.addColorStop(0, "rgba(255,255,255,0)");
+    sweep.addColorStop(0.5, "rgba(190, 225, 255, 0.08)");
+    sweep.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = sweep;
+    ctx.fillRect(0, 0, w, h);
+
+    if (!state._dust) {
+        state._dust = [];
+        for (let i = 0; i < 52; i++) {
+            state._dust.push({
+                x: Math.random(),
+                y: Math.random(),
+                r: 0.5 + Math.random() * 1.3,
+                v: 0.01 + Math.random() * 0.028,
+                a: 0.07 + Math.random() * 0.16
+            });
+        }
+    }
+    for (let i = 0; i < state._dust.length; i++) {
+        const p = state._dust[i];
+        p.y -= p.v * 0.35 * (1 / 60 + 0.01);
+        p.x += Math.sin(t * 0.7 + i) * 0.0004;
+        if (p.y < -0.03) { p.y = 1.03; p.x = Math.random(); }
+        ctx.fillStyle = `rgba(230, 245, 255, ${p.a})`;
+        ctx.beginPath();
+        ctx.arc(p.x * w, p.y * h, p.r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.restore();
 }
 
 // 3. Draw Visual Male Anchor Model & Animated Face
