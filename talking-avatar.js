@@ -153,23 +153,18 @@
     const allow = MATCHED[id] || {};
     function put(key, amt) {
       if (amt <= 0) return;
-      if (allow[key] && key !== "A") z[key] += amt;
-      else if (allow.E) z.E += amt * 0.75;
-      else if (allow.O) z.O += amt * 0.35;
+      if (allow[key]) z[key] += amt;
+      else if (allow.E) z.E += amt * 0.7;
+      else if (allow.O) z.O += amt * 0.55;
+      else if (allow.A) z.A += amt * 0.45;
     }
     if (shape === "closed" || open < 0.04) return z;
-    if (shape === "wide") put("E", 0.72);
-    else if (shape === "round") { put("O", 0.4); put("E", 0.22); }
-    else if (shape === "teeth") put("F", 0.45);
-    else if (shape === "open") put("E", 0.58);
-    else if (shape === "rest") put("E", 0.28);
-    else put("E", 0.4);
-    const sum = z.A + z.E + z.O + z.F;
-    if (sum > 0.75) {
-      const s = 0.75 / sum;
-      z.A *= s; z.E *= s; z.O *= s; z.F *= s;
-    }
-    z.A = 0;
+    if (shape === "wide") put("E", 0.88);
+    else if (shape === "round") put("O", 0.82);
+    else if (shape === "teeth") put("F", 0.7);
+    else if (shape === "open") { put("A", 0.5); put("E", 0.35); }
+    else if (shape === "rest") put("E", 0.4);
+    else put("E", 0.5);
     return z;
   }
 
@@ -185,7 +180,6 @@
     for (let i = 0; i < raw.length; i++) {
       let it = raw[i];
       if (it.viseme === "rest") continue;
-      if (it.viseme === "open") it = { char: it.char, viseme: "wide", open: 0.4, id: 2 };
       if (out.length && out[out.length - 1].viseme === it.viseme) continue;
       out.push(it);
     }
@@ -310,8 +304,8 @@
     const mx = ((f.cx * crop.nw - crop.sx) / crop.srcW) * w;
     const my = ((f.mouthY * crop.nh - crop.sy) / crop.srcH) * h;
     const faceW = (f.faceW * crop.nw / crop.srcW) * w;
-    const dW = Math.max(28, Math.round(faceW * 0.34));
-    const dH = Math.max(14, Math.round(faceW * 0.13));
+    const dW = Math.max(36, Math.round(faceW * 0.50));
+    const dH = Math.max(18, Math.round(faceW * 0.20));
     if (!mouthBuf) {
       mouthBuf = document.createElement("canvas");
       mouthCtx = mouthBuf.getContext("2d");
@@ -338,7 +332,7 @@
     b.fillRect(0, 0, dW, dH);
     b.globalCompositeOperation = "source-over";
     ctx.save();
-    ctx.globalAlpha = Math.min(0.7, alpha);
+    ctx.globalAlpha = Math.min(0.92, alpha);
     ctx.drawImage(mouthBuf, mx - dW / 2, my - dH / 2);
     ctx.restore();
   }
@@ -358,9 +352,10 @@
     const bank = visemeBank[profile.id] || {};
     const fw = (state.faceW && typeof state.faceW.A === "number") ? state.faceW : { A: 0, E: 0, O: 0, F: 0 };
     const layers = [];
-    if (allow.E && fw.E > 0.06 && ready(bank.E)) layers.push([fw.E, bank.E]);
-    if (allow.O && fw.O > 0.06 && ready(bank.O)) layers.push([fw.O, bank.O]);
-    if (allow.F && fw.F > 0.06 && ready(bank.F)) layers.push([fw.F, bank.F]);
+    if (allow.A && fw.A > 0.05 && ready(bank.A)) layers.push([fw.A, bank.A]);
+    if (allow.E && fw.E > 0.05 && ready(bank.E)) layers.push([fw.E, bank.E]);
+    if (allow.O && fw.O > 0.05 && ready(bank.O)) layers.push([fw.O, bank.O]);
+    if (allow.F && fw.F > 0.05 && ready(bank.F)) layers.push([fw.F, bank.F]);
     layers.sort(function (a, b) { return b[0] - a[0]; });
     if (layers.length) stampSmileMouth(layers[0][1], f, w, h, layers[0][0]);
 
