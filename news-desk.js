@@ -30,6 +30,8 @@
       let s = 0;
       if (vl === code) s += 120;
       else if (vl.startsWith(short + "-") || vl === short) s += 80;
+      else if (short === "kn" && vl.startsWith("hi")) s += 55;
+      else if (short === "kn" && vl.startsWith("en")) s += 22;
       else if (short === "hi" && vl.startsWith("en")) s += 12;
       else s -= 20;
       if (g === want) s += 100;

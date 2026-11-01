@@ -5,6 +5,7 @@
   }
 
   function onClick(ev) {
+    try { window.speechSynthesis && window.speechSynthesis.resume(); } catch (e) {}
     const t = ev.target.closest("button, .top-reporter-pill, .remote-pill, .tab-btn, .hub-chip, .unmute-banner");
     if (!t) return;
 
@@ -108,7 +109,8 @@
         document.getElementById("studioContainer")?.classList.toggle("sidebar-collapsed");
       },
       openVideoStudioBtn: () => { if (typeof openVideoStudio === "function") openVideoStudio(); },
-      vsCloseBtn: () => { if (typeof closeVideoStudio === "function") closeVideoStudio(); }
+      vsCloseBtn: () => { if (typeof closeVideoStudio === "function") closeVideoStudio(); },
+      vsAbbakkaBtn: () => { if (typeof playAbbakkaKannada === "function") playAbbakkaKannada(); }
     };
 
     if (id && map[id]) {

@@ -303,6 +303,8 @@
         const v = pickVoiceForLanguage(lang, g);
         if (v) u.voice = v;
       }
+      if (u.voice) u.lang = u.voice.lang || lang;
+      try { s.resume(); } catch (eR) {}
       s.cancel();
       s.speak(u);
       if (typeof state !== "undefined") {
@@ -414,28 +416,28 @@
     if (typeof initSpeechSynthesis === "function") {
       try { initSpeechSynthesis(); } catch (e2) {}
     }
-    kickVoice("ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ.");
     attachStory({
       title: ABBAKKA.title,
       script: ABBAKKA.script,
       category: ABBAKKA.category,
       language: "kn-IN"
     });
-    playBg(ABBAKKA.video);
-    const ok = await addRemoteClip(ABBAKKA.video, ABBAKKA.title, 8000);
+    if (typeof state !== "undefined") {
+      state.scriptText = ABBAKKA.script;
+      state.volume = 1;
+    }
     vs.playing = true;
     syncPlayerUI();
-    toast(ok
-      ? "ಅಬ್ಬಕ್ಕ ವೀಡಿಯೊ ಹಿನ್ನೆಲೆಯಲ್ಲಿ. ಪ್ರೆಸೆಂಟರ್ ಕನ್ನಡದಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆ."
-      : "ಕನ್ನಡ ಸುದ್ದಿ ಶುರು. ವೀಡಿಯೊ ತೆರೆಯುತ್ತಿದೆ.");
+    playBg(ABBAKKA.video);
+    try { window.speechSynthesis && window.speechSynthesis.resume(); } catch (eR) {}
+    // Speak in this click so Chrome does not mute the voice.
     if (typeof startNewsBroadcast === "function") {
       try { startNewsBroadcast(); } catch (e3) {}
     }
-    setTimeout(function () {
-      if (typeof state !== "undefined" && !state.isSpeaking && typeof startNewsBroadcast === "function") {
-        try { startNewsBroadcast(); } catch (e4) {}
-      }
-    }, 600);
+    const ok = await addRemoteClip(ABBAKKA.video, ABBAKKA.title, 8000);
+    toast(ok
+      ? "ಅಬ್ಬಕ್ಕ ವೀಡಿಯೊ ಹಿನ್ನೆಲೆಯಲ್ಲಿ. ಪ್ರೆಸೆಂಟರ್ ಕನ್ನಡದಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆ."
+      : "ಕನ್ನಡ ಸುದ್ದಿ ಶುರು. ವೀಡಿಯೊ ತೆರೆಯುತ್ತಿದೆ.");
   }
   window.playAbbakkaKannada = playAbbakkaKannada;
 
@@ -694,12 +696,11 @@
     const sw = src.videoWidth || src.naturalWidth || src.width || 0;
     const sh = src.videoHeight || src.naturalHeight || src.height || 0;
     if (!sw || !sh) return null;
-    const side = Math.min(sw, sh);
-    return {
-      sx: Math.max(0, (sw - side) / 2),
-      sy: Math.max(0, (sh - side) * 0.12),
-      side: side
-    };
+    // Head box from the top so the forehead stays in frame (not a mid-body crop).
+    const side = Math.round(Math.min(sw, sh) * 0.50);
+    const sx = Math.max(0, Math.round((sw - side) / 2));
+    const sy = Math.max(0, Math.round(sh * 0.02));
+    return { sx, sy, side: Math.min(side, sh - sy, sw - sx) };
   }
 
   function drawNewsOverlay(ctx, w, h, t) {
@@ -716,7 +717,7 @@
     ctx.font = "bold 14px sans-serif";
     ctx.fillText((s.title || "World news").slice(0, 78), 96, 30);
 
-    const pip = Math.round(Math.min(w * 0.2, h * 0.36, 240));
+    const pip = Math.round(Math.min(w * 0.26, h * 0.44, 300));
     const words = (typeof state !== "undefined" && state.scriptWords) || String(s.script || "").split(/\s+/).filter(Boolean);
     const idx = (typeof state !== "undefined" && state.currentWordIndex) || 0;
     const snip = words.slice(idx, idx + 10).join(" ");
@@ -745,7 +746,7 @@
   }
 
   function drawPresenterPip(ctx, w, h) {
-    const size = Math.round(Math.min(w * 0.2, h * 0.36, 240));
+    const size = Math.round(Math.min(w * 0.26, h * 0.44, 300));
     const x = 18;
     const y = h - size - 58;
     ctx.save();
@@ -754,9 +755,9 @@
     ctx.strokeStyle = profile().color || "#00d2ff";
     ctx.lineWidth = 3;
     ctx.strokeRect(x - 3, y - 3, size + 6, size + 6);
-    const live = document.getElementById("broadcastCanvas");
     const img = presenterImg();
-    const src = (live && live.width) ? live : img;
+    const live = document.getElementById("broadcastCanvas");
+    const src = img || ((live && live.width) ? live : null);
     const box = src ? squareSource(src) : null;
     if (src && box) {
       ctx.drawImage(src, box.sx, box.sy, box.side, box.side, x, y, size, size);

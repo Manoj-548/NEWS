@@ -1350,12 +1350,12 @@ function startNewsBroadcast() {
     }
     if (state.currentVoice) {
         currentUtterance.voice = state.currentVoice;
-        const vLang = (state.currentVoice.lang || "").toLowerCase();
-        const want = speakLang.toLowerCase();
-        currentUtterance.lang = vLang.startsWith(want.split("-")[0]) ? state.currentVoice.lang : speakLang;
+        // Forcing kn-IN onto an English/Hindi voice yields silence. Use the voice's own lang.
+        currentUtterance.lang = state.currentVoice.lang || speakLang;
     } else {
         currentUtterance.lang = speakLang;
     }
+    try { speechSynth.resume(); } catch (eRes) {}
     currentUtterance.pitch = gender === "female" ? 1.22 : 0.86;
     state._speakT0 = performance.now();
     state._wordT0 = performance.now();

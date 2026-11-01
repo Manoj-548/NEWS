@@ -302,7 +302,7 @@
       srcW = nw;
       srcH = srcW / ar;
       sx = 0;
-      sy = (nh - srcH) / 2;
+      sy = Math.max(0, (nh - srcH) * 0.05);
     }
     if (sx < 0) sx = 0;
     if (sy < 0) sy = 0;
