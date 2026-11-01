@@ -454,14 +454,22 @@
     if (rows <= 7 && line) ctx.fillText(line, x, yy);
   }
 
-  function drawFileClip(ctx, w, h, clip, local) {
+  function drawFileClip(ctx, w, h, clip) {
     const v = clip.video;
     if (!v) return false;
-    const t = clip.inPoint + local;
+    v.muted = true;
+    v.playsInline = true;
+    const one = vs.clips.filter(function (c) { return c.type === "file"; }).length <= 1;
+    v.loop = one;
+    if (vs._flowId !== clip.id) {
+      vs._flowId = clip.id;
+      try { v.currentTime = clip.inPoint || 0; } catch (e) {}
+    }
     try {
-      if (Math.abs((v.currentTime || 0) - t) > 0.12) v.currentTime = t;
-      if (vs.playing && v.paused) v.play().catch(function () {});
-      if (!vs.playing && !v.paused) v.pause();
+      if (v.paused) v.play().catch(function () {});
+      if (!one && v.currentTime >= (clip.outPoint || v.duration) - 0.08) {
+        try { v.currentTime = clip.inPoint || 0; } catch (e2) {}
+      }
     } catch (e) {}
     if (!v.videoWidth) return false;
     const c = clip.crop || { x: 0, y: 0, w: 1, h: 1 };
@@ -540,7 +548,7 @@
 
     const hit = clipAt(vs.playhead);
     if (hit && hit.clip.type === "file") {
-      if (!drawFileClip(ctx, w, h, hit.clip, hit.local)) {
+      if (!drawFileClip(ctx, w, h, hit.clip)) {
         ctx.fillStyle = "#05070c";
         ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = "#8c9ba5";
@@ -583,14 +591,11 @@
     if (!vs.lastTs) vs.lastTs = ts;
     const dt = Math.min(0.05, (ts - vs.lastTs) / 1000);
     vs.lastTs = ts;
-    if (vs.playing) {
-      vs.playhead += dt;
-      if (vs.playhead >= totalDur()) {
-        vs.playhead = 0;
-        vs.playing = false;
-        const pb = $("vsPlayBtn");
-        if (pb) pb.textContent = "Play";
-      }
+    vs.playhead += dt;
+    if (vs.playhead >= totalDur()) vs.playhead = 0;
+    vs._tlAcc = (vs._tlAcc || 0) + dt;
+    if (vs._tlAcc > 0.25) {
+      vs._tlAcc = 0;
       renderTimeline();
     }
     fitCanvas();

@@ -239,8 +239,9 @@
     const word = words[idx] || "";
     const seq = visemeRun(word);
     const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
-    const hold = 0.20 / Math.max(0.7, rate);
-    const i = Math.min(seq.length - 1, Math.floor(Math.max(0, (now - t0) / 1000) / hold));
+    const dur = Math.min(0.9, Math.max(0.22, 0.1 + seq.length * 0.075)) / Math.max(0.7, rate);
+    const u = Math.min(0.999, Math.max(0, (now - t0) / 1000) / dur);
+    const i = Math.min(seq.length - 1, Math.floor(u * seq.length));
     const item = seq[i] || { viseme: "talk", open: 0.32, char: word };
     state.currentLetter = item.char;
     state.visemeShape = item.viseme;
