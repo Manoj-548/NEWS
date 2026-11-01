@@ -496,35 +496,54 @@
         </div>
 
         <div id="videoStudioScreen" class="video-studio-screen hidden" aria-hidden="true">
-            <header class="vs-bar">
-                <div class="vs-brand">VIDEO STUDIO <small>full screen editor</small></div>
+            <button id="vsSideToggle" class="vs-side-toggle" type="button" title="Show or hide editor sidebar">☰</button>
+            <aside id="vsSide" class="vs-side">
+                <div class="vs-brand">VIDEO STUDIO</div>
+                <div class="vs-side-label">Presenter</div>
                 <div id="vsPresenterPills" class="vs-pills"></div>
-                <div class="vs-tools">
-                    <button id="vsGenerateBtn" class="vs-btn vs-btn-ai" type="button">Generate news video</button>
-                    <button id="vsUploadBtn" class="vs-btn" type="button">Upload video</button>
+                <div class="vs-side-label">Media</div>
+                <button id="vsGenerateBtn" class="vs-btn vs-btn-ai vs-btn-block" type="button">Generate news video</button>
+                <button id="vsUploadBtn" class="vs-btn vs-btn-block" type="button">Upload video</button>
+                <div class="vs-side-label">Edit cuts</div>
+                <div class="vs-btn-row">
                     <button id="vsCropBtn" class="vs-btn" type="button">Crop</button>
-                    <button id="vsCutBtn" class="vs-btn" type="button">Cut</button>
+                    <button id="vsCutBtn" class="vs-btn" type="button">Cut / split</button>
+                </div>
+                <div class="vs-btn-row">
                     <button id="vsCopyBtn" class="vs-btn" type="button">Copy</button>
                     <button id="vsPasteBtn" class="vs-btn" type="button">Paste</button>
-                    <button id="vsPlayBtn" class="vs-btn vs-btn-play" type="button">Play presenter</button>
-                    <button id="vsDownloadBtn" class="vs-btn vs-btn-dl" type="button">Download</button>
-                    <button id="vsYoutubeBtn" class="vs-btn vs-btn-yt" type="button">Live publish YouTube</button>
                 </div>
-            </header>
+                <div class="vs-btn-row">
+                    <button id="vsDupBtn" class="vs-btn" type="button">Duplicate</button>
+                    <button id="vsDelBtn" class="vs-btn" type="button">Delete</button>
+                </div>
+                <div class="vs-btn-row">
+                    <button id="vsTrimInBtn" class="vs-btn" type="button">Trim in</button>
+                    <button id="vsTrimOutBtn" class="vs-btn" type="button">Trim out</button>
+                </div>
+                <div class="vs-btn-row">
+                    <button id="vsLeftBtn" class="vs-btn" type="button">Move left</button>
+                    <button id="vsRightBtn" class="vs-btn" type="button">Move right</button>
+                </div>
+                <div class="vs-side-label">Playback</div>
+                <button id="vsPlayBtn" class="vs-btn vs-btn-play vs-btn-block" type="button">Play presenter + timeline</button>
+                <div class="vs-side-label">YouTube package</div>
+                <button id="vsDownloadBtn" class="vs-btn vs-btn-dl vs-btn-block" type="button">Download full video</button>
+                <button id="vsYoutubeBtn" class="vs-btn vs-btn-yt vs-btn-block" type="button">Live publish YouTube</button>
+                <div id="vsStatus" class="vs-status">Idle</div>
+            </aside>
             <div class="vs-stage">
                 <canvas id="vsCanvas" width="1280" height="720"></canvas>
                 <input id="vsFileInput" type="file" accept="video/*" multiple hidden>
             </div>
             <div class="vs-dock">
                 <div class="vs-bin-wrap">
-                    <div class="vs-dock-label">CLIPS</div>
+                    <div class="vs-dock-label">CLIPS · click to select · timeline is the full-length news video</div>
                     <div id="vsBin" class="vs-bin"></div>
                 </div>
                 <div class="vs-tl-wrap">
-                    <div class="vs-dock-label">TIMELINE · click to seek · crop / cut / paste</div>
                     <div id="vsTimeline" class="vs-timeline"></div>
                 </div>
-                <div id="vsStatus" class="vs-status">Idle</div>
             </div>
         </div>
 
@@ -612,12 +631,12 @@
 
     <div id="studioToast" class="studio-toast hidden"></div>
 
-    <script src="app.js?v=studio3"></script>
-    <script src="talking-avatar.js?v=studio3"></script>
-    <script src="news-desk.js?v=studio3"></script>
-    <script src="boot-controls.js?v=studio3"></script>
-    <script src="fix-news-ui.js?v=studio3"></script>
-    <script src="video-studio.js?v=studio3"></script>
+    <script src="app.js?v=studio4"></script>
+    <script src="talking-avatar.js?v=studio4"></script>
+    <script src="news-desk.js?v=studio4"></script>
+    <script src="boot-controls.js?v=studio4"></script>
+    <script src="fix-news-ui.js?v=studio4"></script>
+    <script src="video-studio.js?v=studio4"></script>
     <script>
         (function () {
             function dismissLoader() {

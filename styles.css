@@ -1844,19 +1844,25 @@ body.dark-theme {
     min-height: 0;
     height: 100%;
     background: #070b12;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 270px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 132px;
     color: #f0f4f8;
     border-radius: 8px;
     overflow: hidden;
 }
 .video-studio-screen.hidden { display: none !important; }
+.video-studio-screen.side-off {
+    grid-template-columns: 0 minmax(0, 1fr);
+}
+.video-studio-screen.side-off .vs-side { display: none; }
 
 body.vs-open .control-panel,
 body.vs-open .teleprompter-card,
 body.vs-open .broadcast-controls,
 body.vs-open .screen-header,
-body.vs-open .sidebar-toggle-btn {
+body.vs-open .sidebar-toggle-btn,
+body.vs-open .viewer-remote-bar {
     display: none !important;
 }
 body.vs-open .studio-container {
@@ -1873,23 +1879,45 @@ body.vs-open .viewport-card {
     min-height: 0;
     height: 100%;
     padding: 4px;
-}
-body.vs-open .vs-stage {
-    flex: 1;
-    min-height: 0;
-    height: auto;
+    display: flex;
+    flex-direction: column;
 }
 
-.vs-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 8px 12px;
-    background: linear-gradient(90deg, #0c101c, #161b2e);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    flex-wrap: wrap;
+.vs-side-toggle {
+    position: absolute;
+    left: 6px;
+    top: 8px;
+    z-index: 6;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 6px;
+    background: #00d2ff;
+    color: #041018;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
 }
+.vs-side {
+    grid-row: 1;
+    grid-column: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #0d1322;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    padding: 46px 10px 12px;
+}
+.vs-side-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: #8c9ba5;
+    margin: 10px 0 5px;
+    text-transform: uppercase;
+}
+.vs-btn-block { width: 100%; margin-bottom: 6px; }
+.vs-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+
+.vs-bar { display: none; }
 .vs-brand {
     font-weight: 800;
     letter-spacing: 0.14em;
@@ -1917,8 +1945,10 @@ body.vs-open .vs-stage {
 .vs-btn-close { background: #3a1020; }
 
 .vs-stage {
-    flex: 1;
+    grid-row: 1;
+    grid-column: 2;
     min-height: 0;
+    min-width: 0;
     position: relative;
     background: #000;
 }
@@ -1933,8 +1963,6 @@ body.vs-open .vs-stage {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    flex: 1;
-    min-width: 200px;
 }
 .vs-pill {
     background: #1c2438;
@@ -1953,9 +1981,12 @@ body.vs-open .vs-stage {
 }
 
 .vs-dock {
+    grid-row: 2;
+    grid-column: 1 / -1;
     background: #0d1320;
     border-top: 1px solid rgba(255,255,255,0.1);
     padding: 8px 12px 10px;
+    overflow: auto;
 }
 .vs-dock-label { font-size: 0.68rem; color: #8c9ba5; letter-spacing: 0.08em; margin-bottom: 4px; }
 .vs-bin { display: flex; gap: 6px; flex-wrap: wrap; min-height: 32px; }

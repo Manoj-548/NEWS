@@ -81,8 +81,8 @@
     const stage = document.querySelector("#videoStudioScreen .vs-stage");
     const canvas = $("vsCanvas");
     if (!stage || !canvas) return;
-    const w = Math.max(960, Math.floor(stage.clientWidth) || 1280);
-    const h = Math.max(540, Math.floor(stage.clientHeight) || 720);
+    const w = Math.max(640, Math.floor(stage.clientWidth) || 1280);
+    const h = Math.max(360, Math.floor(stage.clientHeight) || 720);
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w;
       canvas.height = h;
@@ -538,7 +538,7 @@
   function togglePlay() {
     vs.playing = !vs.playing;
     const pb = $("vsPlayBtn");
-    if (pb) pb.textContent = vs.playing ? "Pause presenter" : "Play presenter";
+    if (pb) pb.textContent = vs.playing ? "Pause" : "Play presenter + timeline";
     if (vs.playing) {
       if (typeof startNewsBroadcast === "function") {
         try { startNewsBroadcast(); } catch (e) {}
@@ -647,7 +647,7 @@
     if (pb) pb.textContent = "Pause";
     rec.start(200);
     toast(thenPublish ? "Recording for YouTube publish…" : "Recording download…");
-    const dur = Math.min(20, Math.max(6, totalDur()));
+    const dur = Math.min(180, Math.max(5, totalDur() + 0.4));
     setTimeout(function () {
       vs.playing = false;
       if (pb) pb.textContent = "Play";
@@ -671,6 +671,63 @@
     $("vsCutBtn")?.addEventListener("click", cutAtPlayhead);
     $("vsCopyBtn")?.addEventListener("click", copyClip);
     $("vsPasteBtn")?.addEventListener("click", pasteClip);
+    $("vsDupBtn")?.addEventListener("click", function () {
+      if (vs.selected < 0 || !vs.clips[vs.selected]) { toast("Select a clip"); return; }
+      const c = vs.clips[vs.selected];
+      vs.clips.splice(vs.selected + 1, 0, {
+        id: uid(), type: c.type, name: c.name + " copy", duration: c.duration,
+        inPoint: c.inPoint, outPoint: c.outPoint, crop: Object.assign({}, c.crop), video: c.video
+      });
+      vs.selected += 1;
+      renderBin(); renderTimeline();
+      toast("Duplicated clip");
+    });
+    $("vsDelBtn")?.addEventListener("click", function () {
+      if (vs.selected < 0) { toast("Select a clip"); return; }
+      vs.clips.splice(vs.selected, 1);
+      vs.selected = Math.min(vs.selected, vs.clips.length - 1);
+      renderBin(); renderTimeline();
+      toast("Clip deleted");
+    });
+    $("vsTrimInBtn")?.addEventListener("click", function () {
+      const hit = clipAt(vs.playhead);
+      if (!hit) return;
+      const at = hit.clip.inPoint + hit.local;
+      if (at < hit.clip.outPoint - 0.15) {
+        hit.clip.inPoint = at;
+        vs.selected = hit.index;
+        renderBin(); renderTimeline();
+        toast("Trim in");
+      }
+    });
+    $("vsTrimOutBtn")?.addEventListener("click", function () {
+      const hit = clipAt(vs.playhead);
+      if (!hit) return;
+      const at = hit.clip.inPoint + hit.local;
+      if (at > hit.clip.inPoint + 0.15) {
+        hit.clip.outPoint = at;
+        vs.selected = hit.index;
+        renderBin(); renderTimeline();
+        toast("Trim out");
+      }
+    });
+    $("vsLeftBtn")?.addEventListener("click", function () {
+      const i = vs.selected;
+      if (i <= 0) return;
+      const t = vs.clips[i]; vs.clips[i] = vs.clips[i - 1]; vs.clips[i - 1] = t;
+      vs.selected = i - 1;
+      renderBin(); renderTimeline();
+    });
+    $("vsRightBtn")?.addEventListener("click", function () {
+      const i = vs.selected;
+      if (i < 0 || i >= vs.clips.length - 1) return;
+      const t = vs.clips[i]; vs.clips[i] = vs.clips[i + 1]; vs.clips[i + 1] = t;
+      vs.selected = i + 1;
+      renderBin(); renderTimeline();
+    });
+    $("vsSideToggle")?.addEventListener("click", function () {
+      $("videoStudioScreen")?.classList.toggle("side-off");
+    });
     $("vsPlayBtn")?.addEventListener("click", togglePlay);
     $("viewModeStudioBtn")?.addEventListener("click", function (e) {
       e.preventDefault();
