@@ -312,8 +312,10 @@
     const el = bgEl();
     if (!el || !src) return;
     if (!/^https?:/i.test(src)) el.removeAttribute("crossorigin");
-    el.muted = true;
-    el.defaultMuted = true;
+    const film = /abbakka/i.test(src);
+    el.muted = !film;
+    el.defaultMuted = !film;
+    if (film) el.volume = 0.88;
     el.loop = true;
     el.playsInline = true;
     el.autoplay = true;
@@ -325,6 +327,12 @@
     el.playbackRate = vs.rate || 1;
     const p = el.play();
     if (p && p.catch) p.catch(function () {});
+    if (film && typeof state !== "undefined") {
+      state._videoNarration = true;
+      state._fileNarration = true;
+      state.isSpeaking = true;
+      state.isPaused = false;
+    }
   }
 
   function commitFileClip(vid, name) {
@@ -491,7 +499,7 @@
     title: "ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ",
     category: "ಕನ್ನಡ ವಿಶೇಷ",
     language: "kn-IN",
-    video: "/assets/abbakka/abbakka_full.mp4?v=pack23",
+    video: "/assets/abbakka/abbakka_film.mp4?v=stream1",
     audio: "/assets/abbakka/abbakka_kn.mp3?v=pack23",
     script:
       "ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ, ಇದು ವಿಶೇಷ ಇತಿಹಾಸ ವಾರ್ತಾ ಪ್ರಸಾರ. ತೆರೆಯ ಮೇಲೆ ದಕ್ಷಿಣ ಕನ್ನಡದ ಉಳ್ಳಾಲ. ಈ ನೆಲದಿಂದ ಹದಿನಾರನೇ ಶತಮಾನದಲ್ಲಿ ರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ ಪೋರ್ಚುಗೀಸ್ ಸಾಮ್ರಾಜ್ಯವನ್ನು ನಾಲ್ಕು ದಶಕ ಎದುರಿಸಿದಳು. ಜನ ಅವಳನ್ನು ಅಭಯರಾಣಿ ಎಂದು ಕರೆದರು. ಚೌಟ ವಂಶ ಅಳಿಯಸಂತಾನ. ಮಾವ ತಿರುಮಲ ರಾಯ ಖಡ್ಗ ಮತ್ತು ಯುದ್ಧತಂತ್ರ ಕಲಿಸಿ ಸಿಂಹಾಸನ ಕಟ್ಟಿದರು. ಜೈನ, ಹಿಂದೂ, ಬ್ಯಾರಿ ಮುಸ್ಲಿಂ ಸಮುದಾಯ ಆಡಳಿತದಲ್ಲಿದ್ದರು. ಉಳ್ಳಾಲ ಮೆಣಸು ವ್ಯಾಪಾರದ ಕೇಂದ್ರ. ಪೋರ್ಚುಗೀಸರು ತೆರಿಗೆ ಕೇಳಿದರು. ರಾಣಿ ನಿರಾಕರಿಸಿದಳು. ಈಗ ಕಾಣುವವಳು ಉಳ್ಳಾಲದ ರಾಣಿ. ಆಕೆ ಸಾಮಾನ್ಯರಂತೆ ಉಡುಪು ಧರಿಸಿ ರಾತ್ರಿ ತಡವಾಗಿ ನ್ಯಾಯ ನೀಡುತ್ತಿದ್ದಳು. ಕಪ್ಪು ಮೋಡದಡಿ ಪೋರ್ಚುಗೀಸ್ ಹಡಗುಗಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಐವತ್ತೈದರಲ್ಲಿ ಅಡ್ಮಿರಲ್ ಡಾನ್ ಅಲ್ವಾರೊ ದಾಳಿ ಮಾಡಿದ. ಅಬ್ಬಕ್ಕ ಅವರನ್ನು ಹಿಮ್ಮೆಟ್ಟಿಸಿದಳು. ಮೊಗವೀರ ಮೀನುಗಾರರು ಮತ್ತು ಬ್ಯಾರಿ ನಾವಿಕರು ರಾಣಿಯ ಬಲ. ಅಗ್ನಿಬಾಣ ಬಳಸಿದ ಕೊನೆಯವರಲ್ಲಿ ಒಬ್ಬಳು ಎಂದು ಐತಿಹ್ಯ. ಮಹಿಳೆಯರು ಖಡ್ಗಾಭ್ಯಾಸ ಮಾಡುತ್ತಿದ್ದಾರೆ. ರಾಣಿ ಕರಾವಳಿ ಮಹಿಳೆಯರನ್ನು ಸೇನೆ ಮಾಡಿದಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಅರವತ್ತೆಂಟರಲ್ಲಿ ಜನರಲ್ ಪೈಕ್ಸೊಟೊ ಉಳ್ಳಾಲವನ್ನು ಆಕ್ರಮಿಸಿ ಅರಮನೆ ಪ್ರವೇಶಿಸಿದ. ರಾಣಿ ಮಸೀದಿಯಲ್ಲಿ ಆಶ್ರಯ ಪಡೆದು ಅದೇ ರಾತ್ರಿ ಎರಡು ನೂರು ಸೈನಿಕರೊಂದಿಗೆ ಮರುದಾಳಿ ಮಾಡಿದಳು. ಪೋರ್ಚುಗೀಸರು ಮಂಗಳೂರು ಕೋಟೆಯಿಂದ ಹಿಂದೆ ಸರಿದರು. ಕೊನೆಯ ಚಿತ್ರ ಸ್ಮೃತಿ. ಉಳ್ಳಾಲದ ವೃತ್ತದಲ್ಲಿ ಅಬ್ಬಕ್ಕ ಜೀವಂತ. ಅಂಚೆಚೀಟಿಯಲ್ಲಿ ವೀರರಾಣಿ. ಕಿತ್ತೂರು ಚೆನ್ನಮ್ಮ ಮತ್ತು ಒನಕೆ ಓಬವ್ವರ ಸಾಲಿನಲ್ಲಿ ಕರ್ನಾಟಕ ಈ ರಾಣಿಯನ್ನು ಸ್ಮರಿಸುತ್ತದೆ. ಇದು ನಮ್ಮ ಕನ್ನಡ ವರದಿ. ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಅಭಯರಾಣಿ. ನಾವು ಮತ್ತೆ ಸಿಗೋಣ."
@@ -526,8 +534,9 @@
       state.scriptText = ABBAKKA.script;
       state.volume = 0.75;
     }
-    // Start Kannada audio in this click — Chrome has no kn-IN voice.
-    playFileNarration();
+    vs.playing = true;
+    playBg(ABBAKKA.video);
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (eR0) {}
     document.querySelectorAll("[data-model]").forEach(function (p) {
       p.classList.toggle("active", p.dataset.model === "priya_nair");
     });
@@ -554,9 +563,6 @@
     syncPlayerUI();
     playBg(ABBAKKA.video);
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (eR) {}
-    if (typeof startNewsBroadcast === "function") {
-      try { startNewsBroadcast(); } catch (e3) {}
-    }
     const ok = await addRemoteClip(ABBAKKA.video, ABBAKKA.title, 8000);
     toast(ok
       ? "ಅಬ್ಬಕ್ಕ ವೀಡಿಯೊ ಹಿನ್ನೆಲೆಯಲ್ಲಿ. ಪ್ರೆಸೆಂಟರ್ ಕನ್ನಡದಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆ."
@@ -913,18 +919,32 @@
     const t = now / 1000;
     ctx.clearRect(0, 0, w, h);
 
-    const hit = clipAt(vs.playhead);
-    let painted = false;
-    if (hit && hit.clip.type === "file") {
-      painted = drawFileClip(ctx, w, h, hit.clip);
-    } else if (hit && hit.clip.type === "ai") {
-      drawAiNews(ctx, w, h, t, hit.clip);
-      painted = true;
-    }
-    if (!painted) {
-      const bg = bgEl();
-      if (bg && bg.videoWidth && bg.readyState >= 2) {
-        try { ctx.drawImage(bg, 0, 0, w, h); painted = true; } catch (e) {}
+    const bg = bgEl();
+    const streaming = !!(bg && bg.videoWidth && bg.readyState >= 2);
+    if (streaming) {
+      if (vs.playing && bg.paused) {
+        const p = bg.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+      if (typeof state !== "undefined" && !bg.paused && !bg.ended) {
+        state.isSpeaking = true;
+        state.isPaused = false;
+        const words = state.scriptWords || [];
+        if (bg.duration > 0 && words.length) {
+          const idx = Math.min(words.length - 1, Math.floor((bg.currentTime / bg.duration) * words.length));
+          if (idx !== state.currentWordIndex) {
+            state.currentWordIndex = idx;
+            state._wordT0 = performance.now();
+            state._lastBoundary = performance.now();
+          }
+        }
+      }
+    } else {
+      const hit = clipAt(vs.playhead);
+      if (hit && hit.clip.type === "file") {
+        drawFileClip(ctx, w, h, hit.clip);
+      } else if (hit && hit.clip.type === "ai") {
+        drawAiNews(ctx, w, h, t, hit.clip);
       }
     }
 
@@ -1110,22 +1130,18 @@
     }
     syncPlayerUI();
     if (vs.playing) {
-      const narr = $("vsNarration");
       const bg = bgEl();
-      const onAbbakka = /abbakka_full/.test((bg && (bg.getAttribute("data-src") || bg.src)) || "")
-        || (typeof state !== "undefined" && state._fileNarration);
-      if (onAbbakka) {
+      const film = !!(bg && /abbakka/i.test((bg.getAttribute("data-src") || bg.src || "")));
+      if (film) {
+        bg.muted = false;
+        bg.volume = 0.88;
+        bg.playbackRate = vs.rate || 1;
+        const np = bg.play();
+        if (np && np.catch) np.catch(function () {});
         if (typeof state !== "undefined") {
-          state._fileNarration = true;
+          state._videoNarration = true;
           state.isSpeaking = true;
           state.isPaused = false;
-        }
-        if (narr) {
-          narr.playbackRate = vs.rate || 1;
-          const np = narr.play();
-          if (np && np.catch) np.catch(function () {});
-        } else {
-          playFileNarration();
         }
       } else if (typeof startNewsBroadcast === "function") {
         try { startNewsBroadcast(); } catch (e) {}

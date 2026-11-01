@@ -2051,13 +2051,15 @@ body.vs-open #videoStudioScreen.hidden {
     pointer-events: none;
 }
 #vsCanvas {
-    position: relative;
+    position: absolute;
+    inset: 0;
     z-index: 1;
     width: 100%;
     height: 100%;
     display: block;
     background: transparent;
-    cursor: crosshair;
+    cursor: default;
+    pointer-events: none;
 }
 .vs-pills {
     display: flex;
