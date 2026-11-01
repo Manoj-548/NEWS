@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI News Studio — Live Male & Female Anchors</title>
     <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal channel branding.">
-    <link rel="stylesheet" href="styles.css?v=studio20">
+    <link rel="stylesheet" href="styles.css?v=studio21">
     <style>
         html, body { background: #0a0d14; color: #f0f4f8; margin: 0; }
         #appLoaderScreen, .app-loader-overlay { display: none !important; }
@@ -19,7 +19,7 @@
             <i class="fa-solid fa-satellite-dish"></i>
             <span>AI NEWS STUDIO <small>v2.5 PRO</small></span>
         </div>
-        <button id="openVideoStudioBtn" class="btn-studio-top" type="button" title="Open Video Studio editor" onclick="if(window.openVideoStudio){window.openVideoStudio();}return false;">
+        <button id="openVideoStudioBtn" class="btn-studio-top" type="button" title="Open Video Studio editor" onclick="if(window.playAbbakkaKannada){window.playAbbakkaKannada();}else if(window.openVideoStudio){window.openVideoStudio();}return false;">
             VIDEO STUDIO
         </button>
         
@@ -413,7 +413,7 @@
                 <button id="viewModeAiChatBtn" class="mode-tab-btn">
                     <i class="fa-solid fa-comments text-neon"></i> AI Chat
                 </button>
-                <button id="viewModeStudioBtn" class="mode-tab-btn" type="button" onclick="if(window.openVideoStudio){window.openVideoStudio();}return false;">
+                <button id="viewModeStudioBtn" class="mode-tab-btn" type="button" onclick="if(window.playAbbakkaKannada){window.playAbbakkaKannada();}else if(window.openVideoStudio){window.openVideoStudio();}return false;">
                     VIDEO STUDIO
                 </button>
             </div>
@@ -639,12 +639,12 @@
     <audio id="vsNarration" preload="auto" src="/assets/abbakka/abbakka_kn.mp3"></audio>
     <div id="studioToast" class="studio-toast hidden"></div>
 
-    <script src="app.js?v=studio20"></script>
-    <script src="talking-avatar.js?v=studio20"></script>
-    <script src="news-desk.js?v=studio20"></script>
-    <script src="boot-controls.js?v=studio20"></script>
-    <script src="fix-news-ui.js?v=studio20"></script>
-    <script src="video-studio.js?v=studio20"></script>
+    <script src="app.js?v=studio21"></script>
+    <script src="talking-avatar.js?v=studio21"></script>
+    <script src="news-desk.js?v=studio21"></script>
+    <script src="boot-controls.js?v=studio21"></script>
+    <script src="fix-news-ui.js?v=studio21"></script>
+    <script src="video-studio.js?v=studio21"></script>
     <script>
         (function () {
             function dismissLoader() {
@@ -665,11 +665,13 @@
 
             document.getElementById('openVideoStudioBtn') && document.getElementById('openVideoStudioBtn').addEventListener('click', function (ev) {
                 ev.preventDefault();
-                if (window.openVideoStudio) window.openVideoStudio();
+                if (window.playAbbakkaKannada) window.playAbbakkaKannada();
+                else if (window.openVideoStudio) window.openVideoStudio();
             });
             document.getElementById('viewModeStudioBtn') && document.getElementById('viewModeStudioBtn').addEventListener('click', function (ev) {
                 ev.preventDefault();
-                if (window.openVideoStudio) window.openVideoStudio();
+                if (window.playAbbakkaKannada) window.playAbbakkaKannada();
+                else if (window.openVideoStudio) window.openVideoStudio();
             });
 
             var toggle = document.getElementById('sidebarToggleBtn');

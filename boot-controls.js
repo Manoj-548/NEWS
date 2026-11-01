@@ -103,12 +103,12 @@
         document.getElementById("canvasWrapper")?.classList.add("hidden");
         document.getElementById("videoStudioScreen")?.classList.add("hidden");
       },
-      viewModeStudioBtn: () => { if (typeof openVideoStudio === "function") openVideoStudio(); },
+      viewModeStudioBtn: () => { if (typeof playAbbakkaKannada === "function") playAbbakkaKannada(); else if (typeof openVideoStudio === "function") openVideoStudio(); },
       sidebarToggleBtn: () => {
         document.getElementById("mainControlPanel")?.classList.toggle("collapsed");
         document.getElementById("studioContainer")?.classList.toggle("sidebar-collapsed");
       },
-      openVideoStudioBtn: () => { if (typeof openVideoStudio === "function") openVideoStudio(); },
+      openVideoStudioBtn: () => { if (typeof playAbbakkaKannada === "function") playAbbakkaKannada(); else if (typeof openVideoStudio === "function") openVideoStudio(); },
       vsCloseBtn: () => { if (typeof closeVideoStudio === "function") closeVideoStudio(); },
       vsAbbakkaBtn: () => { if (typeof playAbbakkaKannada === "function") playAbbakkaKannada(); }
     };

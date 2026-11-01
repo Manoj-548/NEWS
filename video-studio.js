@@ -109,12 +109,23 @@
   }
   function playFileNarration() {
     const a = narrationEl();
-    if (a.getAttribute("data-src") !== ABBAKKA.audio) {
+    const same = a.getAttribute("data-src") === ABBAKKA.audio;
+    if (same && !a.paused && !a.ended) {
+      if (typeof state !== "undefined") {
+        state.isSpeaking = true;
+        state.isPaused = false;
+        state._fileNarration = true;
+      }
+      return a;
+    }
+    if (!same) {
       a.src = ABBAKKA.audio;
       a.setAttribute("data-src", ABBAKKA.audio);
     }
     a.volume = 0.75;
-    try { a.currentTime = 0; } catch (e0) {}
+    if (!same || a.ended || a.currentTime < 0.05) {
+      try { a.currentTime = 0; } catch (e0) {}
+    }
     const p = a.play();
     if (p && p.catch) p.catch(function () {});
     if (typeof state !== "undefined") {
@@ -243,6 +254,7 @@
     if (!vs.raf) loop(0);
   }
   function hideStudio() {
+    pauseFileNarration();
     vs.open = false;
     vs.playing = false;
     document.body.classList.remove("vs-open");
@@ -494,6 +506,11 @@
   };
 
   async function playAbbakkaKannada() {
+    if (vs._abbakkaClick && Date.now() - vs._abbakkaClick < 700) {
+      openStudio();
+      return;
+    }
+    vs._abbakkaClick = Date.now();
     toast("ರಾಣಿ ಅಬ್ಬಕ್ಕ ಕನ್ನಡ ಪೂರ್ಣಾವಧಿ ವೀಡಿಯೊ ಹಾಕುತ್ತಿದ್ದೇವೆ…");
     preloadVisemes("priya_nair");
     if (typeof state !== "undefined") {
@@ -506,6 +523,16 @@
       state.userHasStarted = true;
       state._lockScript = true;
       state._fileNarration = true;
+    }
+    attachStory({
+      title: ABBAKKA.title,
+      script: ABBAKKA.script,
+      category: ABBAKKA.category,
+      language: "kn-IN"
+    });
+    if (typeof state !== "undefined") {
+      state.scriptText = ABBAKKA.script;
+      state.volume = 0.75;
     }
     // Start Kannada audio in this click — Chrome has no kn-IN voice.
     playFileNarration();
@@ -530,16 +557,6 @@
     });
     if (typeof initSpeechSynthesis === "function") {
       try { initSpeechSynthesis(); } catch (e2) {}
-    }
-    attachStory({
-      title: ABBAKKA.title,
-      script: ABBAKKA.script,
-      category: ABBAKKA.category,
-      language: "kn-IN"
-    });
-    if (typeof state !== "undefined") {
-      state.scriptText = ABBAKKA.script;
-      state.volume = 0.75;
     }
     vs.playing = true;
     syncPlayerUI();
@@ -994,11 +1011,21 @@
     syncPlayerUI();
     if (vs.playing) {
       const narr = $("vsNarration");
-      if (typeof state !== "undefined" && state._fileNarration && narr) {
-        const np = narr.play();
-        if (np && np.catch) np.catch(function () {});
-        state.isSpeaking = true;
-        state.isPaused = false;
+      const bg = bgEl();
+      const onAbbakka = /abbakka_full/.test((bg && (bg.getAttribute("data-src") || bg.src)) || "")
+        || (typeof state !== "undefined" && state._fileNarration);
+      if (onAbbakka) {
+        if (typeof state !== "undefined") {
+          state._fileNarration = true;
+          state.isSpeaking = true;
+          state.isPaused = false;
+        }
+        if (narr) {
+          const np = narr.play();
+          if (np && np.catch) np.catch(function () {});
+        } else {
+          playFileNarration();
+        }
       } else if (typeof startNewsBroadcast === "function") {
         try { startNewsBroadcast(); } catch (e) {}
       }
@@ -1118,10 +1145,6 @@
   }
 
   function bind() {
-    $("openVideoStudioBtn")?.addEventListener("click", function (e) {
-      e.preventDefault();
-      openStudio();
-    });
     $("vsCloseBtn")?.addEventListener("click", closeStudio);
     $("vsGenerateBtn")?.addEventListener("click", generateNewsVideo);
     $("vsAbbakkaBtn")?.addEventListener("click", function (e) {
@@ -1202,14 +1225,22 @@
     $("vsSideToggle")?.addEventListener("click", function () {
       $("videoStudioScreen")?.classList.toggle("side-off");
     });
-    $("vsPlayBtn")?.addEventListener("click", togglePlay);
+    $("vsPlayBtn")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      const hasNarr = typeof state !== "undefined" && state._fileNarration;
+      if (!vs.playing && !hasNarr && !(bgEl() && bgEl().src)) {
+        playAbbakkaKannada();
+        return;
+      }
+      togglePlay();
+    });
     $("viewModeStudioBtn")?.addEventListener("click", function (e) {
       e.preventDefault();
-      openStudio();
+      playAbbakkaKannada();
     });
     $("openVideoStudioBtn")?.addEventListener("click", function (e) {
       e.preventDefault();
-      openStudio();
+      playAbbakkaKannada();
     });
     $("vsDownloadBtn")?.addEventListener("click", function () { recordStudio(false); });
     $("vsYoutubeBtn")?.addEventListener("click", function () { recordStudio(true); });
