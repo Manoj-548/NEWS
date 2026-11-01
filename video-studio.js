@@ -421,44 +421,43 @@
     return true;
   }
 
+  function squareSource(src) {
+    const sw = src.videoWidth || src.naturalWidth || src.width || 0;
+    const sh = src.videoHeight || src.naturalHeight || src.height || 0;
+    if (!sw || !sh) return null;
+    const side = Math.min(sw, sh);
+    return {
+      sx: Math.max(0, (sw - side) / 2),
+      sy: Math.max(0, (sh - side) * 0.12),
+      side: side
+    };
+  }
+
   function drawPresenterPip(ctx, w, h) {
-    const pipW = Math.round(w * 0.30);
-    const pipH = Math.round(h * 0.42);
-    const x = 16;
-    const y = h - pipH - 56;
+    const size = Math.round(Math.min(w * 0.2, h * 0.36, 240));
+    const x = 18;
+    const y = h - size - 58;
     ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.55)";
-    ctx.fillRect(x - 6, y - 6, pipW + 12, pipH + 12);
+    ctx.fillStyle = "#05070c";
+    ctx.fillRect(x - 5, y - 5, size + 10, size + 10);
     ctx.strokeStyle = profile().color || "#00d2ff";
     ctx.lineWidth = 3;
-    ctx.strokeRect(x - 3, y - 3, pipW + 6, pipH + 6);
+    ctx.strokeRect(x - 3, y - 3, size + 6, size + 6);
     const live = document.getElementById("broadcastCanvas");
     const img = presenterImg();
-    if (live && live.width) {
-      ctx.drawImage(live, x, y, pipW, pipH);
-    } else if (img) {
-      const iw = img.naturalWidth;
-      const ih = img.naturalHeight;
-      const ar = pipW / pipH;
-      let sx, sy, sw, sh;
-      if (iw / ih > ar) {
-        sh = ih; sw = sh * ar; sx = (iw - sw) / 2; sy = 0;
-      } else {
-        sw = iw; sh = sw / ar; sx = 0; sy = Math.max(0, (ih - sh) * 0.12);
-      }
-      ctx.drawImage(img, sx, sy, sw, sh, x, y, pipW, pipH);
+    const src = (live && live.width) ? live : img;
+    const box = src ? squareSource(src) : null;
+    if (src && box) {
+      ctx.drawImage(src, box.sx, box.sy, box.side, box.side, x, y, size, size);
     } else {
       ctx.fillStyle = "#123";
-      ctx.fillRect(x, y, pipW, pipH);
-      ctx.fillStyle = "#7fd";
-      ctx.font = "bold 16px sans-serif";
-      ctx.fillText(profile().name || "Presenter", x + 12, y + pipH / 2);
+      ctx.fillRect(x, y, size, size);
     }
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(x, y + pipH - 26, pipW, 26);
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(x, y + size - 24, size, 24);
     ctx.fillStyle = "#fff";
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillText((profile().name || "Anchor") + "  ·  LIVE", x + 8, y + pipH - 9);
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillText((profile().name || "Anchor"), x + 8, y + size - 8);
     ctx.restore();
   }
 
@@ -489,9 +488,21 @@
 
     const hit = clipAt(vs.playhead);
     if (hit && hit.clip.type === "file") {
-      if (!drawFileClip(ctx, w, h, hit.clip, hit.local)) drawAiNews(ctx, w, h, t, hit.clip);
+      if (!drawFileClip(ctx, w, h, hit.clip, hit.local)) {
+        ctx.fillStyle = "#05070c";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#8c9ba5";
+        ctx.font = "16px sans-serif";
+        ctx.fillText("Upload a video for the background — presenter stays in the square.", 24, 40);
+      }
+    } else if (hit && hit.clip.type === "ai") {
+      drawAiNews(ctx, w, h, t, hit.clip);
     } else {
-      drawAiNews(ctx, w, h, t, hit ? hit.clip : null);
+      ctx.fillStyle = "#05070c";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#8c9ba5";
+      ctx.font = "16px sans-serif";
+      ctx.fillText("Upload or generate a video for the background.", 24, 40);
     }
 
     if (vs.generating) drawGenerating(ctx, w, h);

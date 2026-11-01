@@ -1862,7 +1862,10 @@ body.vs-open .teleprompter-card,
 body.vs-open .broadcast-controls,
 body.vs-open .screen-header,
 body.vs-open .sidebar-toggle-btn,
-body.vs-open .viewer-remote-bar {
+body.vs-open .viewer-remote-bar,
+body.vs-open #canvasWrapper,
+body.vs-open #unmuteBanner,
+body.vs-open #teleprompterSubtitleBox {
     display: none !important;
 }
 body.vs-open .studio-container {
