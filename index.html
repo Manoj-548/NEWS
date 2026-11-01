@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI News Studio — Live Male & Female Anchors</title>
     <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal channel branding.">
-    <link rel="stylesheet" href="styles.css?v=studio12">
+    <link rel="stylesheet" href="styles.css?v=studio13">
     <style>
         html, body { background: #0a0d14; color: #f0f4f8; margin: 0; }
         #appLoaderScreen, .app-loader-overlay { display: none !important; }
@@ -19,14 +19,9 @@
             <i class="fa-solid fa-satellite-dish"></i>
             <span>AI NEWS STUDIO <small>v2.5 PRO</small></span>
         </div>
-        <div class="top-action-strip">
-            <button id="openVideoStudioBtn" class="btn-studio-top" type="button" title="Open Video Studio editor">
-                VIDEO STUDIO
-            </button>
-            <button id="abbakkaTopBtn" class="btn-abbakka-top" type="button" title="Rani Abbakka Kannada full video">
-                ರಾಣಿ ಅಬ್ಬಕ್ಕ | ಕನ್ನಡ ಪೂರ್ಣ ವೀಡಿಯೊ
-            </button>
-        </div>
+        <button id="openVideoStudioBtn" class="btn-studio-top" type="button" title="Open Video Studio editor">
+            VIDEO STUDIO
+        </button>
         
         <!-- Top Screen Reporter Selection Pill Bar -->
         <div class="top-reporter-switcher">
@@ -357,14 +352,6 @@
                         <i class="fa-solid fa-circle text-success" style="font-size: 0.55rem;"></i> 1-CLICK INSTANT BROADCAST SWITCHER
                     </div>
                 </div>
-                <div class="remote-row remote-row-special">
-                    <span class="remote-label">Special:</span>
-                    <div class="remote-pills">
-                        <button id="abbakkaRemoteBtn" class="remote-pill abbakka-pill" type="button">ರಾಣಿ ಅಬ್ಬಕ್ಕ | ಕನ್ನಡ ವೀಡಿಯೊ</button>
-                        <button id="abbakkaStudioJumpBtn" class="remote-pill" type="button">VIDEO STUDIO</button>
-                    </div>
-                </div>
-                
                 <div class="remote-rows-container">
                     <!-- Row 1: Language Switcher Remote Pills -->
                     <div class="remote-row">
@@ -428,9 +415,6 @@
                 </button>
                 <button id="viewModeStudioBtn" class="mode-tab-btn">
                     VIDEO STUDIO
-                </button>
-                <button id="abbakkaTabBtn" class="mode-tab-btn abbakka-tab" type="button">
-                    ರಾಣಿ ಅಬ್ಬಕ್ಕ | ಕನ್ನಡ
                 </button>
             </div>
 
@@ -549,11 +533,17 @@
                 <div id="vsStatus" class="vs-status">Idle</div>
             </aside>
             <div class="vs-stage">
-                <video id="vsBgVideo" muted autoplay loop playsinline preload="auto"></video>
+                <video id="vsBgVideo" muted playsinline preload="auto"></video>
                 <canvas id="vsCanvas" width="1280" height="720"></canvas>
                 <input id="vsFileInput" type="file" accept="video/*" multiple hidden>
             </div>
             <div class="vs-dock">
+                <div class="vs-player-bar">
+                    <button id="vsUnderPlay" class="vs-under-btn play" type="button">Play</button>
+                    <button id="vsUnderPause" class="vs-under-btn pause" type="button">Pause</button>
+                    <span id="vsUnderTime" class="vs-under-time">0:00</span>
+                    <span id="vsUnderHint" class="vs-under-hint">Play / Pause below the video</span>
+                </div>
                 <div class="vs-bin-wrap">
                     <div class="vs-dock-label">CLIPS · click to select · timeline is the full-length news video</div>
                     <div id="vsBin" class="vs-bin"></div>
@@ -648,12 +638,12 @@
 
     <div id="studioToast" class="studio-toast hidden"></div>
 
-    <script src="app.js?v=studio12"></script>
-    <script src="talking-avatar.js?v=studio12"></script>
-    <script src="news-desk.js?v=studio12"></script>
-    <script src="boot-controls.js?v=studio12"></script>
-    <script src="fix-news-ui.js?v=studio12"></script>
-    <script src="video-studio.js?v=studio12"></script>
+    <script src="app.js?v=studio13"></script>
+    <script src="talking-avatar.js?v=studio13"></script>
+    <script src="news-desk.js?v=studio13"></script>
+    <script src="boot-controls.js?v=studio13"></script>
+    <script src="fix-news-ui.js?v=studio13"></script>
+    <script src="video-studio.js?v=studio13"></script>
     <script>
         (function () {
             function dismissLoader() {

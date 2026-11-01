@@ -2077,6 +2077,30 @@ body.vs-open .video-studio-screen {
     padding: 8px 12px 10px;
     overflow: auto;
 }
+.vs-player-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    background: #101826;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+}
+.vs-under-btn {
+    min-width: 88px;
+    height: 36px;
+    border: 0;
+    border-radius: 6px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 0.88rem;
+}
+.vs-under-btn.play { background: #16a34a; color: #fff; }
+.vs-under-btn.pause { background: #b45309; color: #fff; }
+.vs-under-btn:hover { filter: brightness(1.1); }
+.vs-under-time { color: #ffe566; font-weight: 700; min-width: 64px; }
+.vs-under-hint { color: #8c9ba5; font-size: 0.78rem; }
 .vs-dock-label { font-size: 0.68rem; color: #8c9ba5; letter-spacing: 0.08em; margin-bottom: 4px; }
 .vs-bin { display: flex; gap: 6px; flex-wrap: wrap; min-height: 32px; }
 .vs-chip {

@@ -186,8 +186,12 @@
       el.src = src;
       try { el.load(); } catch (e) {}
     }
-    const p = el.play();
-    if (p && p.catch) p.catch(function () {});
+    if (vs.playing) {
+      const p = el.play();
+      if (p && p.catch) p.catch(function () {});
+    } else {
+      try { el.pause(); } catch (e2) {}
+    }
   }
 
   function commitFileClip(vid, name) {
@@ -396,9 +400,8 @@
     playBg(ABBAKKA.video);
     const ok = await addRemoteClip(ABBAKKA.video, ABBAKKA.title, 8000);
     vs.playing = true;
-    const pb = $("vsPlayBtn");
-    if (pb) pb.textContent = "Pause";
-    toast(ok
+    syncPlayerUI();
+    toast(ok)
       ? "ಅಬ್ಬಕ್ಕ ವೀಡಿಯೊ ಹಿನ್ನೆಲೆಯಲ್ಲಿ. ಪ್ರೆಸೆಂಟರ್ ಕನ್ನಡದಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆ."
       : "ಕನ್ನಡ ಸುದ್ದಿ ಶುರು. ವೀಡಿಯೊ ತೆರೆಯುತ್ತಿದೆ.");
     if (typeof startNewsBroadcast === "function") {
@@ -640,7 +643,11 @@
       try { v.currentTime = clip.inPoint || 0; } catch (e) {}
     }
     try {
-      if (v.paused) v.play().catch(function () {});
+      if (vs.playing) {
+        if (v.paused) v.play().catch(function () {});
+      } else if (!v.paused) {
+        v.pause();
+      }
       if (!one && v.currentTime >= (clip.outPoint || v.duration) - 0.08) {
         try { v.currentTime = clip.inPoint || 0; } catch (e2) {}
       }
@@ -800,22 +807,49 @@
     if (!vs.lastTs) vs.lastTs = ts;
     const dt = Math.min(0.05, (ts - vs.lastTs) / 1000);
     vs.lastTs = ts;
-    vs.playhead += dt;
-    if (vs.playhead >= totalDur()) vs.playhead = 0;
+    if (vs.playing) {
+      vs.playhead += dt;
+      if (vs.playhead >= totalDur()) vs.playhead = 0;
+    }
     vs._tlAcc = (vs._tlAcc || 0) + dt;
     if (vs._tlAcc > 0.25) {
       vs._tlAcc = 0;
       renderTimeline();
+      syncPlayerUI();
     }
     fitCanvas();
     drawFrame(ts);
     vs.raf = requestAnimationFrame(loop);
   }
 
-  function togglePlay() {
-    vs.playing = !vs.playing;
+  function syncPlayerUI() {
     const pb = $("vsPlayBtn");
     if (pb) pb.textContent = vs.playing ? "Pause" : "Play presenter + timeline";
+    const v = bgEl();
+    const t = $("vsUnderTime");
+    if (t && v) {
+      function fmt(s) {
+        s = Math.max(0, Math.floor(Number(s) || 0));
+        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+      }
+      t.textContent = fmt(v.currentTime) + " / " + fmt(v.duration);
+    }
+    const hint = $("vsUnderHint");
+    if (hint) hint.textContent = vs.playing ? "Playing in Video Studio" : "Paused — press Play below the video";
+  }
+
+  function togglePlay() {
+    vs.playing = !vs.playing;
+    const v = bgEl();
+    if (v) {
+      if (vs.playing) {
+        const p = v.play();
+        if (p && p.catch) p.catch(function () {});
+      } else {
+        try { v.pause(); } catch (e0) {}
+      }
+    }
+    syncPlayerUI();
     if (vs.playing) {
       if (typeof startNewsBroadcast === "function") {
         try { startNewsBroadcast(); } catch (e) {}
@@ -939,15 +973,17 @@
     });
     $("vsCloseBtn")?.addEventListener("click", closeStudio);
     $("vsGenerateBtn")?.addEventListener("click", generateNewsVideo);
-    ["vsAbbakkaBtn", "abbakkaTopBtn", "abbakkaRemoteBtn", "abbakkaTabBtn"].forEach(function (id) {
-      $(id)?.addEventListener("click", function (e) {
-        e.preventDefault();
-        playAbbakkaKannada();
-      });
-    });
-    $("abbakkaStudioJumpBtn")?.addEventListener("click", function (e) {
+    $("vsAbbakkaBtn")?.addEventListener("click", function (e) {
       e.preventDefault();
-      openStudio();
+      playAbbakkaKannada();
+    });
+    $("vsUnderPlay")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (!vs.playing) togglePlay();
+    });
+    $("vsUnderPause")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (vs.playing) togglePlay();
     });
     $("vsUploadBtn")?.addEventListener("click", function () { $("vsFileInput")?.click(); });
     $("vsFileInput")?.addEventListener("change", function (e) {
