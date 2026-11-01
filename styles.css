@@ -2050,34 +2050,34 @@ body.vs-open #videoStudioScreen.hidden {
     z-index: 3;
     pointer-events: none;
 }
+body.vs-open #vsCanvas,
 body.vs-film #vsCanvas { display: none !important; }
-body.vs-film #vsBgVideo { z-index: 3; opacity: 1; }
+body.vs-open #vsBgVideo,
+body.vs-film #vsBgVideo {
+    z-index: 3;
+    opacity: 1;
+    pointer-events: auto;
+}
 .vs-pip-box {
     display: none;
     position: absolute;
     left: 16px;
-    bottom: 64px;
+    bottom: 88px;
     z-index: 7;
     width: 168px;
     border: 3px solid #00d2ff;
     background: #05070c;
     box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+    pointer-events: none;
 }
-body.vs-film .vs-pip-box { display: block; }
+body.vs-film .vs-pip-box,
+body.vs-open .vs-pip-box { display: block; }
 .vs-pip-box img {
     display: block;
     width: 168px;
     height: 168px;
     object-fit: cover;
     object-position: 50% 8%;
-}
-.vs-pip-box span {
-    display: block;
-    background: rgba(0,0,0,0.78);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 4px 8px;
 }
 #vsCanvas {
     position: absolute;

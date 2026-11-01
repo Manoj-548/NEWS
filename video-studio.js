@@ -319,7 +319,7 @@
     el.autoplay = true;
     el.muted = true;
     el.defaultMuted = true;
-    if (el.getAttribute("data-src") !== src) {
+    if (!/abbakka_play/.test(el.currentSrc || el.src || "") || el.getAttribute("data-src") !== src) {
       el.setAttribute("data-src", src);
       el.src = src;
     }
@@ -497,8 +497,8 @@
     title: "ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ",
     category: "ಕನ್ನಡ ವಿಶೇಷ",
     language: "kn-IN",
-    video: "/assets/abbakka/abbakka_film.mp4?v=stream1",
-    audio: "/assets/abbakka/abbakka_kn.mp3?v=pack23",
+    video: "assets/abbakka/abbakka_play.mp4?v=play1",
+    audio: "assets/abbakka/abbakka_kn.mp3?v=pack23",
     script:
       "ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ, ಇದು ವಿಶೇಷ ಇತಿಹಾಸ ವಾರ್ತಾ ಪ್ರಸಾರ. ತೆರೆಯ ಮೇಲೆ ದಕ್ಷಿಣ ಕನ್ನಡದ ಉಳ್ಳಾಲ. ಈ ನೆಲದಿಂದ ಹದಿನಾರನೇ ಶತಮಾನದಲ್ಲಿ ರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ ಪೋರ್ಚುಗೀಸ್ ಸಾಮ್ರಾಜ್ಯವನ್ನು ನಾಲ್ಕು ದಶಕ ಎದುರಿಸಿದಳು. ಜನ ಅವಳನ್ನು ಅಭಯರಾಣಿ ಎಂದು ಕರೆದರು. ಚೌಟ ವಂಶ ಅಳಿಯಸಂತಾನ. ಮಾವ ತಿರುಮಲ ರಾಯ ಖಡ್ಗ ಮತ್ತು ಯುದ್ಧತಂತ್ರ ಕಲಿಸಿ ಸಿಂಹಾಸನ ಕಟ್ಟಿದರು. ಜೈನ, ಹಿಂದೂ, ಬ್ಯಾರಿ ಮುಸ್ಲಿಂ ಸಮುದಾಯ ಆಡಳಿತದಲ್ಲಿದ್ದರು. ಉಳ್ಳಾಲ ಮೆಣಸು ವ್ಯಾಪಾರದ ಕೇಂದ್ರ. ಪೋರ್ಚುಗೀಸರು ತೆರಿಗೆ ಕೇಳಿದರು. ರಾಣಿ ನಿರಾಕರಿಸಿದಳು. ಈಗ ಕಾಣುವವಳು ಉಳ್ಳಾಲದ ರಾಣಿ. ಆಕೆ ಸಾಮಾನ್ಯರಂತೆ ಉಡುಪು ಧರಿಸಿ ರಾತ್ರಿ ತಡವಾಗಿ ನ್ಯಾಯ ನೀಡುತ್ತಿದ್ದಳು. ಕಪ್ಪು ಮೋಡದಡಿ ಪೋರ್ಚುಗೀಸ್ ಹಡಗುಗಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಐವತ್ತೈದರಲ್ಲಿ ಅಡ್ಮಿರಲ್ ಡಾನ್ ಅಲ್ವಾರೊ ದಾಳಿ ಮಾಡಿದ. ಅಬ್ಬಕ್ಕ ಅವರನ್ನು ಹಿಮ್ಮೆಟ್ಟಿಸಿದಳು. ಮೊಗವೀರ ಮೀನುಗಾರರು ಮತ್ತು ಬ್ಯಾರಿ ನಾವಿಕರು ರಾಣಿಯ ಬಲ. ಅಗ್ನಿಬಾಣ ಬಳಸಿದ ಕೊನೆಯವರಲ್ಲಿ ಒಬ್ಬಳು ಎಂದು ಐತಿಹ್ಯ. ಮಹಿಳೆಯರು ಖಡ್ಗಾಭ್ಯಾಸ ಮಾಡುತ್ತಿದ್ದಾರೆ. ರಾಣಿ ಕರಾವಳಿ ಮಹಿಳೆಯರನ್ನು ಸೇನೆ ಮಾಡಿದಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಅರವತ್ತೆಂಟರಲ್ಲಿ ಜನರಲ್ ಪೈಕ್ಸೊಟೊ ಉಳ್ಳಾಲವನ್ನು ಆಕ್ರಮಿಸಿ ಅರಮನೆ ಪ್ರವೇಶಿಸಿದ. ರಾಣಿ ಮಸೀದಿಯಲ್ಲಿ ಆಶ್ರಯ ಪಡೆದು ಅದೇ ರಾತ್ರಿ ಎರಡು ನೂರು ಸೈನಿಕರೊಂದಿಗೆ ಮರುದಾಳಿ ಮಾಡಿದಳು. ಪೋರ್ಚುಗೀಸರು ಮಂಗಳೂರು ಕೋಟೆಯಿಂದ ಹಿಂದೆ ಸರಿದರು. ಕೊನೆಯ ಚಿತ್ರ ಸ್ಮೃತಿ. ಉಳ್ಳಾಲದ ವೃತ್ತದಲ್ಲಿ ಅಬ್ಬಕ್ಕ ಜೀವಂತ. ಅಂಚೆಚೀಟಿಯಲ್ಲಿ ವೀರರಾಣಿ. ಕಿತ್ತೂರು ಚೆನ್ನಮ್ಮ ಮತ್ತು ಒನಕೆ ಓಬವ್ವರ ಸಾಲಿನಲ್ಲಿ ಕರ್ನಾಟಕ ಈ ರಾಣಿಯನ್ನು ಸ್ಮರಿಸುತ್ತದೆ. ಇದು ನಮ್ಮ ಕನ್ನಡ ವರದಿ. ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಅಭಯರಾಣಿ. ನಾವು ಮತ್ತೆ ಸಿಗೋಣ."
   };
@@ -559,10 +559,7 @@
     syncPlayerUI();
     playBg(ABBAKKA.video);
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (eR) {}
-    const ok = await addRemoteClip(ABBAKKA.video, ABBAKKA.title, 8000);
-    toast(ok
-      ? "ಅಬ್ಬಕ್ಕ ವೀಡಿಯೊ ಹಿನ್ನೆಲೆಯಲ್ಲಿ. ಪ್ರೆಸೆಂಟರ್ ಕನ್ನಡದಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆ."
-      : "ಕನ್ನಡ ಸುದ್ದಿ ಶುರು. ವೀಡಿಯೊ ತೆರೆಯುತ್ತಿದೆ.");
+    toast("ಅಬ್ಬಕ್ಕ ಚಿತ್ರಹಾದು ಚಾಲನೆ. Play ಒತ್ತಿ.");
   }
   window.playAbbakkaKannada = playAbbakkaKannada;
 
@@ -892,8 +889,6 @@
     ctx.fillStyle = "rgba(0,0,0,0.72)";
     ctx.fillRect(x, y + size - 24, size, 24);
     ctx.fillStyle = "#fff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.fillText((profile().name || "Anchor"), x + 8, y + size - 8);
     ctx.restore();
   }
 
@@ -1097,11 +1092,9 @@
       try { window.talkingAvatarTick(dt); } catch (eT) {}
     }
     const pip = $("vsPipLive");
-    if (pip && document.body.classList.contains("vs-film")) {
+    if (pip && (document.body.classList.contains("vs-film") || document.body.classList.contains("vs-open"))) {
       const im = talkingPresenterImg() || presenterImg();
       if (im && im.src && pip.src !== im.src) pip.src = im.src;
-      const nm = $("vsPipName");
-      if (nm) nm.textContent = profile().name || "Priya Nair";
     }
     fitCanvas();
     drawFrame(ts);
