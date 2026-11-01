@@ -1842,6 +1842,7 @@ body.dark-theme {
     position: relative;
     flex: 1;
     min-height: 0;
+    height: 100%;
     background: #070b12;
     display: flex;
     flex-direction: column;
@@ -1850,6 +1851,34 @@ body.dark-theme {
     overflow: hidden;
 }
 .video-studio-screen.hidden { display: none !important; }
+
+body.vs-open .control-panel,
+body.vs-open .teleprompter-card,
+body.vs-open .broadcast-controls,
+body.vs-open .screen-header,
+body.vs-open .sidebar-toggle-btn {
+    display: none !important;
+}
+body.vs-open .studio-container {
+    grid-template-columns: 1fr;
+    padding: 4px 8px 6px;
+    height: calc(100vh - 52px);
+}
+body.vs-open .broadcast-viewport {
+    height: 100%;
+    min-height: 0;
+}
+body.vs-open .viewport-card {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    padding: 4px;
+}
+body.vs-open .vs-stage {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+}
 
 .vs-bar {
     display: flex;

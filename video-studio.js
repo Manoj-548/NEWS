@@ -114,6 +114,7 @@
     setModeTabs("viewModeStudioBtn");
     $("canvasWrapper")?.classList.add("hidden");
     $("aiChatHubViewport")?.classList.add("hidden");
+    document.body.classList.add("vs-open");
     screen.classList.remove("hidden");
     screen.setAttribute("aria-hidden", "false");
     vs.open = true;
@@ -129,6 +130,7 @@
   function hideStudio() {
     vs.open = false;
     vs.playing = false;
+    document.body.classList.remove("vs-open");
     if (vs.raf) cancelAnimationFrame(vs.raf);
     vs.raf = 0;
     const screen = $("videoStudioScreen");
