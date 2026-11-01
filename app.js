@@ -1343,6 +1343,21 @@ function startNewsBroadcast() {
 
     stopNewsBroadcast(true);
 
+    if (state._fileNarration) {
+        const a = document.getElementById("vsNarration");
+        if (a) {
+            a.volume = Math.min(0.78, Number(state.volume) || 0.75);
+            if (a.paused) {
+                const p = a.play();
+                if (p && p.catch) p.catch(function () {});
+            }
+        }
+        state.isSpeaking = true;
+        state.isPaused = false;
+        updateBroadcastButtons();
+        return;
+    }
+
     const speakText = state.resumeText || state.scriptText;
     state.resumeText = "";
 
@@ -1459,6 +1474,26 @@ function startNewsBroadcast() {
 }
 
 function pauseNewsBroadcast() {
+    if (state._fileNarration) {
+        const a = document.getElementById("vsNarration");
+        if (state.isPaused) {
+            if (a) {
+                const p = a.play();
+                if (p && p.catch) p.catch(function () {});
+            }
+            state.isSpeaking = true;
+            state.isPaused = false;
+            updateBroadcastButtons();
+            return;
+        }
+        if (a) try { a.pause(); } catch (eN) {}
+        state.isSpeaking = false;
+        state.isPaused = true;
+        state.visemeMouthOpen = 0;
+        updateBroadcastButtons();
+        studioToast("Broadcast paused");
+        return;
+    }
     if (state.isPaused) {
         startNewsBroadcast();
         return;
@@ -1477,6 +1512,9 @@ function pauseNewsBroadcast() {
 
 function stopNewsBroadcast(keepScript) {
     try { speechSynth && speechSynth.cancel(); } catch (e) {}
+    if (!keepScript && typeof window.stopFileNarration === "function") {
+        try { window.stopFileNarration(); } catch (eN) {}
+    }
     state.isSpeaking = false;
     state.isPaused = false;
     state.visemeMouthOpen = 0;

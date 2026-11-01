@@ -46,21 +46,104 @@
     if (shape === "teeth") return "viseme_talk_" + id + ".jpg";
     return "viseme_talk_" + id + ".jpg";
   }
+  function preloadVisemes(id) {
+    id = id || "priya_nair";
+    ["M", "E", "O", "talk", "open", "F", "U"].forEach(function (k) {
+      const file = "viseme_" + k + "_" + id + ".jpg";
+      if (!vsViseme[file]) {
+        const im = new Image();
+        im.src = "assets/" + file;
+        vsViseme[file] = im;
+      }
+    });
+  }
   function talkingPresenterImg() {
     const idle = presenterImg();
-    const speaking = typeof state !== "undefined" && state.isSpeaking && !state.isPaused;
+    const narr = $("vsNarration");
+    const fileTalking = !!(narr && !narr.paused && !narr.ended);
+    const speaking = fileTalking || (typeof state !== "undefined" && state.isSpeaking && !state.isPaused);
     if (!speaking) return idle;
-    const id = (state.anchorModel || "priya_nair");
-    const file = visemeFile(id, state.visemeShape || "talk");
-    if (!vsViseme[file]) {
-      const im = new Image();
-      im.src = "assets/" + file;
-      vsViseme[file] = im;
-    }
+    const id = (typeof state !== "undefined" && state.anchorModel) || "priya_nair";
+    const file = visemeFile(id, (typeof state !== "undefined" && state.visemeShape) || "talk");
+    preloadVisemes(id);
     const im = vsViseme[file];
     if (im && im.complete && im.naturalWidth > 0) return im;
+    const talk = vsViseme["viseme_talk_" + id + ".jpg"];
+    if (talk && talk.complete && talk.naturalWidth > 0) return talk;
     return idle;
   }
+  function narrationEl() {
+    let a = $("vsNarration");
+    if (!a) {
+      a = document.createElement("audio");
+      a.id = "vsNarration";
+      a.preload = "auto";
+      document.body.appendChild(a);
+    }
+    if (!a._vsBound) {
+      a._vsBound = true;
+      a.addEventListener("ended", function () {
+        if (typeof state !== "undefined") {
+          state.isSpeaking = false;
+          state.isPaused = false;
+          state.visemeMouthOpen = 0;
+        }
+      });
+      a.addEventListener("timeupdate", function () {
+        if (typeof state === "undefined") return;
+        if (a.paused || a.ended) return;
+        state.isSpeaking = true;
+        state.isPaused = false;
+        const words = state.scriptWords || [];
+        if (a.duration > 0 && words.length) {
+          const idx = Math.min(words.length - 1, Math.floor((a.currentTime / a.duration) * words.length));
+          if (idx !== state.currentWordIndex) {
+            state.currentWordIndex = idx;
+            state._wordT0 = performance.now();
+            state._lastBoundary = performance.now();
+          }
+        }
+      });
+    }
+    return a;
+  }
+  function playFileNarration() {
+    const a = narrationEl();
+    if (a.getAttribute("data-src") !== ABBAKKA.audio) {
+      a.src = ABBAKKA.audio;
+      a.setAttribute("data-src", ABBAKKA.audio);
+    }
+    a.volume = 0.75;
+    try { a.currentTime = 0; } catch (e0) {}
+    const p = a.play();
+    if (p && p.catch) p.catch(function () {});
+    if (typeof state !== "undefined") {
+      state.isSpeaking = true;
+      state.isPaused = false;
+      state.userHasStarted = true;
+      state._fileNarration = true;
+    }
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e1) {}
+    return a;
+  }
+  function pauseFileNarration() {
+    const a = $("vsNarration");
+    if (a && !a.paused) try { a.pause(); } catch (e) {}
+  }
+  function stopFileNarration() {
+    const a = $("vsNarration");
+    if (a) {
+      try { a.pause(); } catch (e) {}
+      try { a.currentTime = 0; } catch (e2) {}
+    }
+    if (typeof state !== "undefined") {
+      state._fileNarration = false;
+      state.isSpeaking = false;
+    }
+  }
+  window.pauseFileNarration = pauseFileNarration;
+  window.stopFileNarration = stopFileNarration;
+  window.playFileNarration = playFileNarration;
   function clipLen(c) { return Math.max(0.2, (c.outPoint - c.inPoint)); }
   function totalDur() {
     let t = 0;
@@ -151,6 +234,7 @@
     screen.style.setProperty("pointer-events", "auto", "important");
     vs.open = true;
     vs.lastTs = 0;
+    preloadVisemes((typeof state !== "undefined" && state.anchorModel) || "priya_nair");
     renderPills();
     renderBin();
     renderTimeline();
@@ -175,6 +259,7 @@
     }
   }
   function closeStudio() {
+    stopFileNarration();
     hideStudio();
     setModeTabs("viewModeBroadcastBtn");
     $("canvasWrapper")?.classList.remove("hidden");
@@ -395,20 +480,22 @@
     category: "ಕನ್ನಡ ವಿಶೇಷ",
     language: "kn-IN",
     video: "/assets/abbakka/abbakka_full.mp4",
+    audio: "/assets/abbakka/abbakka_kn.mp3",
     script:
-      "ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ, ಇದು ವಿಶೇಷ ಇತಿಹಾಸ ವಾರ್ತಾ ಪ್ರಸಾರ. ತೆರೆಯ ಮೇಲೆ ನೀವು ನೋಡುತ್ತಿರುವುದು ಅರಬ್ಬೀ ಸಮುದ್ರ ತೀರದ ಉಳ್ಳಾಲ. ಇಂದಿನ ದಕ್ಷಿಣ ಕನ್ನಡ. ಈ ನೆಲದಿಂದ ಹದಿನಾರನೇ ಶತಮಾನದಲ್ಲಿ ಒಬ್ಬ ವೀರರಾಣಿ ಪೋರ್ಚುಗೀಸ್ ಸಾಮ್ರಾಜ್ಯವನ್ನು ನಾಲ್ಕು ದಶಕಗಳ ಕಾಲ ಎದುರಿಸಿದಳು. ಅವಳೇ ರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಜನ ಅವಳನ್ನು ಅಭಯರಾಣಿ ಎಂದು ಕರೆದರು. " +
+      "ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ, ಇದು ವಿಶೇಷ ಇತಿಹಾಸ ವಾರ್ತಾ ಪ್ರಸಾರ. ತೆರೆಯ ಮೇಲೆ ನೀವು ನೋಡುತ್ತಿರುವುದು ದಕ್ಷಿಣ ಕನ್ನಡದ ಉಳ್ಳಾಲ. ಈ ನೆಲದಿಂದ ಹದಿನಾರನೇ ಶತಮಾನದಲ್ಲಿ ಒಬ್ಬ ವೀರರಾಣಿ ಪೋರ್ಚುಗೀಸ್ ಸಾಮ್ರಾಜ್ಯವನ್ನು ನಾಲ್ಕು ದಶಕಗಳ ಕಾಲ ಎದುರಿಸಿದಳು. ಅವಳೇ ರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಜನ ಅವಳನ್ನು ಅಭಯರಾಣಿ ಎಂದು ಕರೆದರು. " +
       "ಈಗ ಕಾಣುವವಳು ಉಳ್ಳಾಲದ ರಾಣಿ. ಚೌಟ ವಂಶ ಅಳಿಯಸಂತಾನ ಪದ್ಧತಿಯನ್ನು ಅನುಸರಿಸುತ್ತಿತ್ತು. ಮಾವ ತಿರುಮಲ ರಾಯ ಅಬ್ಬಕ್ಕನಿಗೆ ಖಡ್ಗ, ಬಿಲ್ಲು ಮತ್ತು ಯುದ್ಧತಂತ್ರ ಕಲಿಸಿ ಸಿಂಹಾಸನ ಕಟ್ಟಿದರು. ಆಕೆ ಸಾಮಾನ್ಯರಂತೆ ಉಡುಪು ಧರಿಸಿ, ರಾತ್ರಿ ತಡವಾಗಿ ನ್ಯಾಯ ನೀಡುತ್ತಿದ್ದಳು ಎಂದು ಜಾನಪದ ಹೇಳುತ್ತದೆ. " +
-      "ಮುಂದಿನ ಚಿತ್ರ ಅರಮನೆ. ಜೈನ, ಹಿಂದೂ ಮತ್ತು ಬ್ಯಾರಿ ಮುಸ್ಲಿಂ ಸಮುದಾಯಗಳೆಲ್ಲರೂ ಆಡಳಿತದಲ್ಲಿದ್ದರು. ನಂತರ ಕಾಣುವುದು ಮಸಾಲೆ ಬಂದರು. ಉಳ್ಳಾಲ ಮೆಣಸು ಮತ್ತು ವ್ಯಾಪಾರದ ಮುಖ್ಯ ಕೇಂದ್ರ. ಪೋರ್ಚುಗೀಸರು ತೆರಿಗೆ ಕೇಳಿದರು. ರಾಣಿ ನಿರಾಕರಿಸಿದಳು. " +
+      "ಮುಂದಿನ ಚಿತ್ರ ಅರಮನೆ. ಜೈನ, ಹಿಂದೂ ಮತ್ತು ಬ್ಯಾರಿ ಮುಸ್ಲಿಂ ಸಮುದಾಯಗಳೆಲ್ಲರೂ ಆಡಳಿತದಲ್ಲಿದ್ದರು. ಉಳ್ಳಾಲ ಮೆಣಸು ಮತ್ತು ವ್ಯಾಪಾರದ ಮುಖ್ಯ ಕೇಂದ್ರ. ಪೋರ್ಚುಗೀಸರು ತೆರಿಗೆ ಕೇಳಿದರು. ರಾಣಿ ನಿರಾಕರಿಸಿದಳು. " +
       "ಕಪ್ಪು ಮೋಡದಡಿ ಬರುವ ನೌಕೆಗಳು ಪೋರ್ಚುಗೀಸ್ ಹಡಗುಗಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಐವತ್ತೈದರಲ್ಲಿ ಅಡ್ಮಿರಲ್ ಡಾನ್ ಅಲ್ವಾರೊ ದಾ ಸಿಲ್ವೇರಾ ದಾಳಿ ಮಾಡಿದ. ಅಬ್ಬಕ್ಕ ಅವರನ್ನು ಹಿಮ್ಮೆಟ್ಟಿಸಿದಳು. " +
-      "ಈ ನೌಕಾಯುದ್ಧದಲ್ಲಿ ಮೊಗವೀರ ಮೀನುಗಾರರು ಮತ್ತು ಬ್ಯಾರಿ ನಾವಿಕರು ರಾಣಿಯ ಬಲ. ಅಗ್ನಿಬಾಣ ಬಳಸಿದ ಕೊನೆಯವರಲ್ಲಿ ಒಬ್ಬಳು ಎಂದು ಐತಿಹ್ಯ. ನೋಡಿ, ಸಣ್ಣ ದೋಣಿಗಳು ದೊಡ್ಡ ಹಡಗುಗಳನ್ನು ಎದುರಿಸುತ್ತಿವೆ. " +
+      "ಈ ನೌಕಾಯುದ್ಧದಲ್ಲಿ ಮೊಗವೀರ ಮೀನುಗಾರರು ಮತ್ತು ಬ್ಯಾರಿ ನಾವಿಕರು ರಾಣಿಯ ಬಲ. ಅಗ್ನಿಬಾಣ ಬಳಸಿದ ಕೊನೆಯವರಲ್ಲಿ ಒಬ್ಬಳು ಎಂದು ಐತಿಹ್ಯ. " +
       "ಮುಂದೆ ಮಹಿಳೆಯರು ಖಡ್ಗಾಭ್ಯಾಸ ಮಾಡುತ್ತಿರುವುದು. ರಾಣಿ ಹೊಲದ ಕುಡುಗೋಲು ಹಿಡಿದ ಕರಾವಳಿ ಮಹಿಳೆಯರನ್ನು ಸೇನೆ ಮಾಡಿದಳು. " +
       "ರಾತ್ರಿ ದೃಶ್ಯ. ಒಂದು ಸಾವಿರ ಐನೂರು ಅರವತ್ತೆಂಟರಲ್ಲಿ ಜನರಲ್ ಜೊವಾವೊ ಪೈಕ್ಸೊಟೊ ಉಳ್ಳಾಲವನ್ನು ಆಕ್ರಮಿಸಿ ಅರಮನೆ ಪ್ರವೇಶಿಸಿದ. ರಾಣಿ ಮಸೀದಿಯಲ್ಲಿ ಆಶ್ರಯ ಪಡೆದು ಅದೇ ರಾತ್ರಿ ಎರಡು ನೂರು ಸೈನಿಕರೊಂದಿಗೆ ಮರುದಾಳಿ ಮಾಡಿದಳು. ಪೈಕ್ಸೊಟೊ ಹತರಾದರು. ಎಪ್ಪತ್ತು ಪೋರ್ಚುಗೀಸ್ ಸೈನಿಕರು ಸೆರೆಯಾದರು. ಅಡ್ಮಿರಲ್ ಮಾಸ್ಕರೆನ್ಹಾಸ್ ಕೂಡ ಬಿದ್ದರು. ಮಂಗಳೂರು ಕೋಟೆಯಿಂದ ಪೋರ್ಚುಗೀಸರು ಹಿಂದೆ ಸರಿದರು. " +
-      "ಕೊನೆಯ ಚಿತ್ರ ಸ್ಮೃತಿ. ಕಾಲಿಕತ್ ಸಾಮೂತಿರಿ ಮತ್ತು ಬಿಜಾಪುರ ಸುಲ್ತಾನರೊಂದಿಗೆ ಮೈತ್ರಿ. ಗಂಡನ ದ್ರೋಹದ ನಂತರವೂ ಆಕೆ ಶರಣಾಗಲಿಲ್ಲ. ಸೆರೆಯಲ್ಲಿಯೂ ಯೋಧಳಾಗಿ ಹೋರಾಡಿ ಪ್ರಾಣ ಬಿಟ್ಟಳು. ಇಂದು ಯಕ್ಷಗಾನ, ದೈವಕೋಲ ಮತ್ತು ಉಳ್ಳಾಲದ ಕಡಲ ತೀರದಲ್ಲಿ ಅಬ್ಬಕ್ಕ ಜೀವಂತ. ಕಿತ್ತೂರು ಚೆನ್ನಮ್ಮ ಮತ್ತು ಒನಕೆ ಓಬವ್ವರ ಸಾಲಿನಲ್ಲಿ ಕರ್ನಾಟಕ ಈ ವೀರರಾಣಿಯನ್ನು ಸ್ಮರಿಸುತ್ತದೆ. " +
+      "ಕೊನೆಯ ಚಿತ್ರ ಸ್ಮೃತಿ. ಕಾಲಿಕತ್ ಸಾಮೂತಿರಿ ಮತ್ತು ಬಿಜಾಪುರ ಸುಲ್ತಾನರೊಂದಿಗೆ ಮೈತ್ರಿ. ಗಂಡನ ದ್ರೋಹದ ನಂತರವೂ ಆಕೆ ಶರಣಾಗಲಿಲ್ಲ. ಸೆರೆಯಲ್ಲಿಯೂ ಯೋಧಳಾಗಿ ಹೋರಾಡಿ ಪ್ರಾಣ ಬಿಟ್ಟಳು. ಇಂದು ಉಳ್ಳಾಲದ ವೃತ್ತ ಮತ್ತು ಅಂಚೆಚೀಟಿಯಲ್ಲಿ ಅಬ್ಬಕ್ಕ ಜೀವಂತ. ಕಿತ್ತೂರು ಚೆನ್ನಮ್ಮ ಮತ್ತು ಒನಕೆ ಓಬವ್ವರ ಸಾಲಿನಲ್ಲಿ ಕರ್ನಾಟಕ ಈ ವೀರರಾಣಿಯನ್ನು ಸ್ಮರಿಸುತ್ತದೆ. " +
       "ಇದು ನಮ್ಮ ಪೂರ್ಣಾವಧಿ ಕನ್ನಡ ವರದಿ. ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಅಭಯರಾಣಿ. ನಾವು ಮತ್ತೆ ಸಿಗೋಣ."
   };
 
   async function playAbbakkaKannada() {
     toast("ರಾಣಿ ಅಬ್ಬಕ್ಕ ಕನ್ನಡ ಪೂರ್ಣಾವಧಿ ವೀಡಿಯೊ ಹಾಕುತ್ತಿದ್ದೇವೆ…");
+    preloadVisemes("priya_nair");
     if (typeof state !== "undefined") {
       state.anchorModel = "priya_nair";
       state.currentLanguage = "kn-IN";
@@ -418,7 +505,10 @@
       state.volume = 0.75;
       state.userHasStarted = true;
       state._lockScript = true;
+      state._fileNarration = true;
     }
+    // Start Kannada audio in this click — Chrome has no kn-IN voice.
+    playFileNarration();
     document.querySelectorAll("[data-model]").forEach(function (p) {
       p.classList.toggle("active", p.dataset.model === "priya_nair");
     });
@@ -454,8 +544,7 @@
     vs.playing = true;
     syncPlayerUI();
     playBg(ABBAKKA.video);
-    try { window.speechSynthesis && window.speechSynthesis.resume(); } catch (eR) {}
-    // Speak in this click so Chrome does not mute the voice.
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (eR) {}
     if (typeof startNewsBroadcast === "function") {
       try { startNewsBroadcast(); } catch (e3) {}
     }
@@ -740,7 +829,8 @@
     ctx.fillRect(88, 14, Math.min(w - 110, 720), 22);
     ctx.fillStyle = "#f4fbff";
     ctx.font = "bold 16px sans-serif";
-    const title = String(s.title || "World news");
+    let title = String(s.title || "World news");
+    if (/[\u0C80-\u0CFF]/.test(title)) title = "Veerarani Abbakka Chouta";
     ctx.fillText(title, 96, 30);
 
     const pip = Math.round(Math.min(w * 0.26, h * 0.44, 300));
@@ -903,11 +993,20 @@
     }
     syncPlayerUI();
     if (vs.playing) {
-      if (typeof startNewsBroadcast === "function") {
+      const narr = $("vsNarration");
+      if (typeof state !== "undefined" && state._fileNarration && narr) {
+        const np = narr.play();
+        if (np && np.catch) np.catch(function () {});
+        state.isSpeaking = true;
+        state.isPaused = false;
+      } else if (typeof startNewsBroadcast === "function") {
         try { startNewsBroadcast(); } catch (e) {}
       }
-    } else if (typeof pauseNewsBroadcast === "function") {
-      try { pauseNewsBroadcast(); } catch (e) {}
+    } else {
+      pauseFileNarration();
+      if (typeof pauseNewsBroadcast === "function") {
+        try { pauseNewsBroadcast(); } catch (e) {}
+      }
     }
   }
 
