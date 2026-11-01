@@ -1302,6 +1302,23 @@ async function fetchRssFeed() {
 }
 
 // --- Speech Synthesis & Teleprompter Sync ---
+function splitSpeakChunks(text) {
+    const words = String(text || "").split(/\s+/).filter(Boolean);
+    const chunks = [];
+    let buf = [];
+    for (let i = 0; i < words.length; i++) {
+        buf.push(words[i]);
+        const joined = buf.join(" ");
+        const punct = /[।.!?]$/.test(words[i]);
+        if (joined.length >= 130 || buf.length >= 16 || punct) {
+            chunks.push(joined);
+            buf = [];
+        }
+    }
+    if (buf.length) chunks.push(buf.join(" "));
+    return chunks.length ? chunks : [String(text || " ").trim() || " "];
+}
+
 function startNewsBroadcast() {
     if (!state.scriptText) {
         const cat = document.getElementById("newsCategorySelect")?.value || "india_tech";
@@ -1337,11 +1354,8 @@ function startNewsBroadcast() {
         return;
     }
 
-    currentUtterance = new SpeechSynthesisUtterance(speakText);
     const profileNow = getAnchorProfile?.(state.anchorModel);
     const softPriya = !!(profileNow && profileNow.id === "priya_nair") || String(state.anchorModel || "") === "priya_nair";
-    currentUtterance.rate = softPriya ? Math.min(Number(state.speechRate) || 0.8, 0.82) : (state.speechRate || 1);
-    currentUtterance.volume = softPriya ? Math.min(Number(state.volume) || 0.78, 0.78) : (state.volume || 1);
     const gender = (typeof syncVoiceToPresenter === "function"
         ? syncVoiceToPresenter()
         : (profileNow?.gender || document.getElementById("voiceGenderSelect")?.value || "male"));
@@ -1349,77 +1363,99 @@ function startNewsBroadcast() {
     if (typeof pickVoiceForLanguage === "function") {
         state.currentVoice = pickVoiceForLanguage(speakLang, gender) || state.currentVoice;
     }
-    if (state.currentVoice) {
-        currentUtterance.voice = state.currentVoice;
-        // Forcing kn-IN onto an English/Hindi voice yields silence. Use the voice's own lang.
-        currentUtterance.lang = state.currentVoice.lang || speakLang;
-    } else {
-        currentUtterance.lang = speakLang;
-    }
-    try { speechSynth.resume(); } catch (eRes) {}
-    currentUtterance.pitch = softPriya ? 1.05 : (gender === "female" ? 1.12 : 0.86);
+    const rate = softPriya ? Math.min(Number(state.speechRate) || 0.8, 0.82) : (state.speechRate || 1);
+    const vol = softPriya ? Math.min(Number(state.volume) || 0.78, 0.78) : (state.volume || 1);
+    const pitch = softPriya ? 1.05 : (gender === "female" ? 1.12 : 0.86);
+    const chunks = splitSpeakChunks(speakText);
+    let chunkIndex = 0;
+    let wordOffset = 0;
+    state._speakGen = (state._speakGen || 0) + 1;
+    const gen = state._speakGen;
     state._speakT0 = performance.now();
     state._wordT0 = performance.now();
     state._lastBoundary = 0;
     state.currentWordIndex = 0;
     state.letterPhase = 0;
+    state.isSpeaking = true;
+    state.isPaused = false;
 
-    currentUtterance.onboundary = (event) => {
-        if (event.name === "word" || event.name === "sentence" || !event.name) {
-            const charIdx = event.charIndex || 0;
-            const subText = speakText.substring(0, charIdx);
-            state.currentWordIndex = Math.max(0, subText.split(/\s+/).filter(Boolean).length - (subText.endsWith(" ") ? 0 : 1));
-            if (state.currentWordIndex < 0) state.currentWordIndex = 0;
-            state.letterPhase = 0;
-            state._visemeWord = state.currentWordIndex;
-            state._boundCharIndex = charIdx;
-            state._lastBoundary = performance.now();
-            state._wordT0 = performance.now();
-            renderTeleprompterText();
-            const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
-            if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            const currentSnippet = state.scriptWords.slice(Math.max(0, state.currentWordIndex - 2), state.currentWordIndex + 6).join(" ");
-            const liveSub = document.getElementById("subtitleTicker");
-            if (liveSub) liveSub.textContent = currentSnippet || state.scriptText;
-        }
-    };
-
-    currentUtterance.onstart = () => {
-        state.isSpeaking = true;
-        state.isPaused = false;
-        state._speakT0 = performance.now();
+    function applyWordIndex(absWords) {
+        state.currentWordIndex = Math.max(0, Math.min((state.scriptWords || []).length - 1, absWords));
+        state.letterPhase = 0;
+        state._visemeWord = state.currentWordIndex;
+        state._lastBoundary = performance.now();
         state._wordT0 = performance.now();
-        document.querySelector(".teleprompter-card")?.classList.add("speaking-active");
-        updateBroadcastButtons();
-    };
-
-    currentUtterance.onend = () => {
-        state.isSpeaking = false;
-        state.isPaused = false;
-        state.visemeMouthOpen = 0;
-        document.querySelector(".teleprompter-card")?.classList.remove("speaking-active");
-        updateBroadcastButtons();
-    };
-
-    currentUtterance.onerror = (e) => {
-        if (e && e.error === "interrupted") return;
-        console.warn("SpeechSynthesis error:", e);
-        state.isSpeaking = true;
-        state.isPaused = false;
-        updateBroadcastButtons();
-    };
-
-    try {
-        speechSynth.cancel();
-        speechSynth.speak(currentUtterance);
-        state.isSpeaking = true;
-        state.isPaused = false;
-        updateBroadcastButtons();
-    } catch (err) {
-        state.isSpeaking = true;
-        studioToast("Voice blocked — presenter is still animating");
-        updateBroadcastButtons();
+        renderTeleprompterText();
+        const activeElem = document.getElementById("tp-word-" + state.currentWordIndex);
+        if (activeElem) activeElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        const currentSnippet = state.scriptWords.slice(Math.max(0, state.currentWordIndex - 2), state.currentWordIndex + 6).join(" ");
+        const liveSub = document.getElementById("subtitleTicker");
+        if (liveSub) liveSub.textContent = currentSnippet || state.scriptText;
     }
+
+    function speakChunk() {
+        if (gen !== state._speakGen) return;
+        if (chunkIndex >= chunks.length) {
+            state.isSpeaking = false;
+            state.isPaused = false;
+            state.visemeMouthOpen = 0;
+            document.querySelector(".teleprompter-card")?.classList.remove("speaking-active");
+            updateBroadcastButtons();
+            return;
+        }
+        const chunk = chunks[chunkIndex];
+        const localOffset = wordOffset;
+        currentUtterance = new SpeechSynthesisUtterance(chunk);
+        currentUtterance.rate = rate;
+        currentUtterance.volume = vol;
+        currentUtterance.pitch = pitch;
+        if (state.currentVoice) {
+            currentUtterance.voice = state.currentVoice;
+            currentUtterance.lang = state.currentVoice.lang || speakLang;
+        } else {
+            currentUtterance.lang = speakLang;
+        }
+        currentUtterance.onstart = () => {
+            if (gen !== state._speakGen) return;
+            state.isSpeaking = true;
+            state.isPaused = false;
+            document.querySelector(".teleprompter-card")?.classList.add("speaking-active");
+            updateBroadcastButtons();
+        };
+        currentUtterance.onboundary = (event) => {
+            if (gen !== state._speakGen) return;
+            if (event.name === "word" || event.name === "sentence" || !event.name) {
+                const local = String(chunk).substring(0, event.charIndex || 0).split(/\s+/).filter(Boolean).length;
+                applyWordIndex(localOffset + Math.max(0, local - (String(chunk).substring(0, event.charIndex || 0).endsWith(" ") ? 0 : 1)));
+            }
+        };
+        currentUtterance.onend = () => {
+            if (gen !== state._speakGen) return;
+            wordOffset += chunk.split(/\s+/).filter(Boolean).length;
+            chunkIndex += 1;
+            applyWordIndex(wordOffset);
+            speakChunk();
+        };
+        currentUtterance.onerror = (e) => {
+            if (e && e.error === "interrupted") return;
+            console.warn("SpeechSynthesis error:", e);
+            if (gen !== state._speakGen) return;
+            wordOffset += chunk.split(/\s+/).filter(Boolean).length;
+            chunkIndex += 1;
+            speakChunk();
+        };
+        try {
+            speechSynth.resume();
+            speechSynth.speak(currentUtterance);
+        } catch (err) {
+            studioToast("Voice blocked — click Play under the video");
+        }
+    }
+
+    try { speechSynth.cancel(); } catch (eC) {}
+    try { speechSynth.resume(); } catch (eR) {}
+    updateBroadcastButtons();
+    speakChunk();
 }
 
 function pauseNewsBroadcast() {

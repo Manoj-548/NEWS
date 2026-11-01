@@ -426,7 +426,7 @@
     });
     if (typeof state !== "undefined") {
       state.scriptText = ABBAKKA.script;
-      state.volume = 1;
+      state.volume = 0.75;
     }
     vs.playing = true;
     syncPlayerUI();
