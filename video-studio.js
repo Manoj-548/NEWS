@@ -367,15 +367,14 @@
 
   async function playAbbakkaKannada() {
     toast("ರಾಣಿ ಅಬ್ಬಕ್ಕ ಕನ್ನಡ ಪೂರ್ಣಾವಧಿ ವೀಡಿಯೊ ಹಾಕುತ್ತಿದ್ದೇವೆ…");
-    if (typeof switchPresenterModel === "function") {
-      try { switchPresenterModel("priya_nair"); } catch (e) {}
-    }
+    openStudio();
     renderPills();
     if (typeof state !== "undefined") {
       state.currentLanguage = "kn-IN";
       state._ttsLang = "kn-IN";
       state.speechRate = 0.92;
       state.userHasStarted = true;
+      state._lockScript = true;
     }
     const langSelect = $("languageSelect");
     if (langSelect) langSelect.value = "kn-IN";
@@ -940,9 +939,15 @@
     });
     $("vsCloseBtn")?.addEventListener("click", closeStudio);
     $("vsGenerateBtn")?.addEventListener("click", generateNewsVideo);
-    $("vsAbbakkaBtn")?.addEventListener("click", function (e) {
+    ["vsAbbakkaBtn", "abbakkaTopBtn", "abbakkaRemoteBtn", "abbakkaTabBtn"].forEach(function (id) {
+      $(id)?.addEventListener("click", function (e) {
+        e.preventDefault();
+        playAbbakkaKannada();
+      });
+    });
+    $("abbakkaStudioJumpBtn")?.addEventListener("click", function (e) {
       e.preventDefault();
-      playAbbakkaKannada();
+      openStudio();
     });
     $("vsUploadBtn")?.addEventListener("click", function () { $("vsFileInput")?.click(); });
     $("vsFileInput")?.addEventListener("change", function (e) {

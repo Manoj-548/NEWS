@@ -1050,6 +1050,10 @@ function renderTeleprompterText() {
 }
 
 function translateStoryScript(story, targetLang) {
+    if (!story) return;
+    if (state._lockScript) return;
+    if (story.language && String(story.language).split("-")[0] === String(targetLang || "").split("-")[0]) return;
+    if (/[\u0C80-\u0CFF]/.test(story.script || "") && String(targetLang || "").startsWith("kn")) return;
     const langCode = targetLang.split('-')[0];
     let translated = story.script;
     
