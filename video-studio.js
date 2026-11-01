@@ -164,44 +164,95 @@
     vs.selected = vs.clips.length - 1;
   }
 
-  function addRemoteClip(src, name) {
+  const FALLBACK_VIDEOS = [
+    "/assets/fallback_broll.mp4",
+    "/assets/fallback_broll.webm",
+    "https://images-assets.nasa.gov/video/GSFC_20161116_Climate_m12426_Change/GSFC_20161116_Climate_m12426_Change~mobile.mp4"
+  ];
+
+  function bgEl() { return $("vsBgVideo"); }
+
+  function playBg(src) {
+    const el = bgEl();
+    if (!el || !src) return;
+    el.crossOrigin = "anonymous";
+    el.muted = true;
+    el.defaultMuted = true;
+    el.loop = true;
+    el.playsInline = true;
+    el.autoplay = true;
+    if (el.getAttribute("data-src") !== src) {
+      el.setAttribute("data-src", src);
+      el.src = src;
+      try { el.load(); } catch (e) {}
+    }
+    const p = el.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+
+  function commitFileClip(vid, name) {
+    const dur = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 12;
+    vs.clips = vs.clips.filter(function (c) { return !c.auto; });
+    vs.clips.unshift({
+      id: uid(),
+      type: "file",
+      auto: true,
+      name: (name || "World news").slice(0, 42),
+      duration: dur,
+      inPoint: 0,
+      outPoint: dur,
+      crop: { x: 0, y: 0, w: 1, h: 1 },
+      video: vid
+    });
+    vs.selected = 0;
+    vs.playhead = 0;
+    vs._flowId = null;
+    renderBin();
+    renderTimeline();
+  }
+
+  function addRemoteClip(src, name, timeoutMs) {
+    playBg(src);
     return new Promise(function (resolve) {
-      const vid = document.createElement("video");
+      const vid = bgEl() || document.createElement("video");
       vid.crossOrigin = "anonymous";
       vid.muted = true;
       vid.playsInline = true;
       vid.preload = "auto";
-      vid.src = src;
       let settled = false;
       const done = function (ok) {
         if (settled) return;
         settled = true;
+        vid.onloadedmetadata = null;
+        vid.oncanplay = null;
+        vid.onerror = null;
         if (!ok) { resolve(false); return; }
-        const dur = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 12;
-        vs.clips = vs.clips.filter(function (c) { return c.type !== "ai"; });
-        vs.clips.push({
-          id: uid(),
-          type: "file",
-          name: (name || "World news").slice(0, 42),
-          duration: dur,
-          inPoint: 0,
-          outPoint: dur,
-          crop: { x: 0, y: 0, w: 1, h: 1 },
-          video: vid
-        });
-        vs.selected = vs.clips.length - 1;
-        vs.playhead = 0;
-        vs._flowId = null;
+        commitFileClip(vid, name);
         try { vid.play().catch(function () {}); } catch (e) {}
-        renderBin();
-        renderTimeline();
         resolve(true);
       };
+      if (vid.readyState >= 2 && vid.videoWidth && vid.getAttribute("data-src") === src) {
+        done(true);
+        return;
+      }
       vid.onloadedmetadata = function () { done(true); };
       vid.oncanplay = function () { if (vid.videoWidth) done(true); };
       vid.onerror = function () { done(false); };
-      setTimeout(function () { if (!settled) done(!!(vid.videoWidth || (isFinite(vid.duration) && vid.duration > 0))); }, 12000);
+      setTimeout(function () {
+        if (!settled) done(!!(vid.videoWidth || (isFinite(vid.duration) && vid.duration > 0)));
+      }, timeoutMs || 5000);
     });
+  }
+
+  async function placeFirstVideo(urls, name) {
+    for (let i = 0; i < urls.length; i++) {
+      const ok = await addRemoteClip(urls[i], name, 4000);
+      if (ok) return true;
+    }
+    playBg(urls[0]);
+    const vid = bgEl();
+    if (vid) commitFileClip(vid, name);
+    return !!vid;
   }
 
   function attachStory(story) {
@@ -257,7 +308,9 @@
       || "en-IN";
     const loadingLine = /^hi/i.test(lang) ? "विश्व समाचार लोड हो रहा है।" : "Loading world news.";
     kickVoice(loadingLine);
-    toast("Pulling a world news video and attaching the story…");
+    toast("Putting video on the background…");
+    playBg(FALLBACK_VIDEOS[0]);
+    if (bgEl()) commitFileClip(bgEl(), "World b-roll");
     const tick = setInterval(function () {
       vs.generating = Math.min(0.92, (vs.generating || 0.12) + 0.05);
     }, 450);
@@ -267,16 +320,18 @@
       clearInterval(tick);
       vs.generating = 0;
       attachStory(data.story);
+      const clipName = (data.video && data.video.name) || (data.story && data.story.title) || "World news";
       let placed = false;
       if (data.video && data.video.src) {
-        placed = await addRemoteClip(data.video.src, data.video.name || (data.story && data.story.title));
+        placed = await addRemoteClip(data.video.src, clipName, 8000);
       }
+      if (!placed) placed = await placeFirstVideo(FALLBACK_VIDEOS, clipName);
       vs.playing = true;
       const pb = $("vsPlayBtn");
       if (pb) pb.textContent = "Pause";
       toast(placed
-        ? "Video on the background — presenter is reading the story"
-        : ((data.story && data.story.title) || "News attached") + " — video still opening");
+        ? "Video is on the background — presenter is reading the story"
+        : "News attached — check Video Studio background");
       if (typeof startNewsBroadcast === "function") {
         try { startNewsBroadcast(); } catch (e) {}
       }
@@ -288,7 +343,8 @@
     } catch (err) {
       clearInterval(tick);
       vs.generating = 0;
-      toast("Could not fetch world news video");
+      await placeFirstVideo(FALLBACK_VIDEOS, "World b-roll");
+      toast("Could not fetch world news — background video is still playing");
     }
   }
 
@@ -509,7 +565,7 @@
   }
 
   function drawFileClip(ctx, w, h, clip) {
-    const v = clip.video;
+    const v = clip.video || bgEl();
     if (!v) return false;
     v.muted = true;
     v.playsInline = true;
@@ -525,14 +581,18 @@
         try { v.currentTime = clip.inPoint || 0; } catch (e2) {}
       }
     } catch (e) {}
-    if (!v.videoWidth) return false;
+    if (!v.videoWidth || v.readyState < 2) return false;
     const c = clip.crop || { x: 0, y: 0, w: 1, h: 1 };
     const sx = c.x * v.videoWidth;
     const sy = c.y * v.videoHeight;
     const sw = Math.max(2, c.w * v.videoWidth);
     const sh = Math.max(2, c.h * v.videoHeight);
-    ctx.drawImage(v, sx, sy, sw, sh, 0, 0, w, h);
-    return true;
+    try {
+      ctx.drawImage(v, sx, sy, sw, sh, 0, 0, w, h);
+      return true;
+    } catch (e3) {
+      return false;
+    }
   }
 
   function squareSource(src) {
@@ -618,47 +678,35 @@
   }
 
   function drawGenerating(ctx, w, h) {
-    ctx.fillStyle = "rgba(2,8,16,0.72)";
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "rgba(2,8,16,0.55)";
+    ctx.fillRect(0, 44, w, 54);
     ctx.fillStyle = "#00d2ff";
-    ctx.font = "bold 28px sans-serif";
-    ctx.fillText("Pulling news video and attaching the story…", 48, h / 2 - 20);
-    const pw = w * 0.5;
-    const px = (w - pw) / 2;
-    ctx.strokeStyle = "#00d2ff";
-    ctx.strokeRect(px, h / 2, pw, 16);
-    ctx.fillStyle = "#00d2ff";
-    ctx.fillRect(px, h / 2, pw * vs.generating, 16);
-    ctx.fillStyle = "#fff";
-    ctx.font = "14px sans-serif";
-    ctx.fillText(Math.round(vs.generating * 100) + "%", px + pw + 12, h / 2 + 13);
+    ctx.font = "bold 18px sans-serif";
+    ctx.fillText("Pulling news video… " + Math.round(vs.generating * 100) + "%", 24, 78);
   }
 
   function drawFrame(now) {
     const canvas = $("vsCanvas");
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     const w = canvas.width;
     const h = canvas.height;
     const t = now / 1000;
+    ctx.clearRect(0, 0, w, h);
 
     const hit = clipAt(vs.playhead);
+    let painted = false;
     if (hit && hit.clip.type === "file") {
-      if (!drawFileClip(ctx, w, h, hit.clip)) {
-        ctx.fillStyle = "#05070c";
-        ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "#8c9ba5";
-        ctx.font = "16px sans-serif";
-        ctx.fillText("Upload a video for the background — presenter stays in the square.", 24, 40);
-      }
+      painted = drawFileClip(ctx, w, h, hit.clip);
     } else if (hit && hit.clip.type === "ai") {
       drawAiNews(ctx, w, h, t, hit.clip);
-    } else {
-      ctx.fillStyle = "#05070c";
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = "#8c9ba5";
-      ctx.font = "16px sans-serif";
-      ctx.fillText("Upload or generate a video for the background.", 24, 40);
+      painted = true;
+    }
+    if (!painted) {
+      const bg = bgEl();
+      if (bg && bg.videoWidth && bg.readyState >= 2) {
+        try { ctx.drawImage(bg, 0, 0, w, h); painted = true; } catch (e) {}
+      }
     }
 
     drawNewsOverlay(ctx, w, h, t);

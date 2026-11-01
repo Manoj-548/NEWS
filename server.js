@@ -207,8 +207,16 @@ async function downloadVideo(fileUrl, destPath) {
     return buf.length;
 }
 
+function bundledFallback() {
+    const mp4 = path.join(PUBLIC_DIR, 'assets', 'fallback_broll.mp4');
+    const webm = path.join(PUBLIC_DIR, 'assets', 'fallback_broll.webm');
+    if (fs.existsSync(mp4)) return { name: 'World b-roll', src: '/assets/fallback_broll.mp4' };
+    if (fs.existsSync(webm)) return { name: 'World b-roll', src: '/assets/fallback_broll.webm' };
+    return null;
+}
+
 async function placeVideo(found) {
-    if (!found || !found.url) return null;
+    if (!found || !found.url) return bundledFallback();
     const ext = /mp4/i.test(found.mime || found.url) ? '.mp4' : '.webm';
     const fname = 'broll_' + Date.now() + ext;
     const dest = path.join(BROLL_DIR, fname);
@@ -217,7 +225,7 @@ async function placeVideo(found) {
         return { name: '', src: '/assets/broll/' + fname };
     } catch (e) {
         console.warn('dl', e.message);
-        return { name: '', src: found.url, remote: true };
+        return bundledFallback() || { name: '', src: found.url, remote: true };
     }
 }
 
