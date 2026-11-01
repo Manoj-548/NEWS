@@ -308,7 +308,7 @@
   function playBg(src) {
     const el = bgEl();
     if (!el || !src) return;
-    el.crossOrigin = "anonymous";
+    if (!/^https?:/i.test(src)) el.removeAttribute("crossorigin");
     el.muted = true;
     el.defaultMuted = true;
     el.loop = true;
@@ -319,12 +319,8 @@
       el.src = src;
       try { el.load(); } catch (e) {}
     }
-    if (vs.playing) {
-      const p = el.play();
-      if (p && p.catch) p.catch(function () {});
-    } else {
-      try { el.pause(); } catch (e2) {}
-    }
+    const p = el.play();
+    if (p && p.catch) p.catch(function () {});
   }
 
   function commitFileClip(vid, name) {
@@ -491,7 +487,7 @@
     title: "ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ",
     category: "ಕನ್ನಡ ವಿಶೇಷ",
     language: "kn-IN",
-    video: "/assets/abbakka/abbakka_full.mp4",
+    video: "/assets/abbakka/abbakka_full.mp4?v=motion22",
     audio: "/assets/abbakka/abbakka_kn.mp3",
     script:
       "ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ, ಇದು ವಿಶೇಷ ಇತಿಹಾಸ ವಾರ್ತಾ ಪ್ರಸಾರ. ತೆರೆಯ ಮೇಲೆ ನೀವು ನೋಡುತ್ತಿರುವುದು ದಕ್ಷಿಣ ಕನ್ನಡದ ಉಳ್ಳಾಲ. ಈ ನೆಲದಿಂದ ಹದಿನಾರನೇ ಶತಮಾನದಲ್ಲಿ ಒಬ್ಬ ವೀರರಾಣಿ ಪೋರ್ಚುಗೀಸ್ ಸಾಮ್ರಾಜ್ಯವನ್ನು ನಾಲ್ಕು ದಶಕಗಳ ಕಾಲ ಎದುರಿಸಿದಳು. ಅವಳೇ ರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಜನ ಅವಳನ್ನು ಅಭಯರಾಣಿ ಎಂದು ಕರೆದರು. " +
@@ -794,7 +790,7 @@
     v.muted = true;
     v.playsInline = true;
     const one = vs.clips.filter(function (c) { return c.type === "file"; }).length <= 1;
-    v.loop = one;
+    v.loop = true;
     if (vs._flowId !== clip.id) {
       vs._flowId = clip.id;
       try { v.currentTime = clip.inPoint || 0; } catch (e) {}
