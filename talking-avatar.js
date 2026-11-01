@@ -16,7 +16,7 @@
     nova_kade:       { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
     lyra_nova:       { M: 1, T: 1, A: 1, E: 1, O: 1 },
     arjun_mehra:     { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
-    priya_nair:      { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
+    priya_nair:      { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1, U: 1 },
     rajesh_sharma:   { M: 1, T: 1, A: 1, E: 1, O: 1 },
     meera_kapoor:    { M: 1, T: 1, A: 1, E: 1, O: 1, F: 1 },
     alexander_hayes: { M: 1, T: 1, A: 1, E: 1, O: 1 },
@@ -69,7 +69,8 @@
       A: loadImg("assets/viseme_open_" + id + ".jpg"),
       E: loadImg("assets/viseme_E_" + id + ".jpg"),
       O: loadImg("assets/viseme_O_" + id + ".jpg"),
-      F: loadImg("assets/viseme_F_" + id + ".jpg")
+      F: loadImg("assets/viseme_F_" + id + ".jpg"),
+      U: loadImg("assets/viseme_U_" + id + ".jpg")
     };
   });
 
@@ -88,7 +89,7 @@
     if (LATIN_LETTER[t]) return LATIN_LETTER[t];
     if (["mb", "mp"].indexOf(t) >= 0 || /[मपबभ]/.test(raw) || /[ಮಪಬ]/.test(raw) || /[மப]/.test(raw) || /[మపబ]/.test(raw))
       return { open: 0, width: 0.8, shape: "closed" };
-    if (t === "ph" || /[फव]/.test(raw))
+    if (t === "ph" || /[फव]/.test(raw) || /[ಫವ]/.test(raw) || /[ஃவ]/.test(raw) || /[ఫవ]/.test(raw))
       return { open: 0.26, width: 1.05, shape: "teeth" };
     if (["th", "sh", "ch"].indexOf(t) >= 0)
       return { open: 0.3, width: 1.16, shape: "wide" };
@@ -186,11 +187,12 @@
       if (tok === "ou" || tok === "ow") return [{ char: tok, viseme: "talk", open: 0.32 }, { char: tok, viseme: "round", open: 0.34 }];
       return [{ char: it.char, viseme: s, open: s === "closed" ? 0 : 0.34 }];
     }
+    const keepAll = /[\u0900-\u0D7F]/.test(String(word || ""));
     for (let i = 0; i < raw.length; i++) {
       const bits = mild(raw[i]);
       for (let b = 0; b < bits.length; b++) {
         const it = bits[b];
-        if (out.length && out[out.length - 1].viseme === it.viseme) continue;
+        if (!keepAll && out.length && out[out.length - 1].viseme === it.viseme) continue;
         out.push(it);
       }
     }
@@ -200,7 +202,7 @@
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-3.1 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-3.8 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.T !== "number") state.faceW = { T: 0, A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -223,27 +225,48 @@
     const words = state.scriptWords || [];
     const rate = state.speechRate || 1;
     const now = performance.now();
+    const lang = String(state._ttsLang || state.currentLanguage || "").toLowerCase();
+    const kn = /^kn/.test(lang);
+    const indic = /^(hi|ta|te|kn|ml|bn|mr|gu|pa|ur)/.test(lang);
+    const weights = words.map(function (w) { return Math.max(2, lettersOf(w).length); });
+    let sumW = 0;
+    for (let i = 0; i < weights.length; i++) sumW += weights[i];
+    const wps = (kn ? 1.05 : indic ? 1.22 : 1.65) * Math.max(0.7, rate);
+    const totalEst = Math.max(1, words.length / Math.max(0.4, wps));
+    const elapsed = Math.max(0, (now - (state._speakT0 || now)) / 1000);
     const boundAge = state._lastBoundary ? now - state._lastBoundary : 1e9;
+    let idx = 0;
+    let localU = 0;
 
-    if (boundAge > 800 && words.length) {
-      const elapsed = Math.max(0, (now - (state._speakT0 || now)) / 1000);
-      const lang = String(state._ttsLang || state.currentLanguage || "").toLowerCase();
-      const indic = /^(hi|ta|te|kn|ml|bn|mr|gu|pa|ur)/.test(lang);
-      const wps = (indic ? 1.35 : 1.85) * rate;
-      const est = Math.min(words.length - 1, Math.max(0, Math.floor(elapsed * wps)));
-      if (est !== state.currentWordIndex) {
-        state.currentWordIndex = est;
+    if (boundAge < 700 && words.length) {
+      idx = Math.max(0, Math.min(words.length - 1, state.currentWordIndex || 0));
+      const seqTmp = visemeRun(words[idx] || "");
+      const hold = kn ? 0.11 : 0.085;
+      const dur = Math.min(1.25, Math.max(0.28, 0.14 + seqTmp.length * hold)) / Math.max(0.7, rate);
+      localU = Math.min(0.999, Math.max(0, (now - (state._wordT0 || now)) / 1000) / dur);
+    } else if (words.length) {
+      const t = Math.min(totalEst - 0.0001, elapsed);
+      let acc = 0;
+      idx = words.length - 1;
+      localU = 0.999;
+      for (let i = 0; i < weights.length; i++) {
+        const slice = (weights[i] / Math.max(1, sumW)) * totalEst;
+        if (t < acc + slice) {
+          idx = i;
+          localU = (t - acc) / Math.max(0.001, slice);
+          break;
+        }
+        acc += slice;
+      }
+      if (idx !== state.currentWordIndex) {
+        state.currentWordIndex = idx;
         state._wordT0 = now;
       }
     }
 
-    const idx = Math.max(0, Math.min(Math.max(0, words.length - 1), state.currentWordIndex || 0));
     const word = words[idx] || "";
     const seq = visemeRun(word);
-    const t0 = state._wordT0 || state._lastBoundary || state._speakT0 || now;
-    const dur = Math.min(0.9, Math.max(0.22, 0.1 + seq.length * 0.075)) / Math.max(0.7, rate);
-    const u = Math.min(0.999, Math.max(0, (now - t0) / 1000) / dur);
-    const i = Math.min(seq.length - 1, Math.floor(u * seq.length));
+    const i = Math.min(seq.length - 1, Math.floor(localU * seq.length));
     const item = seq[i] || { viseme: "talk", open: 0.32, char: word };
     state.currentLetter = item.char;
     state.visemeShape = item.viseme;
@@ -312,8 +335,8 @@
     if (shape === "closed") return take("M") || take("T");
     if (shape === "teeth") return take("F") || take("T");
     if (shape === "wide") return take("E") || take("T");
-    if (shape === "round") return take("O") || take("T");
-    return take("T") || take("E");
+    if (shape === "round") return take("O") || take("U") || take("T");
+    return take("T") || take("E") || take("A");
   }
 
   function drawPhotorealReader(profile, w, h) {

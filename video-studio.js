@@ -92,7 +92,7 @@
   function renderPills() {
     const box = $("vsPresenterPills");
     if (!box) return;
-    const cur = (typeof state !== "undefined" && state.anchorModel) || "nova_kade";
+    const cur = (typeof state !== "undefined" && state.anchorModel) || "priya_nair";
     box.innerHTML = "";
     PEOPLE.forEach(function (p) {
       const b = document.createElement("button");
@@ -110,20 +110,29 @@
 
   function openStudio() {
     const screen = $("videoStudioScreen");
-    if (!screen) return;
+    if (!screen) {
+      console.error("videoStudioScreen missing");
+      return;
+    }
     setModeTabs("viewModeStudioBtn");
     $("canvasWrapper")?.classList.add("hidden");
     $("aiChatHubViewport")?.classList.add("hidden");
     document.body.classList.add("vs-open");
+    document.body.classList.remove("remote-open");
     screen.classList.remove("hidden");
+    screen.removeAttribute("hidden");
     screen.setAttribute("aria-hidden", "false");
+    screen.style.setProperty("display", "grid", "important");
+    screen.style.setProperty("visibility", "visible", "important");
+    screen.style.setProperty("opacity", "1", "important");
+    screen.style.setProperty("pointer-events", "auto", "important");
     vs.open = true;
     vs.lastTs = 0;
     renderPills();
     renderBin();
     renderTimeline();
     fitCanvas();
-    toast("Video Studio — World news + video pulls a clip and the presenter reads it");
+    toast("Video Studio — editor open");
     if (!vs.raf) loop(0);
   }
   function hideStudio() {
@@ -136,6 +145,10 @@
     if (screen) {
       screen.classList.add("hidden");
       screen.setAttribute("aria-hidden", "true");
+      screen.style.removeProperty("display");
+      screen.style.removeProperty("visibility");
+      screen.style.removeProperty("opacity");
+      screen.style.removeProperty("pointer-events");
     }
   }
   function closeStudio() {
@@ -371,15 +384,26 @@
 
   async function playAbbakkaKannada() {
     toast("ರಾಣಿ ಅಬ್ಬಕ್ಕ ಕನ್ನಡ ಪೂರ್ಣಾವಧಿ ವೀಡಿಯೊ ಹಾಕುತ್ತಿದ್ದೇವೆ…");
-    openStudio();
-    renderPills();
     if (typeof state !== "undefined") {
+      state.anchorModel = "priya_nair";
       state.currentLanguage = "kn-IN";
       state._ttsLang = "kn-IN";
-      state.speechRate = 0.92;
+      state.speechRate = 0.88;
       state.userHasStarted = true;
       state._lockScript = true;
     }
+    document.querySelectorAll("[data-model]").forEach(function (p) {
+      p.classList.toggle("active", p.dataset.model === "priya_nair");
+    });
+    const modelSelect = $("anchorModelSelect");
+    if (modelSelect) modelSelect.value = "priya_nair";
+    const genderSelect = $("voiceGenderSelect");
+    if (genderSelect) genderSelect.value = "female";
+    if (typeof syncVoiceToPresenter === "function") {
+      try { syncVoiceToPresenter(); } catch (e0) {}
+    }
+    openStudio();
+    renderPills();
     const langSelect = $("languageSelect");
     if (langSelect) langSelect.value = "kn-IN";
     const lab = $("currentLangLabel");
@@ -401,7 +425,7 @@
     const ok = await addRemoteClip(ABBAKKA.video, ABBAKKA.title, 8000);
     vs.playing = true;
     syncPlayerUI();
-    toast(ok)
+    toast(ok
       ? "ಅಬ್ಬಕ್ಕ ವೀಡಿಯೊ ಹಿನ್ನೆಲೆಯಲ್ಲಿ. ಪ್ರೆಸೆಂಟರ್ ಕನ್ನಡದಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆ."
       : "ಕನ್ನಡ ಸುದ್ದಿ ಶುರು. ವೀಡಿಯೊ ತೆರೆಯುತ್ತಿದೆ.");
     if (typeof startNewsBroadcast === "function") {

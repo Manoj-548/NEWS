@@ -26,7 +26,7 @@ const state = {
     isPaused: false,
     
     // Visual & Canvas Model
-    anchorModel: "nova_kade", // human-looking male news bot by default
+    anchorModel: "priya_nair",
     studioBg: "bg_modern",
     lightingTheme: "prime_blue", // prime_blue, red_alert, gold_luxury, cyber_neon
     aspectRatio: "16:9", // 16:9 or 9:16
@@ -182,7 +182,7 @@ const ANCHOR_PROFILES = {
     },
     priya_nair: {
         id: "priya_nair", name: "Priya Nair", short: "Priya",
-        title: "National Desk Female Anchor", gender: "female", kind: "human",
+        title: "National Desk — white sari & blazer", gender: "female", kind: "human",
         asset: "indian_female", color: "#f9a8d4",
         face: { cx: 0.50, mouthY: 0.40, eyeY: 0.320, faceW: 0.15 }
     },
@@ -772,7 +772,7 @@ function switchPresenterModel(model) {
     const viewportCard = document.querySelector(".viewport-card");
     const teleCard = document.querySelector(".teleprompter-card");
 
-    if (modeBroadcastBtn && modeAiChatBtn) {
+    if (!document.body.classList.contains("vs-open") && modeBroadcastBtn && modeAiChatBtn) {
         modeBroadcastBtn.classList.add("active");
         modeAiChatBtn.classList.remove("active");
         if (viewportCard) viewportCard.classList.remove("hidden");
@@ -870,7 +870,7 @@ function switchBroadcastLanguage(lang) {
     const viewportCard = document.querySelector(".viewport-card");
     const teleCard = document.querySelector(".teleprompter-card");
 
-    if (modeBroadcastBtn && modeAiChatBtn) {
+    if (!document.body.classList.contains("vs-open") && modeBroadcastBtn && modeAiChatBtn) {
         modeBroadcastBtn.classList.add("active");
         modeAiChatBtn.classList.remove("active");
         if (viewportCard) viewportCard.classList.remove("hidden");
@@ -1254,7 +1254,7 @@ window.loadChatBriefingToTeleprompter = function(title, script, targetLang = "hi
     const canvasWrapper = document.getElementById("canvasWrapper");
     const aiChatHubViewport = document.getElementById("aiChatHubViewport");
 
-    if (modeBroadcastBtn && modeAiChatBtn) {
+    if (!document.body.classList.contains("vs-open") && modeBroadcastBtn && modeAiChatBtn) {
         modeBroadcastBtn.classList.add("active");
         modeAiChatBtn.classList.remove("active");
         if (canvasWrapper) canvasWrapper.classList.remove("hidden");

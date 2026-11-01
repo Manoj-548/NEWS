@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI News Studio — Live Male & Female Anchors</title>
     <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal channel branding.">
-    <link rel="stylesheet" href="styles.css?v=studio13">
+    <link rel="stylesheet" href="styles.css?v=studio14">
     <style>
         html, body { background: #0a0d14; color: #f0f4f8; margin: 0; }
         #appLoaderScreen, .app-loader-overlay { display: none !important; }
@@ -19,7 +19,7 @@
             <i class="fa-solid fa-satellite-dish"></i>
             <span>AI NEWS STUDIO <small>v2.5 PRO</small></span>
         </div>
-        <button id="openVideoStudioBtn" class="btn-studio-top" type="button" title="Open Video Studio editor">
+        <button id="openVideoStudioBtn" class="btn-studio-top" type="button" title="Open Video Studio editor" onclick="if(window.openVideoStudio){window.openVideoStudio();}return false;">
             VIDEO STUDIO
         </button>
         
@@ -27,10 +27,10 @@
         <div class="top-reporter-switcher">
             <span class="top-reporter-label"><i class="fa-solid fa-robot text-neon"></i> REPORTER:</span>
             <div class="top-reporter-pills" id="topHeaderAnchorPills">
-                <button class="top-reporter-pill active" data-model="nova_kade">🤖 Kade Nova</button>
+                <button class="top-reporter-pill" data-model="nova_kade">🤖 Kade Nova</button>
                 <button class="top-reporter-pill" data-model="lyra_nova">🤖 Lyra Nova</button>
                 <button class="top-reporter-pill" data-model="arjun_mehra">🎤 Arjun Mehra</button>
-                <button class="top-reporter-pill" data-model="priya_nair">🎤 Priya Nair</button>
+                <button class="top-reporter-pill active" data-model="priya_nair">🎤 Priya Nair</button>
                 <button class="top-reporter-pill" data-model="rajesh_sharma">💼 Rajesh Sharma</button>
                 <button class="top-reporter-pill" data-model="meera_kapoor">🎤 Meera Kapoor</button>
                 <button class="top-reporter-pill" data-model="alexander_hayes">🎤 Alexander Hayes</button>
@@ -238,8 +238,8 @@
                     <div>
                         <label for="voiceGenderSelect" class="form-label">Voice Over Gender:</label>
                         <select id="voiceGenderSelect" class="form-select mb-8">
-                            <option value="male" selected>👔 Male Voice Over</option>
-                            <option value="female">👩 Female Voice Over</option>
+                            <option value="male">👔 Male Voice Over</option>
+                            <option value="female" selected>👩 Female Voice Over</option>
                         </select>
 
                         <label for="voiceSelect" class="form-label">Voice Model:</label>
@@ -273,13 +273,13 @@
                 <label for="anchorModelSelect" class="form-label">News Anchor Presenter Model:</label>
                 <select id="anchorModelSelect" class="form-select">
                     <optgroup label="🤖 Human-Looking News Bots">
-                        <option value="nova_kade" selected>🤖 Kade Nova — Human-Look Male News Bot</option>
+                        <option value="nova_kade">🤖 Kade Nova — Human-Look Male News Bot</option>
                         <option value="lyra_nova">🤖 Lyra Nova — Human-Look Female News Bot</option>
                         <option value="nexus_3d">⚙️ NEXUS-3D — Mechanical Android</option>
                     </optgroup>
                     <optgroup label="🇮🇳 Indian News Anchors">
                         <option value="arjun_mehra">🎤 Arjun Mehra — Prime Time Male Anchor</option>
-                        <option value="priya_nair">🎤 Priya Nair — National Desk Female Anchor</option>
+                        <option value="priya_nair" selected>🎤 Priya Nair — white sari & blazer</option>
                         <option value="rajesh_sharma">💼 Rajesh Sharma — Executive Business Anchor</option>
                         <option value="meera_kapoor">🎤 Meera Kapoor — World Bulletin Female Anchor</option>
                     </optgroup>
@@ -381,10 +381,10 @@
                     <div class="remote-row">
                         <span class="remote-label"><i class="fa-solid fa-robot text-neon"></i> Presenter Model:</span>
                         <div class="remote-pills" id="quickAnchorPills">
-                            <button class="remote-pill active" data-model="nova_kade">🤖 Kade Nova (Male Bot)</button>
+                            <button class="remote-pill" data-model="nova_kade">🤖 Kade Nova (Male Bot)</button>
                             <button class="remote-pill" data-model="lyra_nova">🤖 Lyra Nova (Female Bot)</button>
                             <button class="remote-pill" data-model="arjun_mehra">🎤 Arjun Mehra</button>
-                            <button class="remote-pill" data-model="priya_nair">🎤 Priya Nair</button>
+                            <button class="remote-pill active" data-model="priya_nair">🎤 Priya Nair</button>
                             <button class="remote-pill" data-model="rajesh_sharma">💼 Rajesh Sharma</button>
                             <button class="remote-pill" data-model="meera_kapoor">🎤 Meera Kapoor</button>
                             <button class="remote-pill" data-model="alexander_hayes">🎤 Alexander Hayes</button>
@@ -413,7 +413,7 @@
                 <button id="viewModeAiChatBtn" class="mode-tab-btn">
                     <i class="fa-solid fa-comments text-neon"></i> AI Chat
                 </button>
-                <button id="viewModeStudioBtn" class="mode-tab-btn">
+                <button id="viewModeStudioBtn" class="mode-tab-btn" type="button" onclick="if(window.openVideoStudio){window.openVideoStudio();}return false;">
                     VIDEO STUDIO
                 </button>
             </div>
@@ -638,12 +638,12 @@
 
     <div id="studioToast" class="studio-toast hidden"></div>
 
-    <script src="app.js?v=studio13"></script>
-    <script src="talking-avatar.js?v=studio13"></script>
-    <script src="news-desk.js?v=studio13"></script>
-    <script src="boot-controls.js?v=studio13"></script>
-    <script src="fix-news-ui.js?v=studio13"></script>
-    <script src="video-studio.js?v=studio13"></script>
+    <script src="app.js?v=studio14"></script>
+    <script src="talking-avatar.js?v=studio14"></script>
+    <script src="news-desk.js?v=studio14"></script>
+    <script src="boot-controls.js?v=studio14"></script>
+    <script src="fix-news-ui.js?v=studio14"></script>
+    <script src="video-studio.js?v=studio14"></script>
     <script>
         (function () {
             function dismissLoader() {
@@ -661,6 +661,15 @@
             setTimeout(dismissLoader, 400);
             setTimeout(dismissLoader, 1200);
             window.addEventListener('load', function () { setTimeout(dismissLoader, 200); });
+
+            document.getElementById('openVideoStudioBtn') && document.getElementById('openVideoStudioBtn').addEventListener('click', function (ev) {
+                ev.preventDefault();
+                if (window.openVideoStudio) window.openVideoStudio();
+            });
+            document.getElementById('viewModeStudioBtn') && document.getElementById('viewModeStudioBtn').addEventListener('click', function (ev) {
+                ev.preventDefault();
+                if (window.openVideoStudio) window.openVideoStudio();
+            });
 
             var toggle = document.getElementById('sidebarToggleBtn');
             var sidebar = document.getElementById('mainControlPanel');
