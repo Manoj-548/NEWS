@@ -257,6 +257,7 @@
     if (!vs.raf) loop(0);
   }
   function hideStudio() {
+    document.body.classList.remove("vs-film");
     pauseFileNarration();
     vs.open = false;
     vs.playing = false;
@@ -313,25 +314,25 @@
     if (!el || !src) return;
     if (!/^https?:/i.test(src)) el.removeAttribute("crossorigin");
     const film = /abbakka/i.test(src);
-    el.muted = !film;
-    el.defaultMuted = !film;
-    if (film) el.volume = 0.88;
     el.loop = true;
     el.playsInline = true;
     el.autoplay = true;
+    el.muted = true;
+    el.defaultMuted = true;
     if (el.getAttribute("data-src") !== src) {
       el.setAttribute("data-src", src);
       el.src = src;
-      try { el.load(); } catch (e) {}
     }
     el.playbackRate = vs.rate || 1;
     const p = el.play();
     if (p && p.catch) p.catch(function () {});
-    if (film && typeof state !== "undefined") {
-      state._videoNarration = true;
-      state._fileNarration = true;
-      state.isSpeaking = true;
-      state.isPaused = false;
+    if (film) {
+      document.body.classList.add("vs-film");
+      if (typeof state !== "undefined") {
+        state._fileNarration = true;
+        state.isSpeaking = true;
+        state.isPaused = false;
+      }
     }
   }
 
@@ -350,8 +351,7 @@
       video: vid
     });
     vs.selected = 0;
-    vs.playhead = 0;
-    vs._flowId = null;
+    if (!vs.playing) vs.playhead = 0;
     renderBin();
     renderTimeline();
   }
@@ -360,8 +360,6 @@
     playBg(src);
     return new Promise(function (resolve) {
       const vid = bgEl() || document.createElement("video");
-      vid.crossOrigin = "anonymous";
-      vid.muted = true;
       vid.playsInline = true;
       vid.preload = "auto";
       let settled = false;
@@ -506,10 +504,6 @@
   };
 
   async function playAbbakkaKannada() {
-    if (vs._abbakkaClick && Date.now() - vs._abbakkaClick < 700) {
-      openStudio();
-      return;
-    }
     vs._abbakkaClick = Date.now();
     toast("ರಾಣಿ ಅಬ್ಬಕ್ಕ ಕನ್ನಡ ಪೂರ್ಣಾವಧಿ ವೀಡಿಯೊ ಹಾಕುತ್ತಿದ್ದೇವೆ…");
     preloadVisemes("priya_nair");
@@ -535,7 +529,9 @@
       state.volume = 0.75;
     }
     vs.playing = true;
+    document.body.classList.add("vs-film");
     playBg(ABBAKKA.video);
+    playFileNarration();
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (eR0) {}
     document.querySelectorAll("[data-model]").forEach(function (p) {
       p.classList.toggle("active", p.dataset.model === "priya_nair");
@@ -789,7 +785,6 @@
   function drawFileClip(ctx, w, h, clip) {
     const v = clip.video || bgEl();
     if (!v) return false;
-    v.muted = true;
     v.playsInline = true;
     const one = vs.clips.filter(function (c) { return c.type === "file"; }).length <= 1;
     v.loop = true;
@@ -1101,6 +1096,13 @@
     if (typeof window.talkingAvatarTick === "function") {
       try { window.talkingAvatarTick(dt); } catch (eT) {}
     }
+    const pip = $("vsPipLive");
+    if (pip && document.body.classList.contains("vs-film")) {
+      const im = talkingPresenterImg() || presenterImg();
+      if (im && im.src && pip.src !== im.src) pip.src = im.src;
+      const nm = $("vsPipName");
+      if (nm) nm.textContent = profile().name || "Priya Nair";
+    }
     fitCanvas();
     drawFrame(ts);
     vs.raf = requestAnimationFrame(loop);
@@ -1133,13 +1135,12 @@
       const bg = bgEl();
       const film = !!(bg && /abbakka/i.test((bg.getAttribute("data-src") || bg.src || "")));
       if (film) {
-        bg.muted = false;
-        bg.volume = 0.88;
         bg.playbackRate = vs.rate || 1;
         const np = bg.play();
         if (np && np.catch) np.catch(function () {});
+        playFileNarration();
         if (typeof state !== "undefined") {
-          state._videoNarration = true;
+          state._fileNarration = true;
           state.isSpeaking = true;
           state.isPaused = false;
         }

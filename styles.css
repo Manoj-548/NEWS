@@ -2047,8 +2047,37 @@ body.vs-open #videoStudioScreen.hidden {
     height: 100%;
     object-fit: cover;
     background: #000;
-    z-index: 0;
+    z-index: 3;
     pointer-events: none;
+}
+body.vs-film #vsCanvas { display: none !important; }
+body.vs-film #vsBgVideo { z-index: 3; opacity: 1; }
+.vs-pip-box {
+    display: none;
+    position: absolute;
+    left: 16px;
+    bottom: 64px;
+    z-index: 7;
+    width: 168px;
+    border: 3px solid #00d2ff;
+    background: #05070c;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+}
+body.vs-film .vs-pip-box { display: block; }
+.vs-pip-box img {
+    display: block;
+    width: 168px;
+    height: 168px;
+    object-fit: cover;
+    object-position: 50% 8%;
+}
+.vs-pip-box span {
+    display: block;
+    background: rgba(0,0,0,0.78);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 8px;
 }
 #vsCanvas {
     position: absolute;
