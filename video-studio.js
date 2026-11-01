@@ -348,6 +348,71 @@
     }
   }
 
+  const ABBAKKA = {
+    title: "ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ",
+    category: "ಕನ್ನಡ ವಿಶೇಷ",
+    language: "kn-IN",
+    video: "/assets/abbakka/abbakka_full.mp4",
+    script:
+      "ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ, ಇದು ವಿಶೇಷ ಇತಿಹಾಸ ವಾರ್ತಾ ಪ್ರಸಾರ. ತೆರೆಯ ಮೇಲೆ ನೀವು ನೋಡುತ್ತಿರುವುದು ಅರಬ್ಬೀ ಸಮುದ್ರ ತೀರದ ಉಳ್ಳಾಲ. ಇಂದಿನ ದಕ್ಷಿಣ ಕನ್ನಡ. ಈ ನೆಲದಿಂದ ಹದಿನಾರನೇ ಶತಮಾನದಲ್ಲಿ ಒಬ್ಬ ವೀರರಾಣಿ ಪೋರ್ಚುಗೀಸ್ ಸಾಮ್ರಾಜ್ಯವನ್ನು ನಾಲ್ಕು ದಶಕಗಳ ಕಾಲ ಎದುರಿಸಿದಳು. ಅವಳೇ ರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಜನ ಅವಳನ್ನು ಅಭಯರಾಣಿ ಎಂದು ಕರೆದರು. " +
+      "ಈಗ ಕಾಣುವವಳು ಉಳ್ಳಾಲದ ರಾಣಿ. ಚೌಟ ವಂಶ ಅಳಿಯಸಂತಾನ ಪದ್ಧತಿಯನ್ನು ಅನುಸರಿಸುತ್ತಿತ್ತು. ಮಾವ ತಿರುಮಲ ರಾಯ ಅಬ್ಬಕ್ಕನಿಗೆ ಖಡ್ಗ, ಬಿಲ್ಲು ಮತ್ತು ಯುದ್ಧತಂತ್ರ ಕಲಿಸಿ ಸಿಂಹಾಸನ ಕಟ್ಟಿದರು. ಆಕೆ ಸಾಮಾನ್ಯರಂತೆ ಉಡುಪು ಧರಿಸಿ, ರಾತ್ರಿ ತಡವಾಗಿ ನ್ಯಾಯ ನೀಡುತ್ತಿದ್ದಳು ಎಂದು ಜಾನಪದ ಹೇಳುತ್ತದೆ. " +
+      "ಮುಂದಿನ ಚಿತ್ರ ಅರಮನೆ. ಜೈನ, ಹಿಂದೂ ಮತ್ತು ಬ್ಯಾರಿ ಮುಸ್ಲಿಂ ಸಮುದಾಯಗಳೆಲ್ಲರೂ ಆಡಳಿತದಲ್ಲಿದ್ದರು. ನಂತರ ಕಾಣುವುದು ಮಸಾಲೆ ಬಂದರು. ಉಳ್ಳಾಲ ಮೆಣಸು ಮತ್ತು ವ್ಯಾಪಾರದ ಮುಖ್ಯ ಕೇಂದ್ರ. ಪೋರ್ಚುಗೀಸರು ತೆರಿಗೆ ಕೇಳಿದರು. ರಾಣಿ ನಿರಾಕರಿಸಿದಳು. " +
+      "ಕಪ್ಪು ಮೋಡದಡಿ ಬರುವ ನೌಕೆಗಳು ಪೋರ್ಚುಗೀಸ್ ಹಡಗುಗಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಐವತ್ತೈದರಲ್ಲಿ ಅಡ್ಮಿರಲ್ ಡಾನ್ ಅಲ್ವಾರೊ ದಾ ಸಿಲ್ವೇರಾ ದಾಳಿ ಮಾಡಿದ. ಅಬ್ಬಕ್ಕ ಅವರನ್ನು ಹಿಮ್ಮೆಟ್ಟಿಸಿದಳು. " +
+      "ಈ ನೌಕಾಯುದ್ಧದಲ್ಲಿ ಮೊಗವೀರ ಮೀನುಗಾರರು ಮತ್ತು ಬ್ಯಾರಿ ನಾವಿಕರು ರಾಣಿಯ ಬಲ. ಅಗ್ನಿಬಾಣ ಬಳಸಿದ ಕೊನೆಯವರಲ್ಲಿ ಒಬ್ಬಳು ಎಂದು ಐತಿಹ್ಯ. ನೋಡಿ, ಸಣ್ಣ ದೋಣಿಗಳು ದೊಡ್ಡ ಹಡಗುಗಳನ್ನು ಎದುರಿಸುತ್ತಿವೆ. " +
+      "ಮುಂದೆ ಮಹಿಳೆಯರು ಖಡ್ಗಾಭ್ಯಾಸ ಮಾಡುತ್ತಿರುವುದು. ರಾಣಿ ಹೊಲದ ಕುಡುಗೋಲು ಹಿಡಿದ ಕರಾವಳಿ ಮಹಿಳೆಯರನ್ನು ಸೇನೆ ಮಾಡಿದಳು. " +
+      "ರಾತ್ರಿ ದೃಶ್ಯ. ಒಂದು ಸಾವಿರ ಐನೂರು ಅರವತ್ತೆಂಟರಲ್ಲಿ ಜನರಲ್ ಜೊವಾವೊ ಪೈಕ್ಸೊಟೊ ಉಳ್ಳಾಲವನ್ನು ಆಕ್ರಮಿಸಿ ಅರಮನೆ ಪ್ರವೇಶಿಸಿದ. ರಾಣಿ ಮಸೀದಿಯಲ್ಲಿ ಆಶ್ರಯ ಪಡೆದು ಅದೇ ರಾತ್ರಿ ಎರಡು ನೂರು ಸೈನಿಕರೊಂದಿಗೆ ಮರುದಾಳಿ ಮಾಡಿದಳು. ಪೈಕ್ಸೊಟೊ ಹತರಾದರು. ಎಪ್ಪತ್ತು ಪೋರ್ಚುಗೀಸ್ ಸೈನಿಕರು ಸೆರೆಯಾದರು. ಅಡ್ಮಿರಲ್ ಮಾಸ್ಕರೆನ್ಹಾಸ್ ಕೂಡ ಬಿದ್ದರು. ಮಂಗಳೂರು ಕೋಟೆಯಿಂದ ಪೋರ್ಚುಗೀಸರು ಹಿಂದೆ ಸರಿದರು. " +
+      "ಕೊನೆಯ ಚಿತ್ರ ಸ್ಮೃತಿ. ಕಾಲಿಕತ್ ಸಾಮೂತಿರಿ ಮತ್ತು ಬಿಜಾಪುರ ಸುಲ್ತಾನರೊಂದಿಗೆ ಮೈತ್ರಿ. ಗಂಡನ ದ್ರೋಹದ ನಂತರವೂ ಆಕೆ ಶರಣಾಗಲಿಲ್ಲ. ಸೆರೆಯಲ್ಲಿಯೂ ಯೋಧಳಾಗಿ ಹೋರಾಡಿ ಪ್ರಾಣ ಬಿಟ್ಟಳು. ಇಂದು ಯಕ್ಷಗಾನ, ದೈವಕೋಲ ಮತ್ತು ಉಳ್ಳಾಲದ ಕಡಲ ತೀರದಲ್ಲಿ ಅಬ್ಬಕ್ಕ ಜೀವಂತ. ಕಿತ್ತೂರು ಚೆನ್ನಮ್ಮ ಮತ್ತು ಒನಕೆ ಓಬವ್ವರ ಸಾಲಿನಲ್ಲಿ ಕರ್ನಾಟಕ ಈ ವೀರರಾಣಿಯನ್ನು ಸ್ಮರಿಸುತ್ತದೆ. " +
+      "ಇದು ನಮ್ಮ ಪೂರ್ಣಾವಧಿ ಕನ್ನಡ ವರದಿ. ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಅಭಯರಾಣಿ. ನಾವು ಮತ್ತೆ ಸಿಗೋಣ."
+  };
+
+  async function playAbbakkaKannada() {
+    toast("ರಾಣಿ ಅಬ್ಬಕ್ಕ ಕನ್ನಡ ಪೂರ್ಣಾವಧಿ ವೀಡಿಯೊ ಹಾಕುತ್ತಿದ್ದೇವೆ…");
+    if (typeof switchPresenterModel === "function") {
+      try { switchPresenterModel("priya_nair"); } catch (e) {}
+    }
+    renderPills();
+    if (typeof state !== "undefined") {
+      state.currentLanguage = "kn-IN";
+      state._ttsLang = "kn-IN";
+      state.speechRate = 0.92;
+      state.userHasStarted = true;
+    }
+    const langSelect = $("languageSelect");
+    if (langSelect) langSelect.value = "kn-IN";
+    const lab = $("currentLangLabel");
+    if (lab) lab.textContent = "Kannada (ಕನ್ನಡ)";
+    document.querySelectorAll("[data-lang]").forEach(function (p) {
+      p.classList.toggle("active", p.dataset.lang === "kn-IN");
+    });
+    if (typeof initSpeechSynthesis === "function") {
+      try { initSpeechSynthesis(); } catch (e2) {}
+    }
+    kickVoice("ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ.");
+    attachStory({
+      title: ABBAKKA.title,
+      script: ABBAKKA.script,
+      category: ABBAKKA.category,
+      language: "kn-IN"
+    });
+    playBg(ABBAKKA.video);
+    const ok = await addRemoteClip(ABBAKKA.video, ABBAKKA.title, 8000);
+    vs.playing = true;
+    const pb = $("vsPlayBtn");
+    if (pb) pb.textContent = "Pause";
+    toast(ok
+      ? "ಅಬ್ಬಕ್ಕ ವೀಡಿಯೊ ಹಿನ್ನೆಲೆಯಲ್ಲಿ. ಪ್ರೆಸೆಂಟರ್ ಕನ್ನಡದಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆ."
+      : "ಕನ್ನಡ ಸುದ್ದಿ ಶುರು. ವೀಡಿಯೊ ತೆರೆಯುತ್ತಿದೆ.");
+    if (typeof startNewsBroadcast === "function") {
+      try { startNewsBroadcast(); } catch (e3) {}
+    }
+    setTimeout(function () {
+      if (typeof state !== "undefined" && !state.isSpeaking && typeof startNewsBroadcast === "function") {
+        try { startNewsBroadcast(); } catch (e4) {}
+      }
+    }, 600);
+  }
+  window.playAbbakkaKannada = playAbbakkaKannada;
+
   function uploadVideos(files) {
     if (!files || !files.length) return;
     Array.from(files).forEach(function (file) {
@@ -875,6 +940,10 @@
     });
     $("vsCloseBtn")?.addEventListener("click", closeStudio);
     $("vsGenerateBtn")?.addEventListener("click", generateNewsVideo);
+    $("vsAbbakkaBtn")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      playAbbakkaKannada();
+    });
     $("vsUploadBtn")?.addEventListener("click", function () { $("vsFileInput")?.click(); });
     $("vsFileInput")?.addEventListener("change", function (e) {
       uploadVideos(e.target.files);
