@@ -165,25 +165,77 @@
     vs.selected = vs.clips.length - 1;
   }
 
-  function generateNewsVideo() {
+  function addRemoteClip(src, name) {
+    return new Promise(function (resolve) {
+      const vid = document.createElement("video");
+      vid.crossOrigin = "anonymous";
+      vid.muted = true;
+      vid.playsInline = true;
+      vid.preload = "auto";
+      vid.src = src;
+      let settled = false;
+      const done = function (ok) {
+        if (settled) return;
+        settled = true;
+        if (!ok) { resolve(false); return; }
+        const dur = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 12;
+        vs.clips = vs.clips.filter(function (c) { return c.type !== "ai"; });
+        vs.clips.push({
+          id: uid(),
+          type: "file",
+          name: (name || "World news").slice(0, 42),
+          duration: dur,
+          inPoint: 0,
+          outPoint: dur,
+          crop: { x: 0, y: 0, w: 1, h: 1 },
+          video: vid
+        });
+        vs.selected = vs.clips.length - 1;
+        vs.playhead = 0;
+        renderBin();
+        renderTimeline();
+        resolve(true);
+      };
+      vid.onloadedmetadata = function () { done(true); };
+      vid.onerror = function () { done(false); };
+      setTimeout(function () { if (!vid.duration) done(!!vid.videoWidth); }, 8000);
+    });
+  }
+
+  async function generateNewsVideo() {
     if (vs.generating) return;
-    vs.generating = 0.01;
-    toast("AI generating completed news video…");
-    const start = performance.now();
-    const tick = function () {
-      if (!vs.open) { vs.generating = 0; return; }
-      vs.generating = Math.min(1, (performance.now() - start) / 2400);
-      if (vs.generating < 1) {
-        requestAnimationFrame(tick);
-        return;
-      }
+    vs.generating = 0.15;
+    toast("Scraping world news and finding video…");
+    try {
+      const res = await fetch("/api/trending-broll");
+      const data = await res.json();
       vs.generating = 0;
-      seedAiClip(true);
-      renderBin();
-      renderTimeline();
-      toast("News video complete — on the timeline. Edit, then Download or Publish.");
-    };
-    requestAnimationFrame(tick);
+      if (data.story && typeof loadStoryIntoTeleprompter === "function") {
+        loadStoryIntoTeleprompter(data.story);
+      } else if (data.story && typeof state !== "undefined") {
+        state.currentStory = data.story;
+        state.scriptText = data.story.script;
+        state.scriptWords = String(data.story.script || "").split(/\s+/);
+      }
+      if (data.ok && data.video && data.video.src) {
+        const ok = await addRemoteClip(data.video.src, data.video.name);
+        toast(ok ? "World news video on background — presenter will read it" : "News loaded, video failed to open");
+      } else {
+        seedAiClip(true);
+        renderBin();
+        renderTimeline();
+        toast((data.story && data.story.title) || "News loaded — no video file");
+      }
+      vs.playing = true;
+      const pb = $("vsPlayBtn");
+      if (pb) pb.textContent = "Pause";
+      if (typeof startNewsBroadcast === "function") {
+        try { startNewsBroadcast(); } catch (e) {}
+      }
+    } catch (err) {
+      vs.generating = 0;
+      toast("Could not fetch world news video");
+    }
   }
 
   function uploadVideos(files) {

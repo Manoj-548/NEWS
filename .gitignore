@@ -1,3 +1,5 @@
 node_modules/
 .DS_Store
 *.log
+assets/broll/*.webm
+assets/broll/*.mp4
