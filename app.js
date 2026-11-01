@@ -1021,15 +1021,16 @@ function loadNewsCategory(categoryKey) {
 
 function loadStoryIntoTeleprompter(story) {
     state.currentStory = story;
-    state.scriptText = story.script;
-    state.scriptWords = story.script.split(/\s+/);
+    state.scriptText = story.script || "";
+    state.scriptWords = String(story.script || "").split(/\s+/).filter(Boolean);
     state.currentWordIndex = 0;
+    if (story.language) state._ttsLang = story.language;
 
     const screenTitle = document.getElementById("screenTitle");
-    if (screenTitle) screenTitle.textContent = `${story.category.toUpperCase()} - ${story.title}`;
+    if (screenTitle) screenTitle.textContent = `${String(story.category || "NEWS").toUpperCase()} - ${story.title || ""}`;
     renderTeleprompterText();
     const subTicker = document.getElementById("subtitleTicker");
-    if (subTicker) subTicker.textContent = story.script;
+    if (subTicker) subTicker.textContent = story.script || "";
 }
 
 function renderTeleprompterText() {
@@ -1339,16 +1340,17 @@ function startNewsBroadcast() {
     const gender = (typeof syncVoiceToPresenter === "function"
         ? syncVoiceToPresenter()
         : (profileNow?.gender || document.getElementById("voiceGenderSelect")?.value || "male"));
+    const speakLang = state._ttsLang || state.currentLanguage || "en-IN";
     if (typeof pickVoiceForLanguage === "function") {
-        state.currentVoice = pickVoiceForLanguage(state.currentLanguage, gender) || state.currentVoice;
+        state.currentVoice = pickVoiceForLanguage(speakLang, gender) || state.currentVoice;
     }
     if (state.currentVoice) {
         currentUtterance.voice = state.currentVoice;
         const vLang = (state.currentVoice.lang || "").toLowerCase();
-        const want = (state.currentLanguage || "en-IN").toLowerCase();
-        currentUtterance.lang = vLang.startsWith(want.split("-")[0]) ? state.currentVoice.lang : (state.currentLanguage || "en-IN");
+        const want = speakLang.toLowerCase();
+        currentUtterance.lang = vLang.startsWith(want.split("-")[0]) ? state.currentVoice.lang : speakLang;
     } else {
-        currentUtterance.lang = state.currentLanguage || "en-IN";
+        currentUtterance.lang = speakLang;
     }
     currentUtterance.pitch = gender === "female" ? 1.22 : 0.86;
     state._speakT0 = performance.now();

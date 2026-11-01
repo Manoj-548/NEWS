@@ -227,7 +227,9 @@
 
     if (boundAge > 800 && words.length) {
       const elapsed = Math.max(0, (now - (state._speakT0 || now)) / 1000);
-      const wps = 1.85 * rate;
+      const lang = String(state._ttsLang || state.currentLanguage || "").toLowerCase();
+      const indic = /^(hi|ta|te|kn|ml|bn|mr|gu|pa|ur)/.test(lang);
+      const wps = (indic ? 1.35 : 1.85) * rate;
       const est = Math.min(words.length - 1, Math.max(0, Math.floor(elapsed * wps)));
       if (est !== state.currentWordIndex) {
         state.currentWordIndex = est;

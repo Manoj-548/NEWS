@@ -119,12 +119,11 @@
     screen.setAttribute("aria-hidden", "false");
     vs.open = true;
     vs.lastTs = 0;
-    if (!vs.clips.length) seedAiClip(false);
     renderPills();
     renderBin();
     renderTimeline();
     fitCanvas();
-    toast("Video Studio — pick a presenter, then Play");
+    toast("Video Studio — World news + video pulls a clip and the presenter reads it");
     if (!vs.raf) loop(0);
   }
   function hideStudio() {
@@ -192,47 +191,102 @@
         });
         vs.selected = vs.clips.length - 1;
         vs.playhead = 0;
+        vs._flowId = null;
+        try { vid.play().catch(function () {}); } catch (e) {}
         renderBin();
         renderTimeline();
         resolve(true);
       };
       vid.onloadedmetadata = function () { done(true); };
+      vid.oncanplay = function () { if (vid.videoWidth) done(true); };
       vid.onerror = function () { done(false); };
-      setTimeout(function () { if (!vid.duration) done(!!vid.videoWidth); }, 8000);
+      setTimeout(function () { if (!settled) done(!!(vid.videoWidth || (isFinite(vid.duration) && vid.duration > 0))); }, 12000);
     });
+  }
+
+  function attachStory(story) {
+    if (!story) return;
+    if (!story.category) story.category = "Live World Desk";
+    if (typeof state !== "undefined") {
+      state.currentStory = story;
+      state.scriptText = story.script || "";
+      state.scriptWords = String(story.script || "").split(/\s+/).filter(Boolean);
+      state.currentWordIndex = 0;
+      state._ttsLang = story.language || state.currentLanguage;
+      state._speakT0 = performance.now();
+      state._wordT0 = performance.now();
+    }
+    try {
+      if (typeof loadStoryIntoTeleprompter === "function") loadStoryIntoTeleprompter(story);
+    } catch (e) {}
+  }
+
+  function kickVoice(text) {
+    try {
+      const s = window.speechSynthesis;
+      if (!s) return;
+      const u = new SpeechSynthesisUtterance(text || " ");
+      u.volume = 1;
+      u.rate = 1;
+      const lang = (typeof state !== "undefined" && (state._ttsLang || state.currentLanguage)) || "en-IN";
+      u.lang = lang;
+      if (typeof pickVoiceForLanguage === "function" && typeof state !== "undefined") {
+        const g = (typeof syncVoiceToPresenter === "function") ? syncVoiceToPresenter() : "female";
+        const v = pickVoiceForLanguage(lang, g);
+        if (v) u.voice = v;
+      }
+      s.cancel();
+      s.speak(u);
+      if (typeof state !== "undefined") {
+        state.isSpeaking = true;
+        state.isPaused = false;
+        state.userHasStarted = true;
+        state.scriptWords = String(text || "").split(/\s+/).filter(Boolean);
+        state.currentWordIndex = 0;
+        state._speakT0 = performance.now();
+        state._wordT0 = performance.now();
+      }
+    } catch (e) {}
   }
 
   async function generateNewsVideo() {
     if (vs.generating) return;
-    vs.generating = 0.15;
-    toast("Scraping world news and finding video…");
+    vs.generating = 0.12;
+    const lang = (typeof state !== "undefined" && state.currentLanguage)
+      || $("languageSelect")?.value
+      || "en-IN";
+    const loadingLine = /^hi/i.test(lang) ? "विश्व समाचार लोड हो रहा है।" : "Loading world news.";
+    kickVoice(loadingLine);
+    toast("Pulling a world news video and attaching the story…");
+    const tick = setInterval(function () {
+      vs.generating = Math.min(0.92, (vs.generating || 0.12) + 0.05);
+    }, 450);
     try {
-      const res = await fetch("/api/trending-broll");
+      const res = await fetch("/api/trending-broll?lang=" + encodeURIComponent(lang));
       const data = await res.json();
+      clearInterval(tick);
       vs.generating = 0;
-      if (data.story && typeof loadStoryIntoTeleprompter === "function") {
-        loadStoryIntoTeleprompter(data.story);
-      } else if (data.story && typeof state !== "undefined") {
-        state.currentStory = data.story;
-        state.scriptText = data.story.script;
-        state.scriptWords = String(data.story.script || "").split(/\s+/);
-      }
-      if (data.ok && data.video && data.video.src) {
-        const ok = await addRemoteClip(data.video.src, data.video.name);
-        toast(ok ? "World news video on background — presenter will read it" : "News loaded, video failed to open");
-      } else {
-        seedAiClip(true);
-        renderBin();
-        renderTimeline();
-        toast((data.story && data.story.title) || "News loaded — no video file");
+      attachStory(data.story);
+      let placed = false;
+      if (data.video && data.video.src) {
+        placed = await addRemoteClip(data.video.src, data.video.name || (data.story && data.story.title));
       }
       vs.playing = true;
       const pb = $("vsPlayBtn");
       if (pb) pb.textContent = "Pause";
+      toast(placed
+        ? "Video on the background — presenter is reading the story"
+        : ((data.story && data.story.title) || "News attached") + " — video still opening");
       if (typeof startNewsBroadcast === "function") {
         try { startNewsBroadcast(); } catch (e) {}
       }
+      setTimeout(function () {
+        if (typeof state !== "undefined" && !state.isSpeaking && typeof startNewsBroadcast === "function") {
+          try { startNewsBroadcast(); } catch (e2) {}
+        }
+      }, 500);
     } catch (err) {
+      clearInterval(tick);
       vs.generating = 0;
       toast("Could not fetch world news video");
     }
@@ -493,6 +547,48 @@
     };
   }
 
+  function drawNewsOverlay(ctx, w, h, t) {
+    const s = story();
+    ctx.save();
+    ctx.fillStyle = "#ff2d2d";
+    ctx.fillRect(16, 14, 64, 22);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText("LIVE", 30, 30);
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(88, 14, Math.min(w - 110, 720), 22);
+    ctx.fillStyle = "#f4fbff";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText((s.title || "World news").slice(0, 78), 96, 30);
+
+    const pip = Math.round(Math.min(w * 0.2, h * 0.36, 240));
+    const words = (typeof state !== "undefined" && state.scriptWords) || String(s.script || "").split(/\s+/).filter(Boolean);
+    const idx = (typeof state !== "undefined" && state.currentWordIndex) || 0;
+    const snip = words.slice(idx, idx + 10).join(" ");
+    if (snip) {
+      const bx = 16 + pip + 14;
+      const by = h - 86;
+      const bw = Math.max(120, w - bx - 16);
+      ctx.fillStyle = "rgba(0,0,0,0.72)";
+      ctx.fillRect(bx, by, bw, 36);
+      ctx.fillStyle = "#ffe566";
+      ctx.font = "16px sans-serif";
+      let line = snip;
+      while (ctx.measureText(line).width > bw - 16 && line.length > 8) line = line.slice(0, -1);
+      ctx.fillText(line, bx + 8, by + 24);
+    }
+
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(0, h - 42, w, 42);
+    ctx.fillStyle = "#ffcc00";
+    ctx.font = "bold 15px sans-serif";
+    const ticker = "  •  " + (s.title || "") + "  •  " + (s.script || "") + "  •  ";
+    const tw = Math.max(240, ctx.measureText(ticker).width);
+    const tx = w - ((t * 72) % (tw + w));
+    ctx.fillText(ticker + ticker, tx, h - 16);
+    ctx.restore();
+  }
+
   function drawPresenterPip(ctx, w, h) {
     const size = Math.round(Math.min(w * 0.2, h * 0.36, 240));
     const x = 18;
@@ -526,7 +622,7 @@
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = "#00d2ff";
     ctx.font = "bold 28px sans-serif";
-    ctx.fillText("AI generating completed news video…", 48, h / 2 - 20);
+    ctx.fillText("Pulling news video and attaching the story…", 48, h / 2 - 20);
     const pw = w * 0.5;
     const px = (w - pw) / 2;
     ctx.strokeStyle = "#00d2ff";
@@ -565,6 +661,7 @@
       ctx.fillText("Upload or generate a video for the background.", 24, 40);
     }
 
+    drawNewsOverlay(ctx, w, h, t);
     if (vs.generating) drawGenerating(ctx, w, h);
     drawPresenterPip(ctx, w, h);
 
