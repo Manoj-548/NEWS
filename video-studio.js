@@ -81,8 +81,8 @@
     const stage = document.querySelector("#videoStudioScreen .vs-stage");
     const canvas = $("vsCanvas");
     if (!stage || !canvas) return;
-    const w = Math.max(640, Math.floor(stage.clientWidth) || 1280);
-    const h = Math.max(360, Math.floor(stage.clientHeight) || 720);
+    const w = 1920;
+    const h = 1080;
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w;
       canvas.height = h;
@@ -294,8 +294,8 @@
       const s = window.speechSynthesis;
       if (!s) return;
       const u = new SpeechSynthesisUtterance(text || " ");
-      u.volume = 1;
-      u.rate = 1;
+      u.volume = 0.75;
+      u.rate = 0.8;
       const lang = (typeof state !== "undefined" && (state._ttsLang || state.currentLanguage)) || "en-IN";
       u.lang = lang;
       if (typeof pickVoiceForLanguage === "function" && typeof state !== "undefined") {
@@ -390,7 +390,9 @@
       state.anchorModel = "priya_nair";
       state.currentLanguage = "kn-IN";
       state._ttsLang = "kn-IN";
-      state.speechRate = 0.88;
+      state.speechRate = 0.78;
+      state.speechPitch = 1.05;
+      state.volume = 0.75;
       state.userHasStarted = true;
       state._lockScript = true;
     }
@@ -714,8 +716,16 @@
     ctx.fillStyle = "rgba(0,0,0,0.55)";
     ctx.fillRect(88, 14, Math.min(w - 110, 720), 22);
     ctx.fillStyle = "#f4fbff";
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText((s.title || "World news").slice(0, 78), 96, 30);
+    ctx.font = "bold 18px sans-serif";
+    const crawlTitle = "  " + (s.title || "World news") + "   •   ";
+    const crawlW = Math.max(180, ctx.measureText(crawlTitle).width);
+    const crawlX = 96 - ((t * 22) % crawlW);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(88, 12, Math.min(w - 110, 820), 26);
+    ctx.clip();
+    ctx.fillText(crawlTitle + crawlTitle + crawlTitle, crawlX, 30);
+    ctx.restore();
 
     const pip = Math.round(Math.min(w * 0.26, h * 0.44, 300));
     const words = (typeof state !== "undefined" && state.scriptWords) || String(s.script || "").split(/\s+/).filter(Boolean);
@@ -737,10 +747,10 @@
     ctx.fillStyle = "rgba(0,0,0,0.72)";
     ctx.fillRect(0, h - 42, w, 42);
     ctx.fillStyle = "#ffcc00";
-    ctx.font = "bold 15px sans-serif";
+    ctx.font = "bold 18px sans-serif";
     const ticker = "  •  " + (s.title || "") + "  •  " + (s.script || "") + "  •  ";
     const tw = Math.max(240, ctx.measureText(ticker).width);
-    const tx = w - ((t * 72) % (tw + w));
+    const tx = w - ((t * 26) % (tw + w));
     ctx.fillText(ticker + ticker, tx, h - 16);
     ctx.restore();
   }

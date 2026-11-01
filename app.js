@@ -14,9 +14,9 @@ const state = {
     currentLanguage: "hi-IN",
     currentVoice: null,
     availableVoices: [],
-    speechRate: 1.0,
-    speechPitch: 0.95,
-    volume: 1.0,
+    speechRate: 0.82,
+    speechPitch: 1.04,
+    volume: 0.78,
     
     currentStory: null,
     scriptText: "",
@@ -428,8 +428,8 @@ function initCanvas() {
         canvas.width = 720;
         canvas.height = 1280;
     } else {
-        canvas.width = 1280;
-        canvas.height = 720;
+        canvas.width = 1920;
+        canvas.height = 1080;
     }
     if (rect && rect.width > 50 && rect.height > 50) {
         canvas.style.width = "100%";
@@ -834,8 +834,8 @@ function switchBroadcastLanguage(lang) {
         state.speechPitch = 0.92;
         state.speechRate = 1.0;
     } else if (langCode === "ta" || langCode === "te" || langCode === "kn" || langCode === "ml") {
-        state.speechPitch = 0.98;
-        state.speechRate = 1.05;
+        state.speechPitch = 1.04;
+        state.speechRate = 0.80;
     } else if (langCode === "de" || langCode === "ru") {
         state.speechPitch = 0.82;
         state.speechRate = 0.95;
@@ -1338,9 +1338,10 @@ function startNewsBroadcast() {
     }
 
     currentUtterance = new SpeechSynthesisUtterance(speakText);
-    currentUtterance.rate = state.speechRate || 1;
-    currentUtterance.volume = state.volume;
     const profileNow = getAnchorProfile?.(state.anchorModel);
+    const softPriya = !!(profileNow && profileNow.id === "priya_nair") || String(state.anchorModel || "") === "priya_nair";
+    currentUtterance.rate = softPriya ? Math.min(Number(state.speechRate) || 0.8, 0.82) : (state.speechRate || 1);
+    currentUtterance.volume = softPriya ? Math.min(Number(state.volume) || 0.78, 0.78) : (state.volume || 1);
     const gender = (typeof syncVoiceToPresenter === "function"
         ? syncVoiceToPresenter()
         : (profileNow?.gender || document.getElementById("voiceGenderSelect")?.value || "male"));
@@ -1356,7 +1357,7 @@ function startNewsBroadcast() {
         currentUtterance.lang = speakLang;
     }
     try { speechSynth.resume(); } catch (eRes) {}
-    currentUtterance.pitch = gender === "female" ? 1.22 : 0.86;
+    currentUtterance.pitch = softPriya ? 1.05 : (gender === "female" ? 1.12 : 0.86);
     state._speakT0 = performance.now();
     state._wordT0 = performance.now();
     state._lastBoundary = 0;
