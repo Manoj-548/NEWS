@@ -25,31 +25,31 @@
   };
 
   const LATIN_LETTER = {
-    a: { open: 0.88, width: 1.08, shape: "open" },
+    a: { open: 0.34, width: 1.04, shape: "talk" },
     b: { open: 0, width: 0.82, shape: "closed" },
     c: { open: 0.18, width: 1.0, shape: "rest" },
     d: { open: 0.2, width: 1.0, shape: "rest" },
-    e: { open: 0.42, width: 1.22, shape: "wide" },
-    f: { open: 0.26, width: 1.06, shape: "teeth" },
+    e: { open: 0.32, width: 1.08, shape: "wide" },
+    f: { open: 0.22, width: 1.02, shape: "rest" },
     g: { open: 0.2, width: 1.0, shape: "rest" },
     h: { open: 0.22, width: 1.0, shape: "rest" },
-    i: { open: 0.38, width: 1.2, shape: "wide" },
-    j: { open: 0.3, width: 1.14, shape: "wide" },
+    i: { open: 0.32, width: 1.08, shape: "wide" },
+    j: { open: 0.28, width: 1.06, shape: "wide" },
     k: { open: 0.18, width: 1.0, shape: "rest" },
     l: { open: 0.22, width: 1.0, shape: "rest" },
     m: { open: 0, width: 0.8, shape: "closed" },
     n: { open: 0.16, width: 1.0, shape: "rest" },
-    o: { open: 0.7, width: 0.7, shape: "round" },
+    o: { open: 0.36, width: 0.86, shape: "round" },
     p: { open: 0, width: 0.82, shape: "closed" },
     q: { open: 0.18, width: 1.0, shape: "rest" },
-    r: { open: 0.42, width: 0.84, shape: "round" },
-    s: { open: 0.28, width: 1.16, shape: "wide" },
+    r: { open: 0.28, width: 0.92, shape: "talk" },
+    s: { open: 0.24, width: 1.06, shape: "wide" },
     t: { open: 0.18, width: 1.0, shape: "rest" },
-    u: { open: 0.62, width: 0.7, shape: "round" },
-    v: { open: 0.26, width: 1.06, shape: "teeth" },
-    w: { open: 0.58, width: 0.7, shape: "round" },
+    u: { open: 0.34, width: 0.84, shape: "round" },
+    v: { open: 0.22, width: 1.02, shape: "rest" },
+    w: { open: 0.34, width: 0.84, shape: "round" },
     x: { open: 0.28, width: 1.12, shape: "wide" },
-    y: { open: 0.38, width: 1.18, shape: "wide" },
+    y: { open: 0.32, width: 1.08, shape: "wide" },
     z: { open: 0.28, width: 1.16, shape: "wide" }
   };
   window.letterToViseme = LATIN_LETTER;
@@ -90,16 +90,16 @@
     if (["mb", "mp"].indexOf(t) >= 0 || /[मपबभ]/.test(raw) || /[ಮಪಬ]/.test(raw) || /[மப]/.test(raw) || /[మపబ]/.test(raw))
       return { open: 0, width: 0.8, shape: "closed" };
     if (t === "ph" || /[फव]/.test(raw) || /[ಫವ]/.test(raw) || /[ஃவ]/.test(raw) || /[ఫవ]/.test(raw))
-      return { open: 0.26, width: 1.05, shape: "teeth" };
+      return { open: 0.22, width: 1.02, shape: "rest" };
     if (["th", "sh", "ch"].indexOf(t) >= 0)
-      return { open: 0.3, width: 1.16, shape: "wide" };
+      return { open: 0.24, width: 1.06, shape: "wide" };
     if (["ee", "ea", "ie", "ei", "ey"].indexOf(t) >= 0 || /[इईएऐिीेै]/.test(raw) || /[ಇಈಎಏಿೀೆೇ]/.test(raw) || /[இஈஎஏைிீ]/.test(raw) || /[ఇఈఎఏిీెే]/.test(raw))
-      return { open: 0.4, width: 1.22, shape: "wide" };
+      return { open: 0.32, width: 1.08, shape: "wide" };
     if (["oo", "ou", "ow", "ue", "ew", "oy", "oi"].indexOf(t) >= 0 || /[उऊओऔुूोौ]/.test(raw) || /[ಉಊಒಓುೂೊೋ]/.test(raw) || /[உஊஒஓொோுூ]/.test(raw) || /[ఉఊఒఓుూొో]/.test(raw))
-      return { open: 0.66, width: 0.7, shape: "round" };
+      return { open: 0.36, width: 0.86, shape: "round" };
     if (["ay", "ai", "ah"].indexOf(t) >= 0 || /[अआा]/.test(raw) || /[ಅಆಾ]/.test(raw) || /[அஆா]/.test(raw) || /[అఆా]/.test(raw))
-      return { open: 0.85, width: 1.08, shape: "open" };
-    if (/[0-9]/.test(t)) return { open: 0.5, width: 1.05, shape: "open" };
+      return { open: 0.34, width: 1.04, shape: "talk" };
+    if (/[0-9]/.test(t)) return { open: 0.3, width: 1.02, shape: "talk" };
     return { open: 0.22, width: 1, shape: "rest" };
   };
 
@@ -163,7 +163,7 @@
     if (shape === "closed" || open < 0.04) return z;
     if (shape === "wide") put("E", 0.92);
     else if (shape === "round") put("O", 0.92);
-    else if (shape === "teeth") put("F", 0.9);
+    else if (shape === "teeth") put("T", 0.86);
     else put("T", 0.9);
     return z;
   }
@@ -181,6 +181,7 @@
       let s = it.viseme;
       if (s === "rest") s = "talk";
       if (s === "open") s = "talk";
+      if (s === "teeth") s = "talk";
       const tok = String(it.char || "").toLowerCase();
       if (tok === "ai" || tok === "ay") return [{ char: tok, viseme: "talk", open: 0.32 }, { char: tok, viseme: "wide", open: 0.34 }];
       if (tok === "oi" || tok === "oy") return [{ char: tok, viseme: "round", open: 0.34 }, { char: tok, viseme: "wide", open: 0.34 }];
@@ -202,7 +203,7 @@
 
   function driveLetterVisemes(delta) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    const k = 1 - Math.exp(-3.8 * Math.max(0.001, delta));
+    const k = 1 - Math.exp(-2.5 * Math.max(0.001, delta));
     if (!state.faceW || typeof state.faceW.T !== "number") state.faceW = { T: 0, A: 0, E: 0, O: 0, F: 0 };
     const id = state.anchorModel || "";
     const w = state.faceW;
@@ -241,8 +242,8 @@
     if (boundAge < 700 && words.length) {
       idx = Math.max(0, Math.min(words.length - 1, state.currentWordIndex || 0));
       const seqTmp = visemeRun(words[idx] || "");
-      const hold = kn ? 0.11 : 0.085;
-      const dur = Math.min(1.25, Math.max(0.28, 0.14 + seqTmp.length * hold)) / Math.max(0.7, rate);
+      const hold = kn ? 0.14 : 0.11;
+      const dur = Math.min(1.35, Math.max(0.34, 0.18 + seqTmp.length * hold)) / Math.max(0.7, rate);
       localU = Math.min(0.999, Math.max(0, (now - (state._wordT0 || now)) / 1000) / dur);
     } else if (words.length) {
       const t = Math.min(totalEst - 0.0001, elapsed);
@@ -325,18 +326,31 @@
 
   function pickMouthPhoto(id) {
     const speaking = !!(state.isSpeaking && !state.isPaused);
-    if (!speaking) return null;
+    if (!speaking) {
+      state._mouthPhoto = null;
+      state._mouthHoldUntil = 0;
+      return null;
+    }
     const allow = MATCHED[id] || {};
     const bank = visemeBank[id] || {};
     function take(k) {
       return (allow[k] && ready(bank[k])) ? bank[k] : null;
     }
     const shape = state.visemeShape || "talk";
-    if (shape === "closed") return take("M") || take("T");
-    if (shape === "teeth") return take("F") || take("T");
-    if (shape === "wide") return take("E") || take("T");
-    if (shape === "round") return take("O") || take("U") || take("T");
-    return take("T") || take("E") || take("A");
+    let next = null;
+    if (shape === "closed") next = take("M") || take("T");
+    else if (shape === "wide") next = take("E") || take("T");
+    else if (shape === "round") next = take("O") || take("U") || take("T");
+    else next = take("T") || take("F") || take("M");
+    const now = performance.now();
+    if (state._mouthPhoto && next && next !== state._mouthPhoto && state._mouthHoldUntil && now < state._mouthHoldUntil) {
+      return state._mouthPhoto;
+    }
+    if (next && next !== state._mouthPhoto) {
+      state._mouthPhoto = next;
+      state._mouthHoldUntil = now + 140;
+    }
+    return next || state._mouthPhoto;
   }
 
   function drawPhotorealReader(profile, w, h) {
