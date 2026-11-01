@@ -38,6 +38,29 @@
     if (img && img.complete && img.naturalWidth) return img;
     return null;
   }
+  const vsViseme = {};
+  function visemeFile(id, shape) {
+    if (shape === "closed") return "viseme_M_" + id + ".jpg";
+    if (shape === "wide") return "viseme_E_" + id + ".jpg";
+    if (shape === "round") return "viseme_O_" + id + ".jpg";
+    if (shape === "teeth") return "viseme_talk_" + id + ".jpg";
+    return "viseme_talk_" + id + ".jpg";
+  }
+  function talkingPresenterImg() {
+    const idle = presenterImg();
+    const speaking = typeof state !== "undefined" && state.isSpeaking && !state.isPaused;
+    if (!speaking) return idle;
+    const id = (state.anchorModel || "priya_nair");
+    const file = visemeFile(id, state.visemeShape || "talk");
+    if (!vsViseme[file]) {
+      const im = new Image();
+      im.src = "assets/" + file;
+      vsViseme[file] = im;
+    }
+    const im = vsViseme[file];
+    if (im && im.complete && im.naturalWidth > 0) return im;
+    return idle;
+  }
   function clipLen(c) { return Math.max(0.2, (c.outPoint - c.inPoint)); }
   function totalDur() {
     let t = 0;
@@ -716,16 +739,9 @@
     ctx.fillStyle = "rgba(0,0,0,0.55)";
     ctx.fillRect(88, 14, Math.min(w - 110, 720), 22);
     ctx.fillStyle = "#f4fbff";
-    ctx.font = "bold 18px sans-serif";
-    const crawlTitle = "  " + (s.title || "World news") + "   •   ";
-    const crawlW = Math.max(180, ctx.measureText(crawlTitle).width);
-    const crawlX = 96 - ((t * 22) % crawlW);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(88, 12, Math.min(w - 110, 820), 26);
-    ctx.clip();
-    ctx.fillText(crawlTitle + crawlTitle + crawlTitle, crawlX, 30);
-    ctx.restore();
+    ctx.font = "bold 16px sans-serif";
+    const title = String(s.title || "World news");
+    ctx.fillText(title, 96, 30);
 
     const pip = Math.round(Math.min(w * 0.26, h * 0.44, 300));
     const words = (typeof state !== "undefined" && state.scriptWords) || String(s.script || "").split(/\s+/).filter(Boolean);
@@ -765,9 +781,7 @@
     ctx.strokeStyle = profile().color || "#00d2ff";
     ctx.lineWidth = 3;
     ctx.strokeRect(x - 3, y - 3, size + 6, size + 6);
-    const img = presenterImg();
-    const live = document.getElementById("broadcastCanvas");
-    const src = img || ((live && live.width) ? live : null);
+    const src = talkingPresenterImg() || presenterImg();
     const box = src ? squareSource(src) : null;
     if (src && box) {
       ctx.drawImage(src, box.sx, box.sy, box.side, box.side, x, y, size, size);
@@ -851,6 +865,9 @@
       vs._tlAcc = 0;
       renderTimeline();
       syncPlayerUI();
+    }
+    if (typeof window.talkingAvatarTick === "function") {
+      try { window.talkingAvatarTick(dt); } catch (eT) {}
     }
     fitCanvas();
     drawFrame(ts);

@@ -1411,9 +1411,9 @@ function startNewsBroadcast() {
         currentUtterance.pitch = pitch;
         if (state.currentVoice) {
             currentUtterance.voice = state.currentVoice;
-            currentUtterance.lang = state.currentVoice.lang || speakLang;
+            currentUtterance.lang = state.currentVoice.lang || "en-IN";
         } else {
-            currentUtterance.lang = speakLang;
+            currentUtterance.lang = "en-IN";
         }
         currentUtterance.onstart = () => {
             if (gen !== state._speakGen) return;
