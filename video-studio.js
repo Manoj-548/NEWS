@@ -13,7 +13,9 @@
     generating: 0,
     rec: null,
     chunks: [],
-    raf: 0
+    raf: 0,
+    rate: 1,
+    scrubbing: false
   };
 
   function $(id) { return document.getElementById(id); }
@@ -123,7 +125,8 @@
       a.setAttribute("data-src", ABBAKKA.audio);
     }
     a.volume = 0.75;
-    if (!same || a.ended || a.currentTime < 0.05) {
+    a.playbackRate = vs.rate || 1;
+    if (!same || a.ended) {
       try { a.currentTime = 0; } catch (e0) {}
     }
     const p = a.play();
@@ -319,6 +322,7 @@
       el.src = src;
       try { el.load(); } catch (e) {}
     }
+    el.playbackRate = vs.rate || 1;
     const p = el.play();
     if (p && p.catch) p.catch(function () {});
   }
@@ -946,18 +950,131 @@
     }
   }
 
+  function mediaDur() {
+    const v = bgEl();
+    if (v && isFinite(v.duration) && v.duration > 0) return v.duration;
+    const n = $("vsNarration");
+    if (n && isFinite(n.duration) && n.duration > 0) return n.duration;
+    return totalDur();
+  }
+  function fmtTime(s) {
+    s = Math.max(0, Number(s) || 0);
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return m + ":" + String(sec).padStart(2, "0");
+  }
+  function seekTo(t, keepPlaying) {
+    const dur = mediaDur();
+    t = Math.max(0, Math.min(Math.max(0.01, dur - 0.05), t));
+    vs.playhead = t;
+    const v = bgEl();
+    if (v) {
+      try { v.currentTime = t; } catch (e) {}
+      v.playbackRate = vs.rate || 1;
+    }
+    const n = $("vsNarration");
+    if (n && isFinite(n.duration) && n.duration > 0) {
+      try { n.currentTime = Math.min(n.duration - 0.05, t); } catch (e2) {}
+      n.playbackRate = vs.rate || 1;
+    }
+    if (keepPlaying === false) {
+      vs.playing = false;
+      if (v) try { v.pause(); } catch (e3) {}
+      pauseFileNarration();
+    }
+    updateScrubber();
+  }
+  function setRate(r) {
+    vs.rate = Math.max(1, Math.min(10, Math.round(Number(r) || 1)));
+    const v = bgEl();
+    if (v) v.playbackRate = vs.rate;
+    const n = $("vsNarration");
+    if (n) n.playbackRate = vs.rate;
+    ["vsSpeedLabel", "vsSpeedDockLabel"].forEach(function (id) {
+      const el = $(id);
+      if (el) el.textContent = vs.rate + "x";
+    });
+    ["vsSpeed", "vsSpeedDock"].forEach(function (id) {
+      const el = $(id);
+      if (el && String(el.value) !== String(vs.rate)) el.value = String(vs.rate);
+    });
+  }
+  function skipBy(delta) {
+    const v = bgEl();
+    const now = (v && isFinite(v.currentTime)) ? v.currentTime : vs.playhead;
+    seekTo(now + delta);
+  }
+  function updateScrubber() {
+    const dur = mediaDur();
+    const v = bgEl();
+    const t = (v && isFinite(v.currentTime)) ? v.currentTime : vs.playhead;
+    const pct = dur > 0 ? Math.max(0, Math.min(100, (t / dur) * 100)) : 0;
+    const fill = $("vsScrubFill");
+    const knob = $("vsScrubKnob");
+    if (fill) fill.style.width = pct + "%";
+    if (knob) knob.style.left = pct + "%";
+    const clock = fmtTime(t) + " / " + fmtTime(dur);
+    const ov = $("vsOvTime");
+    if (ov) ov.textContent = clock;
+    const under = $("vsUnderTime");
+    if (under) under.textContent = clock;
+    const ovPlay = $("vsOvPlay");
+    if (ovPlay) {
+      ovPlay.textContent = vs.playing ? "Pause" : "Play";
+      ovPlay.classList.toggle("playing", !!vs.playing);
+    }
+  }
+  function scrubFromEvent(ev) {
+    const bar = $("vsScrub");
+    if (!bar) return;
+    const r = bar.getBoundingClientRect();
+    const x = (ev.touches && ev.touches[0] ? ev.touches[0].clientX : ev.clientX) - r.left;
+    const pct = Math.max(0, Math.min(1, x / Math.max(1, r.width)));
+    seekTo(pct * mediaDur());
+  }
+  function bindScrubber() {
+    const bar = $("vsScrub");
+    if (!bar || bar._bound) return;
+    bar._bound = true;
+    const start = function (ev) {
+      vs.scrubbing = true;
+      scrubFromEvent(ev);
+      ev.preventDefault();
+    };
+    const move = function (ev) {
+      if (!vs.scrubbing) return;
+      scrubFromEvent(ev);
+    };
+    const end = function () { vs.scrubbing = false; };
+    bar.addEventListener("pointerdown", start);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    bar.addEventListener("touchstart", start, { passive: false });
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", end);
+  }
+
   function loop(ts) {
     if (!vs.open) return;
     if (!vs.lastTs) vs.lastTs = ts;
     const dt = Math.min(0.05, (ts - vs.lastTs) / 1000);
     vs.lastTs = ts;
-    if (vs.playing) {
-      vs.playhead += dt;
-      if (vs.playhead >= totalDur()) vs.playhead = 0;
+    if (!vs.scrubbing) {
+      const v = bgEl();
+      if (v && isFinite(v.currentTime) && v.readyState >= 2) {
+        vs.playhead = v.currentTime;
+        if (v.ended) {
+          vs.playing = false;
+        }
+      } else if (vs.playing) {
+        vs.playhead += dt * (vs.rate || 1);
+        if (vs.playhead >= totalDur()) vs.playhead = 0;
+      }
     }
     vs._tlAcc = (vs._tlAcc || 0) + dt;
-    if (vs._tlAcc > 0.25) {
+    if (vs._tlAcc > 0.08) {
       vs._tlAcc = 0;
+      updateScrubber();
       renderTimeline();
       syncPlayerUI();
     }
@@ -972,23 +1089,18 @@
   function syncPlayerUI() {
     const pb = $("vsPlayBtn");
     if (pb) pb.textContent = vs.playing ? "Pause" : "Play presenter + timeline";
-    const v = bgEl();
-    const t = $("vsUnderTime");
-    if (t && v) {
-      function fmt(s) {
-        s = Math.max(0, Math.floor(Number(s) || 0));
-        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
-      }
-      t.textContent = fmt(v.currentTime) + " / " + fmt(v.duration);
-    }
     const hint = $("vsUnderHint");
-    if (hint) hint.textContent = vs.playing ? "Playing in Video Studio" : "Paused — press Play below the video";
+    if (hint) hint.textContent = vs.playing
+      ? ("Playing " + (vs.rate || 1) + "x — drag the yellow dot to jump")
+      : "Paused — drag the yellow dot, or Play";
+    updateScrubber();
   }
 
   function togglePlay() {
     vs.playing = !vs.playing;
     const v = bgEl();
     if (v) {
+      v.playbackRate = vs.rate || 1;
       if (vs.playing) {
         const p = v.play();
         if (p && p.catch) p.catch(function () {});
@@ -1009,6 +1121,7 @@
           state.isPaused = false;
         }
         if (narr) {
+          narr.playbackRate = vs.rate || 1;
           const np = narr.play();
           if (np && np.catch) np.catch(function () {});
         } else {
@@ -1057,7 +1170,7 @@
       seg.onclick = function (ev) {
         ev.stopPropagation();
         vs.selected = i;
-        vs.playhead = acc + 0.01;
+        seekTo(acc + 0.01);
         renderBin();
         renderTimeline();
       };
@@ -1070,7 +1183,7 @@
     track.appendChild(head);
     track.addEventListener("click", function (ev) {
       const r = track.getBoundingClientRect();
-      vs.playhead = Math.max(0, Math.min(tot, ((ev.clientX - r.left) / r.width) * tot));
+      seekTo(((ev.clientX - r.left) / r.width) * mediaDur());
       renderTimeline();
     });
     tl.appendChild(track);
@@ -1212,6 +1325,52 @@
     });
     $("vsSideToggle")?.addEventListener("click", function () {
       $("videoStudioScreen")?.classList.toggle("side-off");
+    });
+    bindScrubber();
+    $("vsOvPlay")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      togglePlay();
+    });
+    $("vsRewind")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      skipBy(-5);
+    });
+    $("vsFwd")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      skipBy(5);
+    });
+    $("vsUnderBack")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      skipBy(-5);
+    });
+    $("vsUnderFwd")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      skipBy(5);
+    });
+    function onSpeed(ev) { setRate(ev.target.value); }
+    $("vsSpeed")?.addEventListener("input", onSpeed);
+    $("vsSpeedDock")?.addEventListener("input", onSpeed);
+    const bg = bgEl();
+    if (bg && !bg._vsTimeBound) {
+      bg._vsTimeBound = true;
+      bg.addEventListener("timeupdate", function () {
+        if (!vs.scrubbing) updateScrubber();
+      });
+      bg.addEventListener("ended", function () {
+        vs.playing = false;
+        pauseFileNarration();
+        syncPlayerUI();
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (!vs.open) return;
+      if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+      if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+      if (e.code === "ArrowLeft") { e.preventDefault(); skipBy(e.shiftKey ? -15 : -5); }
+      if (e.code === "ArrowRight") { e.preventDefault(); skipBy(e.shiftKey ? 15 : 5); }
+      if (e.code === "ArrowUp") { e.preventDefault(); setRate((vs.rate || 1) + 1); }
+      if (e.code === "ArrowDown") { e.preventDefault(); setRate((vs.rate || 1) - 1); }
     });
     $("vsPlayBtn")?.addEventListener("click", function (e) {
       e.preventDefault();

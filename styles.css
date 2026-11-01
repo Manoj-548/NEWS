@@ -2088,6 +2088,88 @@ body.vs-open #videoStudioScreen.hidden {
     padding: 8px 12px 10px;
     overflow: auto;
 }
+.vs-overlay-controls {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 14px 12px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.88));
+    pointer-events: auto;
+}
+.vs-ov-btn {
+    min-width: 52px;
+    height: 34px;
+    border: 0;
+    border-radius: 6px;
+    font-weight: 800;
+    cursor: pointer;
+    background: #1f2a3d;
+    color: #fff;
+    font-size: 0.82rem;
+}
+.vs-ov-btn.play { background: #16a34a; }
+.vs-ov-btn.playing { background: #b45309; }
+.vs-scrub {
+    position: relative;
+    flex: 1;
+    height: 16px;
+    background: rgba(255,255,255,0.22);
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: none;
+}
+.vs-scrub-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: #ffcc00;
+    border-radius: 10px;
+    pointer-events: none;
+}
+.vs-scrub-knob {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #ffcc00;
+    box-shadow: 0 0 10px rgba(0,0,0,0.7);
+    cursor: grab;
+    z-index: 2;
+}
+.vs-scrub-knob:active { cursor: grabbing; }
+.vs-ov-time {
+    color: #ffe566;
+    font-weight: 800;
+    min-width: 92px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+.vs-speed-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #dbe7f3;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.vs-speed-wrap input[type="range"] {
+    width: 90px;
+    accent-color: #ffcc00;
+    cursor: pointer;
+}
 .vs-player-bar {
     display: flex;
     align-items: center;
@@ -2097,6 +2179,7 @@ body.vs-open #videoStudioScreen.hidden {
     background: #101826;
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px;
+    flex-wrap: wrap;
 }
 .vs-under-btn {
     min-width: 88px;
@@ -2109,6 +2192,7 @@ body.vs-open #videoStudioScreen.hidden {
 }
 .vs-under-btn.play { background: #16a34a; color: #fff; }
 .vs-under-btn.pause { background: #b45309; color: #fff; }
+.vs-under-btn.skip { background: #1f2a3d; color: #fff; min-width: 56px; }
 .vs-under-btn:hover { filter: brightness(1.1); }
 .vs-under-time { color: #ffe566; font-weight: 700; min-width: 64px; }
 .vs-under-hint { color: #8c9ba5; font-size: 0.78rem; }

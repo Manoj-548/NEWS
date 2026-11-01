@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI News Studio — Live Male & Female Anchors</title>
     <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal channel branding.">
-    <link rel="stylesheet" href="styles.css?v=studio23">
+    <link rel="stylesheet" href="styles.css?v=studio24">
     <style>
         html, body { background: #0a0d14; color: #f0f4f8; margin: 0; }
         #appLoaderScreen, .app-loader-overlay { display: none !important; }
@@ -535,14 +535,34 @@
             <div class="vs-stage">
                 <video id="vsBgVideo" muted playsinline preload="auto"></video>
                 <canvas id="vsCanvas" width="1920" height="1080"></canvas>
+                <div id="vsOverlayControls" class="vs-overlay-controls">
+                    <button id="vsOvPlay" class="vs-ov-btn play" type="button" title="Play or pause">Play</button>
+                    <button id="vsRewind" class="vs-ov-btn" type="button" title="Back 5 seconds">−5s</button>
+                    <button id="vsFwd" class="vs-ov-btn" type="button" title="Forward 5 seconds">+5s</button>
+                    <div id="vsScrub" class="vs-scrub" title="Drag to move in the video">
+                        <div id="vsScrubFill" class="vs-scrub-fill"></div>
+                        <div id="vsScrubKnob" class="vs-scrub-knob"></div>
+                    </div>
+                    <span id="vsOvTime" class="vs-ov-time">0:00 / 0:00</span>
+                    <label class="vs-speed-wrap">Speed
+                        <input id="vsSpeed" type="range" min="1" max="10" step="1" value="1">
+                        <span id="vsSpeedLabel">1x</span>
+                    </label>
+                </div>
                 <input id="vsFileInput" type="file" accept="video/*" multiple hidden>
             </div>
             <div class="vs-dock">
                 <div class="vs-player-bar">
                     <button id="vsUnderPlay" class="vs-under-btn play" type="button">Play</button>
                     <button id="vsUnderPause" class="vs-under-btn pause" type="button">Pause</button>
-                    <span id="vsUnderTime" class="vs-under-time">0:00</span>
-                    <span id="vsUnderHint" class="vs-under-hint">Play / Pause below the video</span>
+                    <button id="vsUnderBack" class="vs-under-btn skip" type="button">−5s</button>
+                    <button id="vsUnderFwd" class="vs-under-btn skip" type="button">+5s</button>
+                    <span id="vsUnderTime" class="vs-under-time">0:00 / 0:00</span>
+                    <label class="vs-speed-wrap dock">Speed
+                        <input id="vsSpeedDock" type="range" min="1" max="10" step="1" value="1">
+                        <span id="vsSpeedDockLabel">1x</span>
+                    </label>
+                    <span id="vsUnderHint" class="vs-under-hint">Drag the yellow dot on the video to jump</span>
                 </div>
                 <div class="vs-bin-wrap">
                     <div class="vs-dock-label">CLIPS · click to select · timeline is the full-length news video</div>
@@ -639,12 +659,12 @@
     <audio id="vsNarration" preload="auto" src="/assets/abbakka/abbakka_kn.mp3?v=pack23"></audio>
     <div id="studioToast" class="studio-toast hidden"></div>
 
-    <script src="app.js?v=studio23"></script>
-    <script src="talking-avatar.js?v=studio23"></script>
-    <script src="news-desk.js?v=studio23"></script>
-    <script src="boot-controls.js?v=studio23"></script>
-    <script src="fix-news-ui.js?v=studio23"></script>
-    <script src="video-studio.js?v=studio23"></script>
+    <script src="app.js?v=studio24"></script>
+    <script src="talking-avatar.js?v=studio24"></script>
+    <script src="news-desk.js?v=studio24"></script>
+    <script src="boot-controls.js?v=studio24"></script>
+    <script src="fix-news-ui.js?v=studio24"></script>
+    <script src="video-studio.js?v=studio24"></script>
     <script>
         (function () {
             function dismissLoader() {
