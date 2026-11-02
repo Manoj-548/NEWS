@@ -110,6 +110,38 @@
     }
     return a;
   }
+  function playDocAudio(src) {
+    const a = narrationEl();
+    const same = a.getAttribute("data-src") === src;
+    if (same && !a.paused && !a.ended) {
+      if (typeof state !== "undefined") {
+        state.isSpeaking = true;
+        state.isPaused = false;
+        state._fileNarration = true;
+      }
+      return a;
+    }
+    if (!same) {
+      a.src = src;
+      a.setAttribute("data-src", src);
+    }
+    a.volume = 0.9;
+    a.playbackRate = vs.rate || 1;
+    if (!same || a.ended) {
+      try { a.currentTime = 0; } catch (e0) {}
+    }
+    const p = a.play();
+    if (p && p.catch) p.catch(function () {});
+    if (typeof state !== "undefined") {
+      state.isSpeaking = true;
+      state.isPaused = false;
+      state.userHasStarted = true;
+      state._fileNarration = true;
+    }
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e1) {}
+    return a;
+  }
+
   function playFileNarration() {
     const a = narrationEl();
     const same = a.getAttribute("data-src") === ABBAKKA.audio;
@@ -379,25 +411,19 @@
     marcus_cole: "male"
   };
 
+  const CLIMATE_DOC = {
+    video: "assets/climate/climate_doc.mp4?v=doc1",
+    audio: "assets/climate/climate_doc.mp3?v=doc1",
+    title: "GLOBAL WARMING: THE PLANET'S RED LINE",
+    script: "Good evening from the World Climate Desk. I am Alexander Hayes, your foreign correspondent. Nineteen of the twenty hottest years ever measured have fallen in this century. The planet's average temperature now sits about one point five degrees Celsius above the pre-industrial line. That is the very limit governments vowed to defend in Paris. From space, the story is written in ice and ocean. Greenland and West Antarctica are losing mass faster each decade. Meltwater, plus the expansion of warming seas, is lifting global waterlines. Streets in Mumbai, Lagos, Jakarta and Miami already flood on cloudless days. A warmer sky holds more moisture, so storms strike harder. Dry belts burn longer. The science is not ambiguous. The main driver is carbon dioxide and methane from coal, oil, gas, and land use. There is a hard, practical hope. Solar and wind are now the cheapest new electricity in most of the world. Every tenth of a degree we still prevent is harvests, coastlines, and lives saved. This is Alexander Hayes, World Climate Desk. We will keep the watch."
+  };
+
   function climateStory(p) {
-    const name = (p && p.name) || "Alexander Hayes";
-    const foreign = /hayes|reyes|cole|lyra|nova/i.test(name);
     return {
-      title: "GLOBAL WARMING: THE PLANET'S RED LINE",
+      title: CLIMATE_DOC.title,
       category: "World Climate Desk",
       language: "en-GB",
-      script:
-        "Good evening from the World Climate Desk. I am " + name +
-        ", your " + (foreign ? "foreign correspondent" : "anchor") +
-        ". Nineteen of the twenty hottest years ever measured have fallen in this century. " +
-        "The planet's average temperature now sits about one point five degrees Celsius above the pre-industrial line — " +
-        "the very limit governments vowed to defend in Paris. From space, the story is written in ice and ocean. " +
-        "Greenland and West Antarctica are losing mass faster each decade. Meltwater, plus the expansion of warming seas, " +
-        "is lifting global waterlines. Streets in Mumbai, Lagos, Jakarta and Miami already flood on cloudless days. " +
-        "A warmer sky holds more moisture, so storms strike harder, while dry belts burn longer. The science is not ambiguous: " +
-        "the main driver is carbon dioxide and methane from coal, oil, gas, and land use. There is a hard, practical hope. " +
-        "Solar and wind are now the cheapest new electricity in most of the world. Every tenth of a degree we still prevent " +
-        "is harvests, coastlines, and lives saved. This is " + name + ", World Climate Desk. We will keep the watch."
+      script: CLIMATE_DOC.script
     };
   }
 
@@ -465,17 +491,7 @@
     renderNameBar();
     updateGfx();
     if (restartWorld && vs.desk === "world") {
-      if (typeof state !== "undefined") {
-        state._fileNarration = false;
-        state.currentLanguage = "en-GB";
-        state._ttsLang = "en-GB";
-      }
-      const storyPack = climateStory({ name: name, gender: gender });
-      attachStory(storyPack);
-      if (typeof startNewsBroadcast === "function") {
-        try { startNewsBroadcast(); } catch (e1) {}
-      }
-      toast(name + " · " + gender + " voice · climate desk");
+      toast(name + " on camera · documentary narration stays locked");
     } else {
       toast(name + " · " + gender + " voice");
     }
@@ -517,7 +533,7 @@
     if (!el || !src) return;
     if (!/^https?:/i.test(src)) el.removeAttribute("crossorigin");
     const film = /abbakka/i.test(src);
-    el.loop = vs.desk !== "world";
+    el.loop = true;
     el.playsInline = true;
     el.autoplay = true;
     el.muted = true;
@@ -664,57 +680,28 @@
   }
 
   async function generateNewsVideo() {
-    if (vs.generating) return;
-    vs.generating = 0.12;
     isolateDesk("world");
-    preloadClimate();
     applyPresenter("alexander_hayes", false);
-    const pack = climateStory(profile());
     if (typeof state !== "undefined") {
       state.currentLanguage = "en-GB";
       state._ttsLang = "en-GB";
-      state.speechRate = 0.92;
-      state.speechPitch = 0.9;
-      state.volume = 1;
+      state.volume = 0.9;
       state.userHasStarted = true;
+      state._fileNarration = true;
+      state._lockScript = true;
     }
     const langSelect = $("languageSelect");
     if (langSelect) langSelect.value = "en-GB";
     const lab = $("currentLangLabel");
     if (lab) lab.textContent = "English (UK)";
-    attachStory(pack);
-    toast("World Climate Desk — Alexander Hayes reading global warming");
+    attachStory(climateStory());
+    toast("HD climate documentary — picture locked to Alexander Hayes");
     openStudio();
-    playBg(CLIMATE_VIDEOS[0]);
-    if (bgEl()) commitFileClip(bgEl(), "Global warming · HD");
     vs.playing = true;
+    playBg(CLIMATE_DOC.video);
+    playDocAudio(CLIMATE_DOC.audio);
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e0) {}
     syncPlayerUI();
-    if (typeof startNewsBroadcast === "function") {
-      try { startNewsBroadcast(); } catch (e0) {}
-    }
-    const tick = setInterval(function () {
-      vs.generating = Math.min(0.92, (vs.generating || 0.12) + 0.08);
-    }, 300);
-    try {
-      const placed = await placeFirstVideo(CLIMATE_VIDEOS, "Global warming · HD");
-      clearInterval(tick);
-      vs.generating = 0;
-      vs.playing = true;
-      playBg(CLIMATE_VIDEOS[0]);
-      if (typeof startNewsBroadcast === "function") {
-        try { startNewsBroadcast(); } catch (e1) {}
-      }
-      toast(placed
-        ? "Climate film on air — foreign correspondent reading. Voices are not mixed with Abbakka."
-        : "Climate script is on air. Video is loading.");
-    } catch (err) {
-      clearInterval(tick);
-      vs.generating = 0;
-      playBg(CLIMATE_VIDEOS[0]);
-      if (typeof startNewsBroadcast === "function") {
-        try { startNewsBroadcast(); } catch (e2) {}
-      }
-    }
     updateGfx();
   }
 
@@ -1329,7 +1316,14 @@
     }
     syncPlayerUI();
     if (vs.playing) {
-      if (vs.desk === "abbakka") {
+      if (vs.desk === "world") {
+        playDocAudio(CLIMATE_DOC.audio);
+        if (typeof state !== "undefined") {
+          state._fileNarration = true;
+          state.isSpeaking = true;
+          state.isPaused = false;
+        }
+      } else if (vs.desk === "abbakka") {
         playFileNarration();
         if (typeof state !== "undefined") {
           state._fileNarration = true;
