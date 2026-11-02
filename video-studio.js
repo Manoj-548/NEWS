@@ -304,12 +304,50 @@
   }
 
   const FALLBACK_VIDEOS = [
-    "https://images-assets.nasa.gov/video/GSFC_20161116_Climate_m12426_Change/GSFC_20161116_Climate_m12426_Change~medium.mp4",
-    "https://images-assets.nasa.gov/video/GSFC_20161116_Climate_m12426_Change/GSFC_20161116_Climate_m12426_Change~mobile.mp4",
-    "/assets/fallback_broll.mp4",
-    "/assets/fallback_broll.webm"
+    "assets/climate/earth.mp4",
+    "assets/fallback_broll.mp4",
+    "assets/fallback_broll.webm"
   ];
-  const CLIMATE_VIDEOS = FALLBACK_VIDEOS;
+  const CLIMATE_BEATS = [
+    { at: 0, src: "assets/climate/earth.mp4", label: "Earth from space" },
+    { at: 53, src: "assets/climate/oceancloud.webm", label: "Ice, ocean, meltwater" },
+    { at: 84, src: "assets/climate/clouds.webm", label: "Storms and flood skies" },
+    { at: 106, src: "assets/climate/fire.webm", label: "Heat, fire, fossil fuel" },
+    { at: 137, src: "assets/climate/wind.webm", label: "Wind and clean power" }
+  ];
+  const CLIMATE_VIDEOS = CLIMATE_BEATS.map(function (b) { return b.src; });
+
+  function climateSrcForWord(idx) {
+    let src = CLIMATE_BEATS[0].src;
+    let label = CLIMATE_BEATS[0].label;
+    for (let i = 0; i < CLIMATE_BEATS.length; i++) {
+      if (idx >= CLIMATE_BEATS[i].at) {
+        src = CLIMATE_BEATS[i].src;
+        label = CLIMATE_BEATS[i].label;
+      }
+    }
+    return { src: src, label: label };
+  }
+
+  function preloadClimate() {
+    CLIMATE_BEATS.forEach(function (b) {
+      const v = document.createElement("video");
+      v.preload = "auto";
+      v.muted = true;
+      v.playsInline = true;
+      v.src = b.src;
+    });
+  }
+
+  function syncWordVideo() {
+    if (!vs.open || !vs.playing) return;
+    const idx = (typeof state !== "undefined" && state.currentWordIndex) || 0;
+    if (vs.desk === "world") {
+      const hit = climateSrcForWord(idx);
+      vs._beatLabel = hit.label;
+      if (bgEl() && bgEl().getAttribute("data-src") !== hit.src) playBg(hit.src);
+    }
+  }
 
   const PEOPLE_GENDER = {
     nova_kade: "male",
@@ -443,7 +481,9 @@
       : (s.title || "VEERARANI ABBAKKA CHOUTA");
     if (kicker) kicker.textContent = world ? "FOREIGN CORRESPONDENT" : "KANNADA PRESENTER";
     if (nm) nm.textContent = p.name || "";
-    if (role) role.textContent = world ? "World Climate Desk · HD" : "Ullal · Karnataka";
+    if (role) role.textContent = world
+      ? ("HD B-ROLL · " + (vs._beatLabel || "Earth from space"))
+      : "Ullal · Karnataka · HD film";
     const words = (typeof state !== "undefined" && state.scriptWords) || [];
     const idx = (typeof state !== "undefined" && state.currentWordIndex) || 0;
     if (sub) sub.textContent = words.slice(idx, idx + 12).join(" ");
@@ -594,6 +634,7 @@
     if (vs.generating) return;
     vs.generating = 0.12;
     isolateDesk("world");
+    preloadClimate();
     applyPresenter("alexander_hayes", false);
     const pack = climateStory(profile());
     if (typeof state !== "undefined") {
@@ -1248,7 +1289,10 @@
       const im = talkingPresenterImg() || presenterImg();
       if (im && im.src && pip.src !== im.src) pip.src = im.src;
     }
-    if (vs.open) updateGfx();
+    if (vs.open) {
+      syncWordVideo();
+      updateGfx();
+    }
     fitCanvas();
     drawFrame(ts);
     vs.raf = requestAnimationFrame(loop);
