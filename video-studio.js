@@ -339,13 +339,31 @@
     });
   }
 
-  function syncWordVideo() {
-    if (!vs.open || !vs.playing) return;
+  function nextClimateSrc() {
+    vs._beat = ((vs._beat || 0) + 1) % CLIMATE_BEATS.length;
     const idx = (typeof state !== "undefined" && state.currentWordIndex) || 0;
-    if (vs.desk === "world") {
-      const hit = climateSrcForWord(idx);
-      vs._beatLabel = hit.label;
-      if (bgEl() && bgEl().getAttribute("data-src") !== hit.src) playBg(hit.src);
+    const wanted = climateSrcForWord(idx);
+    const beat = CLIMATE_BEATS[vs._beat];
+    const pick = wanted && wanted.src ? wanted : beat;
+    vs._beatLabel = (wanted && wanted.label) || beat.label;
+    return pick.src || beat.src;
+  }
+
+  function keepBgPlaying() {
+    const v = bgEl();
+    if (!v || !vs.playing || vs.scrubbing) return;
+    if (v.ended) {
+      if (vs.desk === "world") playBg(nextClimateSrc());
+      else {
+        try { v.currentTime = 0; } catch (e0) {}
+        const p = v.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+      return;
+    }
+    if (v.paused) {
+      const p2 = v.play();
+      if (p2 && p2.catch) p2.catch(function () {});
     }
   }
 
@@ -499,18 +517,33 @@
     if (!el || !src) return;
     if (!/^https?:/i.test(src)) el.removeAttribute("crossorigin");
     const film = /abbakka/i.test(src);
-    el.loop = true;
+    el.loop = vs.desk !== "world";
     el.playsInline = true;
     el.autoplay = true;
     el.muted = true;
     el.defaultMuted = true;
+    el.playbackRate = vs.rate || 1;
     if (el.getAttribute("data-src") !== src) {
       el.setAttribute("data-src", src);
       el.src = src;
     }
-    el.playbackRate = vs.rate || 1;
-    const p = el.play();
-    if (p && p.catch) p.catch(function () {});
+    if (!el._vsKeep) {
+      el._vsKeep = true;
+      el.addEventListener("ended", function () {
+        vs.playing = true;
+        keepBgPlaying();
+      });
+      el.addEventListener("pause", function () {
+        if (vs.playing && vs.open && !vs.scrubbing) {
+          const r = el.play();
+          if (r && r.catch) r.catch(function () {});
+        }
+      });
+    }
+    if (el.paused || el.ended) {
+      const p = el.play();
+      if (p && p.catch) p.catch(function () {});
+    }
     if (film) {
       document.body.classList.add("vs-film");
       if (typeof state !== "undefined") {
@@ -1103,32 +1136,9 @@
     ctx.clearRect(0, 0, w, h);
 
     const bg = bgEl();
-    const streaming = !!(bg && bg.videoWidth && bg.readyState >= 2);
-    if (streaming) {
-      if (vs.playing && bg.paused) {
-        const p = bg.play();
-        if (p && p.catch) p.catch(function () {});
-      }
-      if (typeof state !== "undefined" && !bg.paused && !bg.ended) {
-        state.isSpeaking = true;
-        state.isPaused = false;
-        const words = state.scriptWords || [];
-        if (bg.duration > 0 && words.length) {
-          const idx = Math.min(words.length - 1, Math.floor((bg.currentTime / bg.duration) * words.length));
-          if (idx !== state.currentWordIndex) {
-            state.currentWordIndex = idx;
-            state._wordT0 = performance.now();
-            state._lastBoundary = performance.now();
-          }
-        }
-      }
-    } else {
-      const hit = clipAt(vs.playhead);
-      if (hit && hit.clip.type === "file") {
-        drawFileClip(ctx, w, h, hit.clip);
-      } else if (hit && hit.clip.type === "ai") {
-        drawAiNews(ctx, w, h, t, hit.clip);
-      }
+    if (vs.playing && bg && bg.paused) {
+      const p = bg.play();
+      if (p && p.catch) p.catch(function () {});
     }
 
     drawNewsOverlay(ctx, w, h, t);
@@ -1266,9 +1276,6 @@
       const v = bgEl();
       if (v && isFinite(v.currentTime) && v.readyState >= 2) {
         vs.playhead = v.currentTime;
-        if (v.ended) {
-          vs.playing = false;
-        }
       } else if (vs.playing) {
         vs.playhead += dt * (vs.rate || 1);
         if (vs.playhead >= totalDur()) vs.playhead = 0;
@@ -1290,7 +1297,7 @@
       if (im && im.src && pip.src !== im.src) pip.src = im.src;
     }
     if (vs.open) {
-      syncWordVideo();
+      keepBgPlaying();
       updateGfx();
     }
     fitCanvas();
