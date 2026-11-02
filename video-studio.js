@@ -15,7 +15,8 @@
     chunks: [],
     raf: 0,
     rate: 1,
-    scrubbing: false
+    scrubbing: false,
+    desk: null
   };
 
   function $(id) { return document.getElementById(id); }
@@ -220,9 +221,7 @@
       b.className = "vs-pill" + (p[0] === cur ? " active" : "");
       b.textContent = p[1];
       b.onclick = function () {
-        if (typeof switchPresenterModel === "function") switchPresenterModel(p[0]);
-        renderPills();
-        toast(p[1] + " — press Play presenter");
+        applyPresenter(p[0], true);
       };
       box.appendChild(b);
     });
@@ -250,14 +249,17 @@
     vs.lastTs = 0;
     preloadVisemes((typeof state !== "undefined" && state.anchorModel) || "priya_nair");
     renderPills();
+    renderNameBar();
     renderBin();
     renderTimeline();
+    updateGfx();
     fitCanvas();
     toast("Video Studio — editor open");
     if (!vs.raf) loop(0);
   }
   function hideStudio() {
     document.body.classList.remove("vs-film");
+    document.body.classList.remove("vs-world");
     pauseFileNarration();
     vs.open = false;
     vs.playing = false;
@@ -302,10 +304,153 @@
   }
 
   const FALLBACK_VIDEOS = [
+    "https://images-assets.nasa.gov/video/GSFC_20161116_Climate_m12426_Change/GSFC_20161116_Climate_m12426_Change~medium.mp4",
+    "https://images-assets.nasa.gov/video/GSFC_20161116_Climate_m12426_Change/GSFC_20161116_Climate_m12426_Change~mobile.mp4",
     "/assets/fallback_broll.mp4",
-    "/assets/fallback_broll.webm",
-    "https://images-assets.nasa.gov/video/GSFC_20161116_Climate_m12426_Change/GSFC_20161116_Climate_m12426_Change~mobile.mp4"
+    "/assets/fallback_broll.webm"
   ];
+  const CLIMATE_VIDEOS = FALLBACK_VIDEOS;
+
+  const PEOPLE_GENDER = {
+    nova_kade: "male",
+    lyra_nova: "female",
+    arjun_mehra: "male",
+    priya_nair: "female",
+    rajesh_sharma: "male",
+    meera_kapoor: "female",
+    alexander_hayes: "male",
+    sofia_reyes: "female",
+    marcus_cole: "male"
+  };
+
+  function climateStory(p) {
+    const name = (p && p.name) || "Alexander Hayes";
+    const foreign = /hayes|reyes|cole|lyra|nova/i.test(name);
+    return {
+      title: "GLOBAL WARMING: THE PLANET'S RED LINE",
+      category: "World Climate Desk",
+      language: "en-GB",
+      script:
+        "Good evening from the World Climate Desk. I am " + name +
+        ", your " + (foreign ? "foreign correspondent" : "anchor") +
+        ". Nineteen of the twenty hottest years ever measured have fallen in this century. " +
+        "The planet's average temperature now sits about one point five degrees Celsius above the pre-industrial line — " +
+        "the very limit governments vowed to defend in Paris. From space, the story is written in ice and ocean. " +
+        "Greenland and West Antarctica are losing mass faster each decade. Meltwater, plus the expansion of warming seas, " +
+        "is lifting global waterlines. Streets in Mumbai, Lagos, Jakarta and Miami already flood on cloudless days. " +
+        "A warmer sky holds more moisture, so storms strike harder, while dry belts burn longer. The science is not ambiguous: " +
+        "the main driver is carbon dioxide and methane from coal, oil, gas, and land use. There is a hard, practical hope. " +
+        "Solar and wind are now the cheapest new electricity in most of the world. Every tenth of a degree we still prevent " +
+        "is harvests, coastlines, and lives saved. This is " + name + ", World Climate Desk. We will keep the watch."
+    };
+  }
+
+  function isolateDesk(which) {
+    vs.desk = which;
+    if (typeof state !== "undefined") state._desk = which;
+    if (which === "world") {
+      stopFileNarration();
+      if (typeof state !== "undefined") {
+        state._fileNarration = false;
+        state._lockScript = false;
+      }
+      document.body.classList.remove("vs-film");
+      document.body.classList.add("vs-world");
+    } else if (which === "abbakka") {
+      try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e0) {}
+      if (typeof stopNewsBroadcast === "function") {
+        try { stopNewsBroadcast(true); } catch (e1) {}
+      }
+      document.body.classList.add("vs-film");
+      document.body.classList.remove("vs-world");
+    }
+    updateGfx();
+    renderNameBar();
+  }
+
+  function renderNameBar() {
+    const bar = $("vsNameBar");
+    if (!bar) return;
+    const cur = (typeof state !== "undefined" && state.anchorModel) || "alexander_hayes";
+    bar.innerHTML = "";
+    PEOPLE.forEach(function (p) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "vs-name-chip" + (p[0] === cur ? " active" : "");
+      b.textContent = p[1];
+      b.title = (PEOPLE_GENDER[p[0]] === "female" ? "Female voice · " : "Male voice · ") + p[1];
+      b.onclick = function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        applyPresenter(p[0], true);
+      };
+      bar.appendChild(b);
+    });
+  }
+
+  function applyPresenter(id, restartWorld) {
+    const name = (PEOPLE.filter(function (x) { return x[0] === id; })[0] || [id, id])[1];
+    const gender = PEOPLE_GENDER[id] || "male";
+    if (typeof state !== "undefined") state.anchorModel = id;
+    document.querySelectorAll("[data-model]").forEach(function (el) {
+      el.classList.toggle("active", el.dataset.model === id);
+    });
+    const modelSelect = $("anchorModelSelect");
+    if (modelSelect) modelSelect.value = id;
+    const genderSelect = $("voiceGenderSelect");
+    if (genderSelect) genderSelect.value = gender;
+    const nameLabel = $("currentAnchorLabel");
+    if (nameLabel) nameLabel.textContent = name;
+    if (typeof syncVoiceToPresenter === "function") {
+      try { syncVoiceToPresenter(); } catch (e0) {}
+    }
+    preloadVisemes(id);
+    renderPills();
+    renderNameBar();
+    updateGfx();
+    if (restartWorld && vs.desk === "world") {
+      if (typeof state !== "undefined") {
+        state._fileNarration = false;
+        state.currentLanguage = "en-GB";
+        state._ttsLang = "en-GB";
+      }
+      const storyPack = climateStory({ name: name, gender: gender });
+      attachStory(storyPack);
+      if (typeof startNewsBroadcast === "function") {
+        try { startNewsBroadcast(); } catch (e1) {}
+      }
+      toast(name + " · " + gender + " voice · climate desk");
+    } else {
+      toast(name + " · " + gender + " voice");
+    }
+  }
+  window.studioApplyPresenter = applyPresenter;
+
+  function updateGfx() {
+    const p = profile();
+    const s = story();
+    const world = vs.desk === "world";
+    const show = $("vsGfxShow");
+    const title = $("vsGfxTitle");
+    const kicker = $("vsGfxKicker");
+    const nm = $("vsGfxName");
+    const role = $("vsGfxRole");
+    const sub = $("vsGfxSub");
+    const tick = $("vsGfxTicker");
+    if (show) show.textContent = world ? "WORLD CLIMATE DESK" : "KANNADA HISTORY DESK";
+    if (title) title.textContent = world
+      ? (s.title || "GLOBAL WARMING: THE PLANET'S RED LINE")
+      : (s.title || "VEERARANI ABBAKKA CHOUTA");
+    if (kicker) kicker.textContent = world ? "FOREIGN CORRESPONDENT" : "KANNADA PRESENTER";
+    if (nm) nm.textContent = p.name || "";
+    if (role) role.textContent = world ? "World Climate Desk · HD" : "Ullal · Karnataka";
+    const words = (typeof state !== "undefined" && state.scriptWords) || [];
+    const idx = (typeof state !== "undefined" && state.currentWordIndex) || 0;
+    if (sub) sub.textContent = words.slice(idx, idx + 12).join(" ");
+    if (tick) {
+      tick.textContent = "  •  " + (s.title || "") + "  •  " + (s.script || "") + "  •  LIVE  •  ";
+    }
+  }
 
   function bgEl() { return $("vsBgVideo"); }
 
@@ -319,7 +464,7 @@
     el.autoplay = true;
     el.muted = true;
     el.defaultMuted = true;
-    if (!/abbakka_play/.test(el.currentSrc || el.src || "") || el.getAttribute("data-src") !== src) {
+    if (el.getAttribute("data-src") !== src) {
       el.setAttribute("data-src", src);
       el.src = src;
     }
@@ -448,56 +593,62 @@
   async function generateNewsVideo() {
     if (vs.generating) return;
     vs.generating = 0.12;
-    const lang = (typeof state !== "undefined" && state.currentLanguage)
-      || $("languageSelect")?.value
-      || "en-IN";
-    const loadingLine = /^hi/i.test(lang) ? "विश्व समाचार लोड हो रहा है।" : "Loading world news.";
-    kickVoice(loadingLine);
-    toast("Putting video on the background…");
-    playBg(FALLBACK_VIDEOS[0]);
-    if (bgEl()) commitFileClip(bgEl(), "World b-roll");
+    isolateDesk("world");
+    applyPresenter("alexander_hayes", false);
+    const pack = climateStory(profile());
+    if (typeof state !== "undefined") {
+      state.currentLanguage = "en-GB";
+      state._ttsLang = "en-GB";
+      state.speechRate = 0.92;
+      state.speechPitch = 0.9;
+      state.volume = 1;
+      state.userHasStarted = true;
+    }
+    const langSelect = $("languageSelect");
+    if (langSelect) langSelect.value = "en-GB";
+    const lab = $("currentLangLabel");
+    if (lab) lab.textContent = "English (UK)";
+    attachStory(pack);
+    toast("World Climate Desk — Alexander Hayes reading global warming");
+    openStudio();
+    playBg(CLIMATE_VIDEOS[0]);
+    if (bgEl()) commitFileClip(bgEl(), "Global warming · HD");
+    vs.playing = true;
+    syncPlayerUI();
+    if (typeof startNewsBroadcast === "function") {
+      try { startNewsBroadcast(); } catch (e0) {}
+    }
     const tick = setInterval(function () {
-      vs.generating = Math.min(0.92, (vs.generating || 0.12) + 0.05);
-    }, 450);
+      vs.generating = Math.min(0.92, (vs.generating || 0.12) + 0.08);
+    }, 300);
     try {
-      const res = await fetch("/api/trending-broll?lang=" + encodeURIComponent(lang));
-      const data = await res.json();
+      const placed = await placeFirstVideo(CLIMATE_VIDEOS, "Global warming · HD");
       clearInterval(tick);
       vs.generating = 0;
-      attachStory(data.story);
-      const clipName = (data.video && data.video.name) || (data.story && data.story.title) || "World news";
-      let placed = false;
-      if (data.video && data.video.src) {
-        placed = await addRemoteClip(data.video.src, clipName, 8000);
-      }
-      if (!placed) placed = await placeFirstVideo(FALLBACK_VIDEOS, clipName);
       vs.playing = true;
-      const pb = $("vsPlayBtn");
-      if (pb) pb.textContent = "Pause";
-      toast(placed
-        ? "Video is on the background — presenter is reading the story"
-        : "News attached — check Video Studio background");
+      playBg(CLIMATE_VIDEOS[0]);
       if (typeof startNewsBroadcast === "function") {
-        try { startNewsBroadcast(); } catch (e) {}
+        try { startNewsBroadcast(); } catch (e1) {}
       }
-      setTimeout(function () {
-        if (typeof state !== "undefined" && !state.isSpeaking && typeof startNewsBroadcast === "function") {
-          try { startNewsBroadcast(); } catch (e2) {}
-        }
-      }, 500);
+      toast(placed
+        ? "Climate film on air — foreign correspondent reading. Voices are not mixed with Abbakka."
+        : "Climate script is on air. Video is loading.");
     } catch (err) {
       clearInterval(tick);
       vs.generating = 0;
-      await placeFirstVideo(FALLBACK_VIDEOS, "World b-roll");
-      toast("Could not fetch world news — background video is still playing");
+      playBg(CLIMATE_VIDEOS[0]);
+      if (typeof startNewsBroadcast === "function") {
+        try { startNewsBroadcast(); } catch (e2) {}
+      }
     }
+    updateGfx();
   }
 
   const ABBAKKA = {
     title: "ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ",
     category: "ಕನ್ನಡ ವಿಶೇಷ",
     language: "kn-IN",
-    video: "assets/abbakka/abbakka_play.mp4?v=play1",
+    video: "assets/abbakka/abbakka_play.mp4?v=desk1",
     audio: "assets/abbakka/abbakka_kn.mp3?v=pack23",
     script:
       "ನಮಸ್ಕಾರ. ಕನ್ನಡಿಗರೇ, ಇದು ವಿಶೇಷ ಇತಿಹಾಸ ವಾರ್ತಾ ಪ್ರಸಾರ. ತೆರೆಯ ಮೇಲೆ ದಕ್ಷಿಣ ಕನ್ನಡದ ಉಳ್ಳಾಲ. ಈ ನೆಲದಿಂದ ಹದಿನಾರನೇ ಶತಮಾನದಲ್ಲಿ ರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ ಪೋರ್ಚುಗೀಸ್ ಸಾಮ್ರಾಜ್ಯವನ್ನು ನಾಲ್ಕು ದಶಕ ಎದುರಿಸಿದಳು. ಜನ ಅವಳನ್ನು ಅಭಯರಾಣಿ ಎಂದು ಕರೆದರು. ಚೌಟ ವಂಶ ಅಳಿಯಸಂತಾನ. ಮಾವ ತಿರುಮಲ ರಾಯ ಖಡ್ಗ ಮತ್ತು ಯುದ್ಧತಂತ್ರ ಕಲಿಸಿ ಸಿಂಹಾಸನ ಕಟ್ಟಿದರು. ಜೈನ, ಹಿಂದೂ, ಬ್ಯಾರಿ ಮುಸ್ಲಿಂ ಸಮುದಾಯ ಆಡಳಿತದಲ್ಲಿದ್ದರು. ಉಳ್ಳಾಲ ಮೆಣಸು ವ್ಯಾಪಾರದ ಕೇಂದ್ರ. ಪೋರ್ಚುಗೀಸರು ತೆರಿಗೆ ಕೇಳಿದರು. ರಾಣಿ ನಿರಾಕರಿಸಿದಳು. ಈಗ ಕಾಣುವವಳು ಉಳ್ಳಾಲದ ರಾಣಿ. ಆಕೆ ಸಾಮಾನ್ಯರಂತೆ ಉಡುಪು ಧರಿಸಿ ರಾತ್ರಿ ತಡವಾಗಿ ನ್ಯಾಯ ನೀಡುತ್ತಿದ್ದಳು. ಕಪ್ಪು ಮೋಡದಡಿ ಪೋರ್ಚುಗೀಸ್ ಹಡಗುಗಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಐವತ್ತೈದರಲ್ಲಿ ಅಡ್ಮಿರಲ್ ಡಾನ್ ಅಲ್ವಾರೊ ದಾಳಿ ಮಾಡಿದ. ಅಬ್ಬಕ್ಕ ಅವರನ್ನು ಹಿಮ್ಮೆಟ್ಟಿಸಿದಳು. ಮೊಗವೀರ ಮೀನುಗಾರರು ಮತ್ತು ಬ್ಯಾರಿ ನಾವಿಕರು ರಾಣಿಯ ಬಲ. ಅಗ್ನಿಬಾಣ ಬಳಸಿದ ಕೊನೆಯವರಲ್ಲಿ ಒಬ್ಬಳು ಎಂದು ಐತಿಹ್ಯ. ಮಹಿಳೆಯರು ಖಡ್ಗಾಭ್ಯಾಸ ಮಾಡುತ್ತಿದ್ದಾರೆ. ರಾಣಿ ಕರಾವಳಿ ಮಹಿಳೆಯರನ್ನು ಸೇನೆ ಮಾಡಿದಳು. ಒಂದು ಸಾವಿರ ಐನೂರು ಅರವತ್ತೆಂಟರಲ್ಲಿ ಜನರಲ್ ಪೈಕ್ಸೊಟೊ ಉಳ್ಳಾಲವನ್ನು ಆಕ್ರಮಿಸಿ ಅರಮನೆ ಪ್ರವೇಶಿಸಿದ. ರಾಣಿ ಮಸೀದಿಯಲ್ಲಿ ಆಶ್ರಯ ಪಡೆದು ಅದೇ ರಾತ್ರಿ ಎರಡು ನೂರು ಸೈನಿಕರೊಂದಿಗೆ ಮರುದಾಳಿ ಮಾಡಿದಳು. ಪೋರ್ಚುಗೀಸರು ಮಂಗಳೂರು ಕೋಟೆಯಿಂದ ಹಿಂದೆ ಸರಿದರು. ಕೊನೆಯ ಚಿತ್ರ ಸ್ಮೃತಿ. ಉಳ್ಳಾಲದ ವೃತ್ತದಲ್ಲಿ ಅಬ್ಬಕ್ಕ ಜೀವಂತ. ಅಂಚೆಚೀಟಿಯಲ್ಲಿ ವೀರರಾಣಿ. ಕಿತ್ತೂರು ಚೆನ್ನಮ್ಮ ಮತ್ತು ಒನಕೆ ಓಬವ್ವರ ಸಾಲಿನಲ್ಲಿ ಕರ್ನಾಟಕ ಈ ರಾಣಿಯನ್ನು ಸ್ಮರಿಸುತ್ತದೆ. ಇದು ನಮ್ಮ ಕನ್ನಡ ವರದಿ. ವೀರರಾಣಿ ಅಬ್ಬಕ್ಕ ಚೌಟ. ಅಭಯರಾಣಿ. ನಾವು ಮತ್ತೆ ಸಿಗೋಣ."
@@ -505,6 +656,7 @@
 
   async function playAbbakkaKannada() {
     vs._abbakkaClick = Date.now();
+    isolateDesk("abbakka");
     toast("ರಾಣಿ ಅಬ್ಬಕ್ಕ ಕನ್ನಡ ಪೂರ್ಣಾವಧಿ ವೀಡಿಯೊ ಹಾಕುತ್ತಿದ್ದೇವೆ…");
     preloadVisemes("priya_nair");
     if (typeof state !== "undefined") {
@@ -1096,6 +1248,7 @@
       const im = talkingPresenterImg() || presenterImg();
       if (im && im.src && pip.src !== im.src) pip.src = im.src;
     }
+    if (vs.open) updateGfx();
     fitCanvas();
     drawFrame(ts);
     vs.raf = requestAnimationFrame(loop);
@@ -1125,12 +1278,7 @@
     }
     syncPlayerUI();
     if (vs.playing) {
-      const bg = bgEl();
-      const film = !!(bg && /abbakka/i.test((bg.getAttribute("data-src") || bg.src || "")));
-      if (film) {
-        bg.playbackRate = vs.rate || 1;
-        const np = bg.play();
-        if (np && np.catch) np.catch(function () {});
+      if (vs.desk === "abbakka") {
         playFileNarration();
         if (typeof state !== "undefined") {
           state._fileNarration = true;

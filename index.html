@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI News Studio — Live Male & Female Anchors</title>
     <meta name="description" content="AI Visual News Broadcaster with male anchor, multi-language speech synthesis, automatic subtitle teleprompter, breaking news lower-thirds, and secret/reveal channel branding.">
-    <link rel="stylesheet" href="styles.css?v=studio27">
+    <link rel="stylesheet" href="styles.css?v=studio28">
     <style>
         html, body { background: #0a0d14; color: #f0f4f8; margin: 0; }
         #appLoaderScreen, .app-loader-overlay { display: none !important; }
@@ -501,7 +501,7 @@
                 <div class="vs-side-label">Presenter</div>
                 <div id="vsPresenterPills" class="vs-pills"></div>
                 <div class="vs-side-label">Media</div>
-                <button id="vsGenerateBtn" class="vs-btn vs-btn-ai vs-btn-block" type="button">World news + video</button>
+                <button id="vsGenerateBtn" class="vs-btn vs-btn-ai vs-btn-block" type="button">World news · Global warming</button>
                 <button id="vsAbbakkaBtn" class="vs-btn vs-btn-ai vs-btn-block" type="button">ರಾಣಿ ಅಬ್ಬಕ್ಕ | ಕನ್ನಡ ಪೂರ್ಣ</button>
                 <button id="vsUploadBtn" class="vs-btn vs-btn-block" type="button">Upload video</button>
                 <div class="vs-side-label">Edit cuts</div>
@@ -533,8 +533,23 @@
                 <div id="vsStatus" class="vs-status">Idle</div>
             </aside>
             <div class="vs-stage">
-                <video id="vsBgVideo" controls playsinline preload="auto" src="assets/abbakka/abbakka_play.mp4"></video>
+                <video id="vsBgVideo" playsinline preload="auto"></video>
                 <canvas id="vsCanvas" width="1920" height="1080"></canvas>
+                <div id="vsNameBar" class="vs-name-bar" aria-label="Switch presenter"></div>
+                <div id="vsGfx" class="vs-gfx">
+                    <div class="vs-gfx-top">
+                        <span class="vs-live">LIVE</span>
+                        <span id="vsGfxShow">WORLD CLIMATE DESK</span>
+                    </div>
+                    <div id="vsGfxTitle" class="vs-gfx-title">GLOBAL WARMING</div>
+                    <div class="vs-gfx-lt">
+                        <div id="vsGfxKicker" class="vs-gfx-kicker">FOREIGN CORRESPONDENT</div>
+                        <div id="vsGfxName" class="vs-gfx-name">Alexander Hayes</div>
+                        <div id="vsGfxRole" class="vs-gfx-role">World Climate Desk</div>
+                    </div>
+                    <div id="vsGfxSub" class="vs-gfx-sub"></div>
+                    <div class="vs-gfx-ticker"><span id="vsGfxTicker"></span></div>
+                </div>
                 <div id="vsPipBox" class="vs-pip-box">
                     <img id="vsPipLive" alt="Presenter">
                 </div>
@@ -662,12 +677,12 @@
     <audio id="vsNarration" preload="auto" src="assets/abbakka/abbakka_kn.mp3?v=pack23"></audio>
     <div id="studioToast" class="studio-toast hidden"></div>
 
-    <script src="app.js?v=studio27"></script>
-    <script src="talking-avatar.js?v=studio27"></script>
-    <script src="news-desk.js?v=studio27"></script>
-    <script src="boot-controls.js?v=studio27"></script>
-    <script src="fix-news-ui.js?v=studio27"></script>
-    <script src="video-studio.js?v=studio27"></script>
+    <script src="app.js?v=studio28"></script>
+    <script src="talking-avatar.js?v=studio28"></script>
+    <script src="news-desk.js?v=studio28"></script>
+    <script src="boot-controls.js?v=studio28"></script>
+    <script src="fix-news-ui.js?v=studio28"></script>
+    <script src="video-studio.js?v=studio28"></script>
     <script>
         (function () {
             function dismissLoader() {

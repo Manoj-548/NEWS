@@ -744,6 +744,10 @@ function setupEventListeners() {
 function switchPresenterModel(model) {
     const profile = getAnchorProfile(model);
     state.anchorModel = profile.id;
+    if (document.body.classList.contains("vs-open") && typeof window.studioApplyPresenter === "function") {
+        window.studioApplyPresenter(profile.id, true);
+        return;
+    }
 
     document.querySelectorAll("[data-model]").forEach(p => {
         p.classList.toggle("active", p.dataset.model === profile.id || ANCHOR_ALIASES[p.dataset.model] === profile.id);
@@ -1343,7 +1347,8 @@ function startNewsBroadcast() {
 
     stopNewsBroadcast(true);
 
-    if (state._fileNarration) {
+    if (state._desk === "world") state._fileNarration = false;
+    if (state._fileNarration && state._desk !== "world") {
         const a = document.getElementById("vsNarration");
         if (a) {
             a.volume = Math.min(0.78, Number(state.volume) || 0.75);
