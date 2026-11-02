@@ -385,13 +385,7 @@
     const v = bgEl();
     if (!v || !vs.playing || vs.scrubbing) return;
     if (v.ended) {
-      if (vs.desk === "world") playBg(nextClimateSrc());
-      else {
-        try { v.currentTime = 0; } catch (e0) {}
-        const p = v.play();
-        if (p && p.catch) p.catch(function () {});
-      }
-      return;
+      try { v.currentTime = 0.05; } catch (e0) {}
     }
     if (v.paused) {
       const p2 = v.play();
@@ -412,8 +406,8 @@
   };
 
   const CLIMATE_DOC = {
-    video: "assets/climate/climate_doc.mp4?v=doc1",
-    audio: "assets/climate/climate_doc.mp3?v=doc1",
+    video: "assets/climate/climate_doc.mp4?v=doc2",
+    audio: "assets/climate/climate_doc.mp3?v=doc2",
     title: "GLOBAL WARMING: THE PLANET'S RED LINE",
     script: "Good evening from the World Climate Desk. I am Alexander Hayes, your foreign correspondent. Nineteen of the twenty hottest years ever measured have fallen in this century. The planet's average temperature now sits about one point five degrees Celsius above the pre-industrial line. That is the very limit governments vowed to defend in Paris. From space, the story is written in ice and ocean. Greenland and West Antarctica are losing mass faster each decade. Meltwater, plus the expansion of warming seas, is lifting global waterlines. Streets in Mumbai, Lagos, Jakarta and Miami already flood on cloudless days. A warmer sky holds more moisture, so storms strike harder. Dry belts burn longer. The science is not ambiguous. The main driver is carbon dioxide and methane from coal, oil, gas, and land use. There is a hard, practical hope. Solar and wind are now the cheapest new electricity in most of the world. Every tenth of a degree we still prevent is harvests, coastlines, and lives saved. This is Alexander Hayes, World Climate Desk. We will keep the watch."
   };
@@ -513,11 +507,7 @@
     if (title) title.textContent = world
       ? (s.title || "GLOBAL WARMING: THE PLANET'S RED LINE")
       : (s.title || "VEERARANI ABBAKKA CHOUTA");
-    if (kicker) kicker.textContent = world ? "FOREIGN CORRESPONDENT" : "KANNADA PRESENTER";
-    if (nm) nm.textContent = p.name || "";
-    if (role) role.textContent = world
-      ? ("HD B-ROLL · " + (vs._beatLabel || "Earth from space"))
-      : "Ullal · Karnataka · HD film";
+    if (role) role.textContent = world ? "World Climate Desk · HD" : "Ullal · Karnataka";
     const words = (typeof state !== "undefined" && state.scriptWords) || [];
     const idx = (typeof state !== "undefined" && state.currentWordIndex) || 0;
     if (sub) sub.textContent = words.slice(idx, idx + 12).join(" ");
@@ -543,23 +533,8 @@
       el.setAttribute("data-src", src);
       el.src = src;
     }
-    if (!el._vsKeep) {
-      el._vsKeep = true;
-      el.addEventListener("ended", function () {
-        vs.playing = true;
-        keepBgPlaying();
-      });
-      el.addEventListener("pause", function () {
-        if (vs.playing && vs.open && !vs.scrubbing) {
-          const r = el.play();
-          if (r && r.catch) r.catch(function () {});
-        }
-      });
-    }
-    if (el.paused || el.ended) {
-      const p = el.play();
-      if (p && p.catch) p.catch(function () {});
-    }
+    const p = el.play();
+    if (p && p.catch) p.catch(function () {});
     if (film) {
       document.body.classList.add("vs-film");
       if (typeof state !== "undefined") {

@@ -2060,12 +2060,13 @@ body.vs-film #vsBgVideo {
     pointer-events: none;
 }
 .vs-name-bar {
+    display: none !important;
     position: absolute;
     top: 10px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9;
-    display: flex;
+    flex-wrap: wrap;
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
@@ -2146,18 +2147,9 @@ body.vs-film #vsBgVideo {
     padding: 10px 18px 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.45);
 }
-.vs-gfx-kicker {
-    color: #f3d27a;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.28em;
-}
+.vs-gfx-kicker,
 .vs-gfx-name {
-    color: #fff;
-    font-size: 26px;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    text-shadow: 0 2px 10px #000;
+    display: none !important;
 }
 .vs-gfx-role {
     color: #cfe7ff;
